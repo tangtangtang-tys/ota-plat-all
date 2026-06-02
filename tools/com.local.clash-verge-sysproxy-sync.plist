@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.local.clash-verge-sysproxy-sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>/Users/mac/.clash-verge-sysproxy-sync.sh</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/mac/Library/Logs/clash-verge-sysproxy-sync.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/mac/Library/Logs/clash-verge-sysproxy-sync.err.log</string>
+</dict>
+</plist>
