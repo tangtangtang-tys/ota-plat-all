@@ -3,6 +3,10 @@ const state = {
   packageType: "whole",
   strategy: "version",
   previewScenario: "mixed",
+  versionRule: "all",
+  quantityMode: "full",
+  createStep: 1,
+  regionDropdownOpen: false,
   modal: null,
   toast: "",
   navCollapsed: {
@@ -12,29 +16,13 @@ const state = {
   },
   role: "系统管理员",
   roleTab: "permissions",
-  referenceOpen: false,
 };
 
-const screenshotMap = {
-  "task-list": "13077f73760af84554a538d6e51ad8631ec735530c5e8f2b8281fe7a127e20e7.png",
-  "create-whole-version": "ac40399862e3f295ee35e3ade5e6c159807e64f1f29e3f4d110c3c4ec43067d4.png",
-  "create-whole-file": "7da89a3826c6d77682c2c6852e57ac15026b37c581872adee39687000c3377bd.png",
-  "create-whole-manual": "ba5dfce7445ac50bb31b3e3c5bca63524a8db4fd780bc7d8ec54931fdde5156f.png",
-  "create-diff-version": "a3353c22761671796f42e9b8a677fd17d8247b1ce39852629c4e4d495bc5e696.png",
-  "create-diff-file": "a9abd181512bc270678ae70fbfd3257192f9e0a2b2a0fb3874d1fdfbcc0a073c.png",
-  "create-diff-manual": "6b975ef3723271304a822ef960c8cda92b4e8afcb9b818d592f9b5160dc57238.png",
-  "preview-mixed": "aa1f3e8b3ee58ddd150b3c90d2bdd284a7e204726990e49264696977ed5e037f.png",
-  "preview-blocked": "93109343fb71ea923b50db9c3bf9e0ed1c1e9ad0d208ab41709df48bd7bc4e60.png",
-  "preview-clean": "11831bfedde1f4d3b17a0aad99c218760c5130e6659ec906559d1a822b2d79bd.png",
-  "task-detail": "d073bebfb9b66214c129b0853b8d6635bac6b75feb57018504a30c549391c37b.png",
-  "operation-log": "6040356bbb4774cec11b6941179829611c9f6ed6e00d5f3c4650ef311a0caf81.png",
-  "approval-log": "8ae05c6e77057bf05a9b3455655569a1d3ce0d4bbc2a49359a015d023264a181.png",
-  "user-list": "94542075f64a36c0a86cfa144fc16a0f5de8845b0dee7fbcf214a5fe1f501068.png",
-  "user-permission": "93866f0c63842d4afaea33c8434107dfcfe97bfb31b3ad283a02b3e7bee71a29.png",
-  "role-list": "fce85050eb5c37461b51d14b377295fb68ebfb9c5deed034af78eb6c6fc69f12.png",
-  "role-create": "c24134ba7284b3deb0222f1e0065e9504662cb1787edd1cd22dd9565d98d8c28.png",
-  "role-permission": "e8be1f7714e6a324f8a3077aa07311441c83b39fa3237111954d7c52f936616b.png",
-};
+const navGroups = [
+  { key: "ota", title: "OTA升级", icon: "home", items: [["task-list", "任务列表"]] },
+  { key: "logs", title: "日志管理", icon: "log", items: [["operation-log", "操作日志"], ["approval-log", "审批日志"]] },
+  { key: "users", title: "用户角色", icon: "users", items: [["user-list", "用户列表"], ["role-list", "角色权限"]] },
+];
 
 const taskRows = [
   ["单台升级", "手动导入", "1", "2026-05-19 11:05:00~2026-05-19 12:00:00", "0%", "1", "中国/杭州低功耗", "待执行", "2026-05-19 09:11:24", true],
@@ -102,17 +90,72 @@ const roles = [
   { name: "默认人员", count: 47, note: "只允许查看列表和详情，不允许创建或发布任务" },
 ];
 
-const routeTitles = {
-  "task-list": "任务列表",
-  "task-detail": "任务详情",
-  "create-task": "新增任务",
-  "operation-log": "操作日志",
-  "approval-log": "审批日志",
-  "user-list": "用户列表",
-  "user-permission": "用户列表-配置权限",
-  "user-detail": "用户列表-详情",
-  "role-list": "角色权限",
-  "role-permission": "配置权限页面",
+const firmwareVersions = [
+  { version: "23.422.209.17", count: 6505, diffReady: true, note: "4G 模组基线匹配" },
+  { version: "23.110.105.46", count: 2310, diffReady: true, note: "安全补丁版本" },
+  { version: "23.110.105.43", count: 1250, diffReady: false, note: "无可用差分包" },
+  { version: "10.176.42", count: 664, diffReady: false, note: "整包可跨版本升级" },
+];
+
+const strategyMeta = {
+  version: {
+    title: "指定版本号升级",
+    short: "指定版本",
+    desc: "按当前指定版本批量升级到目标版本，支持区域筛选。",
+    approval: "需产线负责人审批",
+    nextStatus: "待审批",
+    sourceLabel: "已配置版本表格",
+    dispatchLabel: "适用于正式发版、安全补丁、问题修复或灰度验证。",
+    devices: 6505,
+    good: 6503,
+    bad: 2,
+    centerTargets: 6505,
+    filteredOut: 0,
+    candidates: 0,
+  },
+  file: {
+    title: "文件导入升级",
+    short: "文件导入",
+    desc: "上传 CSV / Excel 设备清单，适合批量定向升级。",
+    approval: "需产线负责人审批",
+    nextStatus: "待审批",
+    sourceLabel: "已导入设备清单",
+    dispatchLabel: "导入后展示设备总数量，支持重新上传。",
+    devices: 1250,
+    good: 1182,
+    bad: 68,
+    centerTargets: 1182,
+    filteredOut: 43,
+    candidates: 25,
+  },
+  manual: {
+    title: "手动导入升级",
+    short: "手动导入",
+    desc: "最多 10 台，适合灰度测试或单台处理。",
+    approval: "无需审批",
+    nextStatus: "待执行",
+    sourceLabel: "已配置手动设备列表",
+    dispatchLabel: "无需审批，发布后进入待执行。",
+    devices: 2,
+    good: 2,
+    bad: 0,
+    centerTargets: 2,
+    filteredOut: 0,
+    candidates: 0,
+  },
+};
+
+const routeMeta = {
+  "task-list": { title: "任务列表", section: "OTA升级", parent: null },
+  "create-task": { title: "新增任务", section: "OTA升级", parent: "task-list" },
+  "task-detail": { title: "任务详情", section: "OTA升级", parent: "task-list" },
+  "operation-log": { title: "操作日志", section: "日志管理", parent: null },
+  "approval-log": { title: "审批日志", section: "日志管理", parent: null },
+  "user-list": { title: "用户列表", section: "用户角色", parent: null },
+  "user-permission": { title: "权限配置", section: "用户角色", parent: "user-list" },
+  "user-detail": { title: "用户详情", section: "用户角色", parent: "user-list" },
+  "role-list": { title: "角色权限", section: "用户角色", parent: null },
+  "role-permission": { title: "配置权限", section: "用户角色", parent: "role-list" },
 };
 
 function icon(name, className = "") {
@@ -120,9 +163,13 @@ function icon(name, className = "") {
 }
 
 function setRoute(route) {
+  const previousRoute = state.route;
   state.route = route;
-  state.referenceOpen = false;
-  if (route === "create-task") syncCreateRoute();
+  if (route === "create-task") {
+    syncCreateRoute();
+    if (previousRoute !== "create-task") state.createStep = 1;
+  }
+  window.history.replaceState(null, "", `#${route}`);
   render();
 }
 
@@ -137,18 +184,6 @@ function syncCreateRoute() {
     "diff-manual": ["diff", "manual"],
   };
   return presets[key] || ["whole", "version"];
-}
-
-function createKey() {
-  return `create-${state.packageType}-${state.strategy}`;
-}
-
-function setCreateMode(packageType, strategy) {
-  state.packageType = packageType;
-  state.strategy = strategy;
-  state.route = "create-task";
-  state.referenceOpen = false;
-  render();
 }
 
 function openModal(type, data = {}) {
@@ -217,22 +252,7 @@ function renderSidebar() {
   return `
     <aside class="sidebar" aria-label="主菜单">
       <h1 class="sidebar-title">OTA升级系统</h1>
-      ${navSection("ota", "OTA升级", "home", [
-        ["task-list", "任务列表"],
-        ["create-task", "新增任务"],
-        ["task-detail", "任务详情页"],
-      ], active)}
-      ${navSection("logs", "日志管理", "log", [
-        ["operation-log", "操作日志"],
-        ["approval-log", "审批日志"],
-      ], active)}
-      ${navSection("users", "用户角色", "users", [
-        ["user-list", "用户列表"],
-        ["user-permission", "用户列表-配置权限"],
-        ["user-detail", "用户列表-详情"],
-        ["role-list", "角色权限"],
-        ["role-permission", "配置权限页面"],
-      ], active)}
+      ${navGroups.map(group => navSection(group.key, group.title, group.icon, group.items, active)).join("")}
     </aside>
   `;
 }
@@ -266,7 +286,7 @@ function renderPage() {
     case "task-detail":
       return renderTaskDetail();
     case "operation-log":
-      return renderLogPage("操作日志", operationLogs, "operation-log");
+      return renderLogPage("操作日志", operationLogs);
     case "approval-log":
       return renderApprovalLog();
     case "user-list":
@@ -288,13 +308,37 @@ function renderPageHeader(title, options = {}) {
   const back = options.back ? `<button class="back-btn" type="button" data-route="${options.back}" aria-label="返回">${icon("back")}</button>` : "";
   const actions = options.actions || "";
   return `
-    <div class="page-header">
-      <div class="title-stack">
-        ${back}
-        <h2 class="page-title">${title}</h2>
+    <div class="page-heading">
+      ${renderBreadcrumb()}
+      <div class="page-header">
+        <div class="title-stack">
+          ${back}
+          <h2 class="page-title">${title}</h2>
+        </div>
+        <div class="page-actions">${actions}</div>
       </div>
-      <div>${actions}</div>
     </div>
+  `;
+}
+
+function renderBreadcrumb() {
+  const meta = routeMeta[state.route] || routeMeta["task-list"];
+  const parent = meta.parent ? routeMeta[meta.parent] : null;
+  const crumbs = [
+    { label: meta.section, route: parent ? meta.parent : state.route },
+    parent ? { label: parent.title, route: meta.parent } : null,
+    { label: meta.title, route: state.route, current: true },
+  ].filter(Boolean);
+
+  return `
+    <nav class="breadcrumb" aria-label="当前位置">
+      ${crumbs.map((crumb, index) => `
+        ${index > 0 ? `<span class="breadcrumb-separator">/</span>` : ""}
+        ${crumb.current
+          ? `<span aria-current="page">${crumb.label}</span>`
+          : `<button class="breadcrumb-link" type="button" data-route="${crumb.route}">${crumb.label}</button>`}
+      `).join("")}
+    </nav>
   `;
 }
 
@@ -349,7 +393,6 @@ function renderTaskList() {
         </table>
       </div>
       ${pagination(133, 7)}
-      ${renderReference("task-list")}
     </section>
   `;
 }
@@ -361,59 +404,222 @@ function statusTag(status) {
     "待执行": "gray",
     "已结束": "gray",
     "已驳回": "red",
+    "不可升级": "orange",
+    "可升级": "green",
+    "纳入升级": "green",
+    "本版本不升级": "orange",
   }[status] || "gray";
   return `<span class="status-tag ${cls}">${status}</span>`;
 }
 
 function renderCreateTask() {
-  const packageLabel = state.packageType === "whole" ? "整包" : "差分包";
   return `
     <section class="page form-page">
       ${renderPageHeader("新增任务", { back: "task-list" })}
-      <div class="form-shell">
-        <div class="form-row">
-          <label class="form-label">任务所属大区</label>
-          <input class="input" value="中国/杭州低功耗" disabled />
+      ${renderCreateSteps()}
+      <div class="workbench-shell">
+        <div class="workbench-main">
+          ${renderCreateStepContent()}
         </div>
-        <div class="form-row">
-          <label class="form-label"><span class="required">*</span> 任务名称</label>
+      </div>
+      ${renderWizardActions()}
+    </section>
+  `;
+}
+
+function renderCreateSteps() {
+  const steps = [
+    ["基础信息", "填写任务信息"],
+    ["配置升级策略", "选择升级包和范围"],
+    ["预览发布", "查看预检结果"],
+    ["完成", state.createStep === 4 ? strategyMeta[state.strategy].nextStatus : "发布结果"],
+  ];
+  return `
+    <ol class="step-rail" aria-label="新增任务步骤">
+      ${steps.map(([title, desc], index) => {
+        const step = index + 1;
+        const cls = step < state.createStep ? "done" : step === state.createStep ? "active" : "locked";
+        return `<li class="${cls}"><span>${step}</span><strong>${title}</strong><em>${desc}</em></li>`;
+      }).join("")}
+    </ol>
+  `;
+}
+
+function renderCreateStepContent() {
+  if (state.createStep === 2) return renderStrategyStep();
+  if (state.createStep === 3) return renderPreviewStep();
+  if (state.createStep === 4) return renderFinishStep();
+  return renderBasicInfoStep();
+}
+
+function renderBasicInfoStep() {
+  return `
+    <section class="workbench-card step-card">
+      <div class="card-heading">
+        <div>
+          <span class="eyebrow">Step 1</span>
+          <h3>基础信息</h3>
+        </div>
+      </div>
+      <div class="form-grid element-form">
+        <label class="field-stack">
+          <span><span class="required">*</span> 任务名称</span>
           <div class="input-with-count">
-            <input class="input" placeholder="例如：华南区_IPC_1.1.1升级" aria-label="任务名称" />
-            <span class="count">0 / 64</span>
+            <input class="input" value="IPC-杭州低功耗_安全补丁升级" aria-label="任务名称" />
+            <span class="count">17 / 64</span>
           </div>
+        </label>
+        <label class="field-stack">
+          <span><span class="required">*</span> 任务执行大区</span>
+          <div class="select-field multi-select-field ${state.regionDropdownOpen ? "open" : ""}" data-action="toggle-region-dropdown">
+            <div class="multi-select-values">
+              <span class="chip">${icon("check")} 中国 / 杭州低功耗</span>
+              <span class="chip">${icon("check")} 中国 / 杭州</span>
+            </div>
+            ${icon("chevron", "select-arrow")}
+            ${state.regionDropdownOpen ? renderRegionDropdown() : ""}
+          </div>
+        </label>
+        <label class="field-stack">
+          <span><span class="required">*</span> 目标固件版本</span>
+          <select class="select" aria-label="目标固件版本">
+            <option>${state.packageType === "diff" ? "23.422.209.17（差分包生成成功）" : "23.422.209.17（已上架）"}</option>
+            <option>23.110.105.46</option>
+            <option>10.176.46</option>
+          </select>
+          <em class="field-help">已是目标版本的设备不会进入升级范围。</em>
+        </label>
+        <label class="field-stack">
+          <span><span class="required">*</span> 任务起止时间</span>
+          <div class="date-inputs">
+            <input value="2026-06-03 09:00:00" aria-label="开始日期时间" />
+            <span>至</span>
+            <input value="2026-06-06 18:00:00" aria-label="结束日期时间" />
+          </div>
+          <em class="field-help">任务周期不超过 90 天。</em>
+        </label>
+        <label class="field-stack wide-field">
+          <span><span class="required">*</span> 任务升级说明</span>
+          <textarea class="textarea compact-textarea" placeholder="请输入升级目标、影响范围、灰度或回滚关注点。" aria-label="任务升级说明">修复低功耗设备夜间唤醒异常，按杭州低功耗大区灰度发布。</textarea>
+        </label>
+      </div>
+    </section>
+  `;
+}
+
+function renderRegionDropdown() {
+  const options = [
+    ["中国 / 杭州低功耗", true],
+    ["中国 / 杭州", true],
+    ["中国 / 深圳", false],
+    ["中国 / 成都", false],
+    ["中国 / 上海", false],
+  ];
+  return `
+    <div class="select-dropdown" data-stop>
+      ${options.map(([label, checked]) => `
+        <label class="select-option">
+          <input type="checkbox" ${checked ? "checked" : ""} />
+          <span>${label}</span>
+        </label>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderStrategyStep() {
+  const packageLabel = state.packageType === "whole" ? "整包" : "差分包";
+  const meta = strategyMeta[state.strategy];
+  return `
+    <section class="workbench-card step-card">
+      <div class="card-heading">
+        <div>
+          <span class="eyebrow">Step 2</span>
+          <h3>配置升级策略</h3>
         </div>
-        <div class="form-row">
-          <label class="form-label"><span class="required">*</span> 目标固件版本</label>
-          <input class="input" placeholder="请输入选择指定的目标固件版本号" aria-label="目标固件版本" />
-        </div>
-        <div class="form-row">
-          <span class="form-label">升级包</span>
+        <span class="mini-tag ${state.strategy === "manual" ? "green" : "blue"}">${meta.approval}</span>
+      </div>
+      <div class="package-panel">
+        <div>
+          <span class="field-caption"><span class="required">*</span> 升级包类型</span>
           <div class="radio-group" role="radiogroup" aria-label="升级包">
             ${radio("packageType", "whole", "整包", state.packageType)}
             ${radio("packageType", "diff", "差分包", state.packageType)}
           </div>
         </div>
-        <div class="form-row wide">
-          <span class="form-label"><span class="required">*</span> 升级策略</span>
-          <div class="strategy-grid">
-            ${strategyCard("version", "指定版本号升级", `按当前指定版本批量升级到目标版本，支持区域筛选`)}
-            ${strategyCard("file", "文件导入升级", "通过文件批量导入设备ID进行升级")}
-            ${strategyCard("manual", "手动导入升级", "手动输入少量设备ID，适用于小范围灰度测试")}
-          </div>
-        </div>
-        ${renderStrategyBody(packageLabel)}
-        <div class="form-row wide">
-          <label class="form-label">升级说明</label>
-          <textarea class="textarea" placeholder="请输入升级说明" aria-label="升级说明"></textarea>
+        <div class="package-note ${state.packageType === "diff" ? "warn" : ""}">
+          ${icon(state.packageType === "diff" ? "alert" : "info")}
+          <span>${state.packageType === "diff"
+            ? "差分包仅支持 4G 模组，预检会校验源版本是否存在可用差分包。"
+            : "整包适用于常规升级和跨版本升级。"}</span>
         </div>
       </div>
-      <div class="sticky-actions">
-        <button class="btn" type="button" data-route="task-list">取消</button>
-        <button class="btn" type="button" data-action="save-task">保存</button>
-        <button class="btn primary" type="button" data-action="open-preview">预览并发布</button>
+      ${renderPackageGate()}
+      <div class="section-divider"></div>
+      <span class="field-caption"><span class="required">*</span> 升级策略</span>
+      <div class="strategy-grid">
+        ${strategyCard("version", "指定版本号升级", "按当前指定版本批量升级到目标版本，支持区域筛选")}
+        ${strategyCard("file", "文件导入升级", "上传 CSV / Excel 设备清单，适合批量定向升级")}
+        ${strategyCard("manual", "手动导入升级", "最多 10 台，适合灰度测试或单台处理")}
       </div>
-      ${renderReference(createKey())}
+      ${renderStrategyBody(packageLabel)}
     </section>
+  `;
+}
+
+function renderPreviewStep() {
+  return `
+    <section class="workbench-card step-card">
+      <div class="card-heading">
+        <div>
+          <span class="eyebrow">Step 3</span>
+          <h3>预览发布</h3>
+        </div>
+        <span class="mini-tag ${previewData().disabled ? "orange" : "green"}">${previewData().disabled ? "不可发布" : "可继续"}</span>
+      </div>
+      ${renderPreviewContent(false)}
+    </section>
+  `;
+}
+
+function renderFinishStep() {
+  return `
+    <section class="workbench-card step-card">
+      <div class="card-heading">
+        <div>
+          <span class="eyebrow">Step 4</span>
+          <h3>完成</h3>
+        </div>
+      </div>
+      <div class="finish-panel">
+        ${icon("check")}
+        <div>
+          <strong>${state.strategy === "manual" ? "发布成功，任务已进入待执行" : "任务已提交，等待产线负责人审批"}</strong>
+          <p>任务创建完成后可在任务列表和审批日志中追踪状态。</p>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderWizardActions() {
+  if (state.createStep === 4) {
+    return `
+      <div class="sticky-actions">
+        <button class="btn" type="button" data-route="task-list">返回任务列表</button>
+        <button class="btn primary" type="button" data-route="task-detail">查看任务详情</button>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="sticky-actions">
+      <button class="btn" type="button" data-action="${state.createStep === 1 ? "cancel-create" : "prev-create-step"}">${state.createStep === 1 ? "取消" : "上一步"}</button>
+      <button class="btn" type="button" data-action="save-task">保存草稿</button>
+      ${state.createStep < 3
+        ? `<button class="btn primary" type="button" data-action="next-create-step">${state.createStep === 1 ? "下一步：配置升级策略" : "下一步：预览发布"}</button>`
+        : `${state.previewScenario !== "clean" ? `<button class="btn" type="button" data-action="download-exception">${icon("download")}下载异常明细</button>` : ""}${renderPublishButton()}`}
+    </div>
   `;
 }
 
@@ -427,10 +633,12 @@ function radio(name, value, label, current) {
 }
 
 function strategyCard(value, title, desc) {
+  const meta = strategyMeta[value];
   return `
     <button class="strategy-card ${state.strategy === value ? "active" : ""}" type="button" data-strategy="${value}">
       <strong>${title}</strong>
       <span>${desc}</span>
+      <em>${meta.approval}</em>
     </button>
   `;
 }
@@ -443,113 +651,196 @@ function renderStrategyBody(packageLabel) {
 
 function renderVersionStrategy(packageLabel) {
   return `
-    <div class="form-row">
-      <span class="form-label">版本过滤规则</span>
-      <div class="radio-group">
-        ${radio("versionRule", "all", "全部升级", "all")}
-        ${radio("versionRule", "include", "仅升级指定版本", "all")}
-        ${radio("versionRule", "exclude", "排除指定版本", "all")}
+    ${renderStrategyNote(packageLabel)}
+    <div class="rule-panel">
+      <div class="rule-header">
+        <span class="field-caption">版本升级规则</span>
+        <span class="mini-tag">统一使用版本表格选择</span>
       </div>
-    </div>
-    <div class="form-row wide">
-      <span class="form-label"></span>
-      <div class="info-strip">${icon("info")} 说明：适用于正式发版 / 安全补丁，全量覆盖所有符合目标版本升级的${packageLabel}设备。</div>
-    </div>
-    <div class="form-row">
-      <label class="form-label"><span class="required">*</span> 升级数量规则</label>
-      <div class="radio-group">
-        <select class="select" aria-label="升级数量规则" style="width: 180px"><option>全量</option><option>批量</option></select>
-        <span>升级数量：</span>
-        <input class="input" value="全量" disabled style="width: 140px" />
+      <div class="segmented" role="radiogroup" aria-label="版本过滤规则">
+        ${radio("versionRule", "all", "全部版本升级", state.versionRule)}
+        ${radio("versionRule", "include", "仅指定版本升级", state.versionRule)}
+        ${radio("versionRule", "exclude", "排除指定版本不升级", state.versionRule)}
       </div>
-    </div>
-    <div class="form-row wide">
-      <span class="form-label"></span>
+      <div class="info-strip">${icon("info")} ${versionRuleDescription()}</div>
+      <div class="quantity-panel">
+        <span class="field-caption">配置升级数量</span>
+        <div class="segmented compact-segmented" role="radiogroup" aria-label="升级数量">
+          ${radio("quantityMode", "full", "全量", state.quantityMode)}
+          ${radio("quantityMode", "batch", "批量", state.quantityMode)}
+        </div>
+        <span class="text-muted">${state.quantityMode === "full" ? "全量模式按表格选中版本自动加载全部可升级设备。" : "批量模式可在表格里配置每个版本的指定下发设备数量。"}</span>
+      </div>
       <div class="version-table">
         <table>
-          <thead><tr><th>可升级版本号</th><th>升级设备数</th></tr></thead>
+          <thead><tr><th style="width: 190px">${state.versionRule === "exclude" ? "排除版本" : "选择版本"}</th><th>可升级设备</th><th>下发数量</th><th>策略结果</th><th>说明</th><th>操作</th></tr></thead>
+          <tbody>${renderVersionRows()}</tbody>
         </table>
-        <div class="empty-cell">暂无数据</div>
       </div>
+      ${renderStrategyConditions()}
     </div>
-    ${renderConditions()}
   `;
 }
 
 function renderFileStrategy(packageLabel) {
   return `
-    <div class="form-row wide">
-      <span class="form-label"><span class="required">*</span> 设备文件</span>
+    ${renderStrategyNote(packageLabel)}
+    <div class="import-layout">
       <button class="upload-box" type="button" data-action="mock-upload">
         ${icon("upload")}
-        <strong>点击或拖拽上传设备ID文件</strong>
-        <span>支持 .csv / .xlsx，系统会校验重复设备、版本和大区匹配情况，当前为${packageLabel}升级。</span>
+        <strong>点击或拖拽上传设备清单</strong>
+        <span>下载设备导入模板，按要求填写设备 ID 后上传；一次最多入库 20,000 个设备。</span>
       </button>
-    </div>
-    <div class="form-row">
-      <label class="form-label"><span class="required">*</span> 升级数量规则</label>
-      <div class="radio-group">
-        <select class="select" aria-label="升级数量规则" style="width: 180px"><option>全量</option><option>批量</option></select>
-        <span>升级数量：</span>
-        <input class="input" placeholder="全量" style="width: 140px" />
+      <div class="file-rules">
+        <strong>文件校验规则</strong>
+        <span>第一列为设备标识，首行表头自动跳过</span>
+        <span>自动去重、跳过空行、清理首尾空格</span>
+        <span>自动过滤重复设备 ID 号</span>
+        <div class="inline-actions left">
+          <button class="btn" type="button" data-action="download-template">${icon("download")}CSV 模板</button>
+          <button class="btn" type="button" data-action="download-template">${icon("download")}Excel 模板</button>
+        </div>
       </div>
     </div>
-    <div class="form-row wide">
-      <span class="form-label">导入预览</span>
-      <div class="version-table">
-        <table>
-          <thead><tr><th>文件名称</th><th>设备数量</th><th>校验状态</th></tr></thead>
-          <tbody><tr><td>IPC_杭州低功耗_设备导入.xlsx</td><td>1250</td><td>${statusTag("待执行")}</td></tr></tbody>
-        </table>
-      </div>
+    <div class="version-table">
+      <table>
+        <thead><tr><th>文件名称</th><th>导入设备总数</th><th>重复过滤</th><th>校验状态</th><th>操作</th></tr></thead>
+        <tbody><tr><td>IPC_杭州低功耗_设备导入.xlsx</td><td>1,250</td><td>18</td><td>${statusTag("可升级")} 1,248 台可发布</td><td><button class="link-btn" type="button" data-action="mock-upload">重新上传</button></td></tr></tbody>
+      </table>
     </div>
-    ${renderConditions()}
+    ${renderImportOwnershipPanel()}
   `;
 }
 
 function renderManualStrategy(packageLabel) {
   return `
-    <div class="form-row wide">
-      <label class="form-label"><span class="required">*</span> 设备ID</label>
-      <textarea class="textarea manual-box" aria-label="设备ID" placeholder="请输入设备ID，每行一个。例如：
-VQDG2122086ZPUF
-VQDG2122132LYVU"></textarea>
+    ${renderStrategyNote(packageLabel)}
+    <div class="manual-toolbar">
+      <label class="field-control search">
+        ${icon("plus")}
+        <input placeholder="输入设备ID后回车添加，最多10台" aria-label="手动输入设备ID" />
+      </label>
+      <button class="btn primary" type="button" data-action="validate-manual">${icon("check")}批量校验</button>
     </div>
-    <div class="form-row wide">
-      <span class="form-label">设备预览</span>
-      <div class="preview-line">
-        <span class="chip">${icon("check")} 已识别 2 台${packageLabel}设备</span>
-        <span class="chip">${icon("info")} 手动导入策略无需审批</span>
-      </div>
+    <div class="version-table">
+      <table>
+        <thead><tr><th>设备ID</th><th>源固件版本号</th><th>所属大区</th><th>校验状态</th><th>异常说明</th><th>操作</th></tr></thead>
+        <tbody>
+          <tr><td>VQDG2122086ZPUF</td><td>23.110.105.46</td><td>中国 / 杭州低功耗</td><td>${statusTag("可升级")}</td><td>-</td><td><button class="link-btn" data-action="remove-device">删减</button></td></tr>
+          <tr><td>VQDG2122132LYVU</td><td>23.110.105.43</td><td>中国 / 杭州低功耗</td><td>${statusTag("可升级")}</td><td>-</td><td><button class="link-btn" data-action="remove-device">删减</button></td></tr>
+          <tr><td>VQDG2122182RUJZ</td><td>23.422.209.17</td><td>中国 / 杭州</td><td>${statusTag("不可升级")}</td><td>已是目标版本</td><td><button class="link-btn" data-action="remove-device">删减</button></td></tr>
+        </tbody>
+      </table>
     </div>
-    ${renderConditions()}
+    <div class="preview-line">
+      <span class="chip">${icon("check")} 已添加 3 台${packageLabel}设备</span>
+      <span class="chip">${icon("info")} 手动导入无需审批，发布后进入待执行</span>
+      <span class="chip">${icon("alert")} 超过 10 台需改用文件导入并进入审批</span>
+    </div>
+    ${renderImportOwnershipPanel()}
   `;
 }
 
-function renderConditions() {
+function renderPackageGate() {
+  if (state.packageType === "diff") {
+    return `
+      <div class="gate-list warn">
+        <div>${icon("alert")} 差分包校验要求</div>
+        <span>4G 模组</span>
+        <span>基线版本匹配</span>
+        <span>差分包生成成功</span>
+      </div>
+    `;
+  }
   return `
-    <div class="form-row wide">
-      <span class="form-label">策略条件</span>
-      <div class="condition-grid">
-        <label class="checkbox-line"><input type="checkbox" /> 指定地区</label>
-        <select class="select"><option>请选择</option><option>中国</option><option>海外</option></select>
-        <select class="select"><option>请选择地区</option><option>广东-深圳</option><option>四川-成都</option><option>上海（宠物）</option></select>
+    <div class="gate-list">
+      <div>${icon("check")} 整包校验要求</div>
+      <span>目标固件已上架</span>
+      <span>机型兼容</span>
+      <span>源版本低于目标版本</span>
+    </div>
+  `;
+}
+
+function renderVersionRows() {
+  return firmwareVersions.map(item => {
+    const disabled = state.packageType === "diff" && !item.diffReady;
+    const selected = state.versionRule === "all" ? !disabled : item.diffReady || item.count > 1000;
+    const result = state.versionRule === "exclude" && selected ? "本版本不升级" : disabled ? "不可升级" : "纳入升级";
+    return `
+      <tr class="${disabled ? "muted-row" : ""}">
+        <td>
+          <label class="table-check">
+            <input type="checkbox" ${selected ? "checked" : ""} ${disabled || state.versionRule === "all" ? "disabled" : ""} />
+            <span>${item.version}</span>
+          </label>
+        </td>
+        <td>${item.count.toLocaleString()} 台</td>
+        <td>${state.quantityMode === "batch" && !disabled ? `<input class="table-input" value="${Math.min(item.count, 500)}" aria-label="${item.version} 下发数量" />` : "全量"}</td>
+        <td>${statusTag(result)}</td>
+        <td>${item.note}</td>
+        <td>${state.versionRule === "all" ? `<span class="text-muted">自动加载</span>` : `<button class="link-btn" type="button" data-action="remove-version">删减</button>`}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function versionRuleDescription() {
+  if (state.versionRule === "include") {
+    return "适用于问题修复 / 灰度验证，仅升级表格中勾选的固件版本号。";
+  }
+  if (state.versionRule === "exclude") {
+    return "适用于大规模发布但需避开风险固件版本，表格中勾选版本将不会升级。";
+  }
+  return "适用于正式发版 / 安全补丁，全量覆盖所有符合目标版本升级的固件版本号设备。";
+}
+
+function renderStrategyConditions() {
+  return `
+    <div class="condition-panel">
+      <div class="rule-header">
+        <span class="field-caption">策略条件（非必填）</span>
+        <span class="mini-tag">支持多选</span>
+      </div>
+      <label class="checkbox-line"><input type="checkbox" checked /> 指定地区</label>
+      <div class="condition-tags">
+        <span class="chip">${icon("check")} 中国 / 杭州低功耗</span>
+        <span class="chip">${icon("check")} 中国 / 杭州</span>
+        <button class="btn" type="button" data-action="open-region">选择地区</button>
       </div>
     </div>
-    <div class="form-row wide">
-      <span class="form-label"></span>
-      <div class="condition-grid">
-        <label class="checkbox-line"><input type="checkbox" /> 指定经销商</label>
-        <select class="select"><option>请选择</option><option>维拍物联</option><option>威视达康</option></select>
-        <input class="input" placeholder="请输入经销商ID" />
+  `;
+}
+
+function renderImportOwnershipPanel() {
+  return `
+    <div class="condition-panel ownership-panel">
+      <div class="rule-header">
+        <span class="field-caption">设备归属与地区条件</span>
+        <span class="mini-tag blue">系统自动识别</span>
+      </div>
+      <div class="ownership-grid">
+        <div>
+          <strong>设备归属</strong>
+          <p>导入后系统自动识别设备所属区域；不需要手动选择集群或节点。</p>
+        </div>
+        <div>
+          <strong>地区过滤</strong>
+          <p>可按地区进一步筛选目标设备；不属于当前大区的设备会在预检中剔除。</p>
+        </div>
       </div>
     </div>
-    <div class="form-row">
-      <label class="form-label"><span class="required">*</span> 升级起止时间</label>
-      <div class="date-inputs">
-        <input placeholder="开始日期时间" aria-label="开始日期时间" />
-        <span>至</span>
-        <input placeholder="结束日期时间" aria-label="结束日期时间" />
+  `;
+}
+
+function renderStrategyNote(packageLabel) {
+  const meta = strategyMeta[state.strategy];
+  return `
+    <div class="strategy-note">
+      ${icon(state.strategy === "manual" ? "check" : "info")}
+      <div>
+        <strong>${meta.title}</strong>
+        <p>当前使用${packageLabel}，${meta.approval}。${meta.dispatchLabel}</p>
       </div>
     </div>
   `;
@@ -611,12 +902,11 @@ function renderTaskDetail() {
           <tbody>${deviceRows.map(id => `<tr><td>${id}</td><td>-</td><td>-</td><td>0%</td><td>待升级</td><td>-</td></tr>`).join("")}</tbody>
         </table>
       </div>
-      ${renderReference("task-detail")}
     </section>
   `;
 }
 
-function renderLogPage(title, rows, shotKey) {
+function renderLogPage(title, rows) {
   return `
     <section class="page">
       ${renderPageHeader(title)}
@@ -637,7 +927,6 @@ function renderLogPage(title, rows, shotKey) {
         </table>
       </div>
       ${pagination(title === "操作日志" ? 34 : 12, title === "操作日志" ? 2 : 1)}
-      ${renderReference(shotKey)}
     </section>
   `;
 }
@@ -661,7 +950,6 @@ function renderApprovalLog() {
         </table>
       </div>
       ${pagination(12, 1)}
-      ${renderReference("approval-log")}
     </section>
   `;
 }
@@ -693,7 +981,6 @@ function renderUserList() {
         </table>
       </div>
       ${pagination(80, 4)}
-      ${renderReference("user-list")}
     </section>
   `;
 }
@@ -716,7 +1003,6 @@ function renderUserPermission() {
           <button class="btn primary" data-action="save-user-permission">保存</button>
         </div>
       </div>
-      ${renderReference("user-permission")}
     </section>
   `;
 }
@@ -748,11 +1034,15 @@ function renderRolePage(forcePermission) {
   const current = roles.find(role => role.name === state.role) || roles[0];
   return `
     <section class="page">
-      ${renderPageHeader(forcePermission ? "配置权限页面" : "角色权限")}
+      ${renderPageHeader(forcePermission ? "配置权限" : "角色权限", {
+        back: forcePermission ? "role-list" : "",
+        actions: forcePermission
+          ? `<button class="btn" data-route="role-list">取消</button><button class="btn primary" data-action="save-role-permission">保存权限</button>`
+          : `<button class="btn primary" type="button" data-action="open-role-create">${icon("plus")}新增角色</button>`,
+      })}
       <div class="split-shell">
         <aside class="role-sidebar">
           <h2>角色列表</h2>
-          <button class="btn" type="button" data-action="open-role-create" style="width: 100%; margin-bottom: 20px">${icon("plus")}新增角色</button>
           ${roles.map(role => `
             <button class="role-row ${state.role === role.name ? "active" : ""}" data-role="${role.name}" type="button">
               <span>${role.name}</span>
@@ -769,6 +1059,7 @@ function renderRolePage(forcePermission) {
               <span><span class="text-muted">备注：</span>${current.note}</span>
             </div>
           </div>
+          ${forcePermission ? "" : `<div class="inline-actions"><button class="btn primary" data-route="role-permission">${icon("settings")}配置权限</button><button class="btn" data-action="delete-role">删除角色</button></div>`}
           <div class="tabs" role="tablist">
             <button class="tab-btn ${state.roleTab === "permissions" ? "active" : ""}" type="button" data-tab="permissions">角色权限</button>
             <button class="tab-btn ${state.roleTab === "users" ? "active" : ""}" type="button" data-tab="users">关联用户</button>
@@ -776,7 +1067,6 @@ function renderRolePage(forcePermission) {
           ${state.roleTab === "users" ? renderRoleUsers() : `<h3 class="section-title">角色权限</h3>${permissionTable(false)}`}
         </div>
       </div>
-      ${renderReference(forcePermission ? "role-permission" : "role-list")}
     </section>
   `;
 }
@@ -859,21 +1149,6 @@ function pagination(total, pages) {
   `;
 }
 
-function renderReference(key) {
-  const shot = screenshotMap[key];
-  if (!shot) return "";
-  return `
-    <div class="reference-panel">
-      <button class="btn reference-toggle" type="button" data-action="toggle-reference">
-        ${state.referenceOpen ? "收起" : "查看"}XMind截图参照
-      </button>
-      <div class="reference-shot ${state.referenceOpen ? "open" : ""}">
-        <img src="./assets/screenshots/${shot}" alt="${key} 的 XMind 页面截图参照" loading="lazy" />
-      </div>
-    </div>
-  `;
-}
-
 function renderPortal() {
   const portal = document.getElementById("portal");
   const modal = state.modal ? renderModal(state.modal) : "";
@@ -893,39 +1168,6 @@ function renderModal(modal) {
 }
 
 function renderPreviewModal() {
-  const data = {
-    mixed: {
-      alertClass: "warn",
-      alertTitle: "发布预检提示",
-      alertText: "检测到部分设备不符合发布条件",
-      total: 1250,
-      bad: 2,
-      good: 2,
-      action: "过滤异常并发布",
-      disabled: false,
-    },
-    blocked: {
-      alertClass: "error",
-      alertTitle: "无法发布OTA任务",
-      alertText: "未检测到可升级设备，当前任务无法发布",
-      total: 1250,
-      bad: 1250,
-      good: 0,
-      action: "过滤异常并发布",
-      disabled: true,
-    },
-    clean: {
-      alertClass: "success",
-      alertTitle: "预检通过",
-      alertText: "所有设备均符合发布条件",
-      total: 1250,
-      bad: 0,
-      good: 1250,
-      action: "立即发布",
-      disabled: false,
-    },
-  }[state.previewScenario];
-  const exceptions = state.previewScenario !== "clean";
   return `
     <div class="modal-backdrop" data-action="close-modal">
       <section class="modal large" role="dialog" aria-modal="true" aria-labelledby="previewTitle" data-stop>
@@ -940,79 +1182,135 @@ function renderPreviewModal() {
             <button class="chip" data-preview="blocked">可升级为0</button>
             <button class="chip" data-preview="clean">无异常</button>
           </div>
-          <div class="preview-alert ${data.alertClass}">
-            ${icon(data.alertClass === "success" ? "check" : "alert")}
-            <div><strong>${data.alertTitle}</strong><br /><span>${data.alertText}</span></div>
-          </div>
-          <div class="modal-section">
-            <h3>基本信息</h3>
-            <div class="info-grid">
-              <dl>
-                <dt>任务名称：</dt><dd>IPC-10.176.43指定版本全量升级至10.176.46</dd>
-                <dt>目标固件版本：</dt><dd><button class="link-btn">10.176.46</button></dd>
-                <dt>任务大区：</dt><dd><span class="mini-tag blue">中国/杭州</span></dd>
-                <dt>升级说明：</dt><dd>这是一条OTA升级说明</dd>
-              </dl>
-            </div>
-          </div>
-          <div class="modal-section">
-            <h3>升级策略</h3>
-            <div class="info-grid">
-              <dl>
-                <dt>升级包：</dt><dd><span class="mini-tag blue">${state.packageType === "whole" ? "整包" : "差分包"}</span></dd>
-                <dt>升级策略：</dt><dd>${state.strategy === "file" ? "文件导入升级" : state.strategy === "manual" ? "手动导入升级" : "指定版本号升级"}</dd>
-                <dt>过滤固件版本：</dt><dd>【10.176.41】、【10.176.42】、【10.176.43】、【10.176.44】</dd>
-                <dt>升级时间：</dt><dd>2026-04-10 00:00:00 ~ 2026-04-18 00:00:00</dd>
-              </dl>
-            </div>
-          </div>
-          <div class="modal-section">
-            <h3>任务预览</h3>
-            <div class="preview-cards">
-              <div class="preview-card blue"><span>升级设备总数</span><strong>${data.total}</strong></div>
-              <div class="preview-card orange"><span>不符合升级设备数</span><strong>${data.bad}</strong></div>
-              <div class="preview-card green"><span>可升级设备数</span><strong>${data.good}</strong></div>
-            </div>
-          </div>
-          ${exceptions ? `
-            <div class="modal-section">
-              <h3 style="border-left-color: var(--orange); color: var(--orange)">异常分类明细</h3>
-              <div class="exception-list">
-                <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>大区不匹配：设备位于其他群集，无法在此任务执行</span><span class="mini-tag">${state.previewScenario === "blocked" ? "780台" : "2台"}</span></div>
-                <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>版本不支持：源版本过低或不满足目标升级版本范围</span><span class="mini-tag">${state.previewScenario === "blocked" ? "470台" : "1台"}</span></div>
-              </div>
-              <div class="suggestion">${icon("info")} 建议方案：点击【过滤异常并发布】将自动过滤上述不符合条件的设备，仅对剩余可升级设备执行。</div>
-              <button class="btn" type="button" data-action="download-exception" style="margin-top: 12px">${icon("download")}下载异常明细</button>
-            </div>
-          ` : ""}
-          ${renderReference(`preview-${state.previewScenario}`)}
+          ${renderPreviewContent(false)}
         </div>
         <footer class="modal-footer">
           <button class="btn" data-action="close-modal">取消</button>
-          <button class="btn primary" ${data.disabled ? "disabled title='无符合条件的设备，无法发布'" : ""} data-action="publish-task">${data.action}</button>
+          ${renderPublishButton()}
         </footer>
       </section>
     </div>
   `;
 }
 
+function previewData() {
+  const meta = strategyMeta[state.strategy];
+  const diffPenalty = state.packageType === "diff" && state.strategy !== "manual" ? 418 : 0;
+  const scenario = {
+    mixed: { bad: Math.max(meta.bad + diffPenalty, 2), good: Math.max(meta.good - diffPenalty, 1), alertClass: "warn", alertTitle: "检测到部分设备不符合发布条件", alertText: "可过滤异常设备后继续发布可升级设备", action: state.strategy === "manual" ? "过滤异常并发布" : "过滤异常并提交审批", disabled: false },
+    blocked: { bad: meta.devices, good: 0, alertClass: "error", alertTitle: "无法发布OTA升级任务", alertText: "不存在可升级设备，不支持发布任务", action: "无法发布", disabled: true },
+    clean: { bad: 0, good: meta.devices, alertClass: "success", alertTitle: "预检通过", alertText: state.strategy === "manual" ? "全部设备可升级，可正常发布" : "全部设备可升级，发布后需走审批流程", action: state.strategy === "manual" ? "立即发布" : "提交审批", disabled: false },
+  }[state.previewScenario];
+  return { ...scenario, total: meta.devices };
+}
+
+function renderPreviewContent(compact) {
+  const meta = strategyMeta[state.strategy];
+  const data = previewData();
+  const exceptions = state.previewScenario !== "clean";
+  return `
+    <div class="preview-alert ${data.alertClass}">
+      ${icon(data.alertClass === "success" ? "check" : "alert")}
+      <div><strong>${data.alertTitle}</strong><br /><span>${data.alertText}</span></div>
+    </div>
+    <div class="release-route">
+      <div>
+        <span>发布后状态</span>
+        <strong>${state.strategy === "manual" ? "待执行" : "待审批"}</strong>
+      </div>
+      <div>
+        <span>目标设备</span>
+        <strong>${meta.centerTargets.toLocaleString()} 台</strong>
+      </div>
+      <div>
+        <span>已过滤设备</span>
+        <strong>${meta.filteredOut.toLocaleString()} 台</strong>
+      </div>
+      <div>
+        <span>待确认归属</span>
+        <strong>${meta.candidates.toLocaleString()} 台</strong>
+      </div>
+    </div>
+    <div class="preview-layout ${compact ? "compact" : ""}">
+      <div class="modal-section">
+        <h3>基本信息</h3>
+        <div class="info-grid">
+          <dl>
+            <dt>任务名称：</dt><dd>IPC-杭州低功耗_安全补丁升级</dd>
+            <dt>目标固件版本：</dt><dd><button class="link-btn">23.422.209.17</button></dd>
+            <dt>任务执行大区：</dt><dd><span class="mini-tag blue">中国 / 杭州低功耗</span><span class="mini-tag blue">中国 / 杭州</span></dd>
+            <dt>任务起止时间：</dt><dd>2026-06-03 09:00:00 ~ 2026-06-06 18:00:00</dd>
+            <dt>升级说明：</dt><dd>修复低功耗设备夜间唤醒异常，按杭州低功耗大区灰度发布。</dd>
+          </dl>
+        </div>
+      </div>
+      <div class="modal-section">
+        <h3>升级策略</h3>
+        <div class="info-grid">
+          <dl>
+            <dt>升级包：</dt><dd><span class="mini-tag blue">${state.packageType === "whole" ? "整包" : "差分包"}</span></dd>
+            <dt>升级策略：</dt><dd>${meta.title}</dd>
+            <dt>版本规则：</dt><dd>${state.strategy === "version" ? ({ all: "全部版本升级", include: "仅指定版本升级", exclude: "排除指定版本不升级" }[state.versionRule]) : "-"}</dd>
+            <dt>升级数量：</dt><dd>${state.quantityMode === "full" ? "全量" : "批量"}</dd>
+            <dt>审批流程：</dt><dd>${state.strategy === "manual" ? "无需审批" : "需产线负责人审批"}</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="modal-section">
+      <h3>任务预览</h3>
+      <div class="preview-cards">
+        <div class="preview-card blue"><span>选定设备总数</span><strong>${data.total}</strong></div>
+        <div class="preview-card green"><span>可升级设备数</span><strong>${data.good}</strong></div>
+        <div class="preview-card orange"><span>不可升级设备数</span><strong>${data.bad}</strong></div>
+      </div>
+    </div>
+    <div class="modal-section">
+      <h3>发布校验闭环</h3>
+      <div class="publish-checks">
+        <span class="validation-item pass">${icon("check")} 执行周期合规</span>
+        <span class="validation-item pass">${icon("check")} 升级数量合规</span>
+        <span class="validation-item pass">${icon("check")} 设备无并发升级冲突</span>
+        <span class="validation-item ${state.packageType === "diff" ? "warn" : "pass"}">${icon(state.packageType === "diff" ? "alert" : "check")} ${state.packageType === "diff" ? "差分包需继续校验" : "整包兼容性通过"}</span>
+      </div>
+    </div>
+    ${exceptions ? `
+      <div class="modal-section">
+        <h3 style="border-left-color: var(--orange); color: var(--orange)">异常分类明细</h3>
+        <div class="exception-list">
+          <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>已是目标版本：设备当前版本与目标固件版本一致</span><span class="mini-tag">${state.previewScenario === "blocked" ? Math.ceil(data.bad * 0.42) : Math.min(data.bad, 2)}台</span></div>
+          <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>${state.packageType === "diff" ? "无可用差分包：源版本未匹配差分基线" : "设备不在任务执行大区或机型不匹配"}</span><span class="mini-tag">${state.previewScenario === "blocked" ? Math.floor(data.bad * 0.58) : Math.max(data.bad - 2, 0)}台</span></div>
+        </div>
+        <div class="suggestion">${icon("info")} 建议下载异常明细排查；存在部分可升级时，可过滤异常设备后继续发布。</div>
+        <button class="btn" type="button" data-action="download-exception" style="margin-top: 12px">${icon("download")}下载异常文件明细</button>
+      </div>
+    ` : ""}
+  `;
+}
+
+function renderPublishButton() {
+  const data = previewData();
+  return `<button class="btn primary" ${data.disabled ? "disabled title='无符合条件的设备，无法发布'" : ""} data-action="publish-task">${data.action}</button>`;
+}
+
 function renderRegionModal() {
   return `
     <div class="modal-backdrop" data-action="close-modal">
       <section class="modal medium" role="dialog" aria-modal="true" aria-labelledby="regionTitle" data-stop>
-        <header class="modal-header"><span id="regionTitle">切换当前大区</span><button class="modal-close" data-action="close-modal">${icon("close")}</button></header>
+        <header class="modal-header"><span id="regionTitle">选择当前中心可管理区域</span><button class="modal-close" data-action="close-modal">${icon("close")}</button></header>
         <div class="modal-body">
           <div class="split-shell" style="grid-template-columns: 180px 1fr; min-height: 260px">
             <div class="role-sidebar">
-              <button class="role-row active">中国</button>
-              <button class="role-row">香港</button>
-              <button class="role-row">硅谷</button>
-              <button class="role-row">全部</button>
+              <button class="role-row active">中国大区中心</button>
+              <button class="role-row" disabled>亚洲大区</button>
+              <button class="role-row" disabled>北美大区</button>
+              <button class="role-row" disabled>欧洲大区</button>
             </div>
             <div class="role-content" style="padding: 20px">
-              ${["杭州", "杭州低功耗", "深圳", "成都", "上海（宠物）"].map((item, index) => `
+              ${["杭州", "杭州低功耗", "深圳", "成都", "上海"].map((item, index) => `
                 <button class="role-row ${index === 1 ? "active" : ""}" data-action="choose-region">${index === 1 ? "✓ " : ""}${item}</button>
               `).join("")}
+              <div class="suggestion">${icon("info")} 当前中心只允许选择中国大区下区域；跨大区任务需在对应中心新建。</div>
             </div>
           </div>
         </div>
@@ -1046,7 +1344,6 @@ function renderRoleCreateModal() {
             <div class="form-row" style="grid-template-columns: 120px 1fr"><label class="form-label"><span class="required">*</span> 角色名称</label><input class="input" placeholder="请输入角色名称" /></div>
             <div class="form-row" style="grid-template-columns: 120px 1fr"><label class="form-label">备注</label><textarea class="textarea" placeholder="请输入备注"></textarea></div>
           </div>
-          ${renderReference("role-create")}
         </div>
         <footer class="modal-footer">
           <button class="btn" data-action="close-modal">取消</button>
@@ -1124,10 +1421,23 @@ function bindEvents(root) {
     });
   });
 
+  root.querySelectorAll("[data-radio='versionRule']").forEach(input => {
+    input.addEventListener("change", () => {
+      state.versionRule = input.value;
+      render();
+    });
+  });
+
+  root.querySelectorAll("[data-radio='quantityMode']").forEach(input => {
+    input.addEventListener("change", () => {
+      state.quantityMode = input.value;
+      render();
+    });
+  });
+
   root.querySelectorAll("[data-strategy]").forEach(el => {
     el.addEventListener("click", () => {
       state.strategy = el.dataset.strategy;
-      state.referenceOpen = false;
       render();
     });
   });
@@ -1135,7 +1445,7 @@ function bindEvents(root) {
   root.querySelectorAll("[data-preview]").forEach(el => {
     el.addEventListener("click", () => {
       state.previewScenario = el.dataset.preview;
-      renderPortal();
+      render();
     });
   });
 
@@ -1171,11 +1481,16 @@ function handleAction(action, el) {
     case "open-region":
       openModal("region");
       break;
+    case "toggle-region-dropdown":
+      state.regionDropdownOpen = !state.regionDropdownOpen;
+      render();
+      break;
     case "open-status-filter":
       openModal("status");
       break;
     case "open-preview":
-      openModal("preview");
+      state.createStep = 3;
+      render();
       break;
     case "close-modal":
       closeModal();
@@ -1185,12 +1500,39 @@ function handleAction(action, el) {
       break;
     case "publish-task":
       closeModal();
-      showToast(state.previewScenario === "clean" ? "发布成功" : "已过滤异常设备并提交发布");
+      state.createStep = 4;
+      showToast(state.strategy === "manual" ? "发布成功，任务已进入待执行" : "任务已提交，等待产线负责人审批");
+      render();
+      break;
+    case "next-create-step":
+      state.regionDropdownOpen = false;
+      state.createStep = Math.min(state.createStep + 1, 4);
+      render();
+      break;
+    case "prev-create-step":
+      state.regionDropdownOpen = false;
+      state.createStep = Math.max(state.createStep - 1, 1);
+      render();
+      break;
+    case "cancel-create":
       state.route = "task-list";
+      state.createStep = 1;
       render();
       break;
     case "mock-upload":
       showToast("已读取导入文件，发现 1250 台设备");
+      break;
+    case "download-template":
+      showToast("设备导入模板已生成");
+      break;
+    case "validate-manual":
+      showToast("校验完成：2 台设备可升级，1 台异常");
+      break;
+    case "remove-version":
+      showToast("版本已从当前策略中删减");
+      break;
+    case "remove-device":
+      showToast("设备已从手动导入列表删减");
       break;
     case "download-exception":
       showToast("异常明细已生成");
@@ -1225,13 +1567,19 @@ function handleAction(action, el) {
       break;
     case "save-user-permission":
       showToast("用户权限已保存");
+      state.route = "user-list";
+      render();
+      break;
+    case "save-role-permission":
+      showToast("角色权限已保存");
+      state.route = "role-list";
+      render();
+      break;
+    case "delete-role":
+      showToast("默认角色不允许删除");
       break;
     case "show-strategy":
       openModal("strategyDetail");
-      break;
-    case "toggle-reference":
-      state.referenceOpen = !state.referenceOpen;
-      render();
       break;
     default:
       break;
