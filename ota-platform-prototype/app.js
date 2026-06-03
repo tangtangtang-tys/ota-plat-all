@@ -37,6 +37,7 @@ const state = {
   editingDraft: false,
   taskAdvancedOpen: false,
   columnSettingsOpen: false,
+  taskCompact: true,
   taskPage: 1,
   taskPageSize: 20,
   detailStatus: "升级中",
@@ -97,20 +98,20 @@ const taskStatusMeta = {
 };
 
 const taskListRows = [
-  { name: "IPC-杭州低功耗_安全补丁升级", method: "指定版本", packageType: "整包", targetVersion: "23.422.209.17", total: "6505", time: "2026-06-10 09:00:00~2026-06-17 09:00:00", result: null, region: "中国/杭州低功耗", status: "待审批", creator: "汤彦珊", createdAt: "2026-06-03 17:20:18" },
-  { name: "杭州低功耗灰度定时升级", method: "指定版本", packageType: "差分包", targetVersion: "23.422.209.17", total: "2310", time: "2026-06-04 10:00:00~2026-06-11 10:00:00", result: null, region: "中国/杭州低功耗", status: "待执行", creator: "江锐", createdAt: "2026-06-03 16:42:05" },
+  { name: "IPC-杭州低功耗_安全补丁升级", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-06-10 09:00:00~2026-06-17 09:00:00", result: null, region: "中国/杭州低功耗", status: "待审批", creator: "汤彦珊", createdAt: "2026-06-03 17:20:18" },
+  { name: "杭州低功耗灰度定时升级", method: "指定版本", quantityMode: "batch", planned: 5000, packageType: "差分包", targetVersion: "23.422.209.17", total: null, time: "2026-06-04 10:00:00~2026-06-11 10:00:00", result: null, region: "中国/杭州低功耗", status: "待执行", creator: "江锐", createdAt: "2026-06-03 16:42:05" },
   { name: "文件导入_欧亚非补丁升级", method: "文件导入", packageType: "整包", targetVersion: "23.422.209.17", total: "664", time: "2026-06-01 18:59:01~2026-06-30 18:59:01", result: { success: 346, failed: 0, total: 664 }, region: "欧亚非", status: "升级中", creator: "钱江涛", createdAt: "2026-06-01 18:02:14" },
-  { name: "低功耗设备夜间唤醒修复", method: "指定版本", packageType: "整包", targetVersion: "23.422.209.17", total: "6505", time: "2026-05-13 11:25:20~2026-06-02 11:25:20", result: { success: 6488, failed: 17, total: 6505 }, region: "中国/杭州低功耗", status: "已完成", creator: "江锐", createdAt: "2026-05-13 11:22:42" },
+  { name: "低功耗设备夜间唤醒修复", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-05-13 11:25:20~2026-06-02 11:25:20", result: { matched: 6505, success: 6488, failed: 17 }, region: "中国/杭州低功耗", status: "已完成", creator: "江锐", createdAt: "2026-05-13 11:22:42" },
   { name: "黑光升级双光测试", method: "文件导入", packageType: "差分包", targetVersion: "23.110.105.46", total: "1196", time: "2026-05-19 16:33:42~2026-06-19 16:33:42", result: { success: 730, failed: 8, total: 1196 }, region: "中国/杭州", status: "已结束", creator: "钱江涛", createdAt: "2026-05-19 16:31:18" },
   { name: "华拓测试数据异常明细", method: "文件导入", packageType: "整包", targetVersion: "23.422.209.17", total: "327", time: "2026-05-09 16:51:20~2026-08-09 16:51:20", result: null, region: "中国/杭州低功耗", status: "已驳回", creator: "江锐", createdAt: "2026-05-09 16:49:28" },
-  { name: "审批超时_安全补丁升级", method: "指定版本", packageType: "整包", targetVersion: "23.422.209.17", total: "1851", time: "2026-05-09 16:40:34~2026-06-09 16:40:34", result: null, region: "欧亚非", status: "已失效", creator: "汤彦珊", createdAt: "2026-05-09 16:37:40" },
+  { name: "审批超时_安全补丁升级", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-05-09 16:40:34~2026-06-09 16:40:34", result: null, region: "欧亚非", status: "已失效", creator: "汤彦珊", createdAt: "2026-05-09 16:37:40" },
 ];
 
 const taskColumnOptions = [
   ["method", "升级方式"],
   ["packageType", "升级包"],
   ["targetVersion", "目标版本"],
-  ["total", "升级设备总数"],
+  ["total", "升级规模"],
   ["time", "任务时间"],
   ["result", "执行结果"],
   ["region", "任务所属大区"],
@@ -659,14 +660,12 @@ function renderBreadcrumb() {
 function renderTaskList() {
   return `
     <section class="page">
-      ${renderPageHeader("任务列表", {
-        actions: `<button class="btn primary" type="button" data-route="create-task">${icon("plus")}新增任务</button>`,
-      })}
+      ${renderTaskListHero()}
       ${renderTaskAreaStats()}
       ${renderTaskFilters()}
       ${renderTaskTableToolbar()}
       <div class="table-wrap">
-        <table class="task-table">
+        <table class="task-table ${state.taskCompact ? "compact" : ""}">
           <thead>
             <tr>
               <th style="width: 210px">任务名称</th>
@@ -686,12 +685,29 @@ function renderTaskList() {
   `;
 }
 
+function renderTaskListHero() {
+  return `
+    <div class="task-list-hero">
+      <div class="task-list-hero-copy">
+        ${renderBreadcrumb()}
+        <h2>OTA升级</h2>
+        <p>为物联网设备提供稳定、高并发、安全的远程升级任务管理能力，支持版本灰度、定向升级和执行监控。</p>
+      </div>
+      <div class="task-list-hero-art" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  `;
+}
+
 function renderTaskAreaStats() {
   const rows = taskRowsForStats();
   const count = status => rows.filter(row => row.status === status).length;
   const total = rows.filter(row => row.status !== "待发布").length;
   const stats = [
-    ["当前任务大区", "中国 / 杭州低功耗", "home"],
+    ["当前大区", "中国中心", "home"],
     ["任务总数", total, "layer"],
     ["待发布", state.draftTask ? 1 : 0, "log"],
     ["待审批", count("待审批"), "clock"],
@@ -722,10 +738,6 @@ function renderTaskFilters() {
   return `
     <div class="task-filter-panel">
       <div class="task-filter-grid">
-        <label class="field-control search">
-          ${icon("search")}
-          <input type="search" placeholder="任务名称 / 任务ID" aria-label="任务关键词搜索" />
-        </label>
         <button class="filter-select" type="button" data-action="open-status-filter">任务状态 ${icon("chevron")}</button>
         <label class="field-control">
           <select aria-label="创建人">
@@ -740,6 +752,10 @@ function renderTaskFilters() {
           <input placeholder="创建开始时间" aria-label="创建开始时间" />
           <span class="date-split">至</span>
           <input placeholder="创建结束时间" aria-label="创建结束时间" />
+        </label>
+        <label class="field-control search task-search">
+          <input type="search" placeholder="任务名称 / 任务ID" aria-label="任务关键词搜索" />
+          <button type="button" data-action="query" aria-label="搜索任务">${icon("search")}</button>
         </label>
         <button class="btn primary" type="button" data-action="query">查询</button>
         <button class="btn" type="button" data-action="reset">重置</button>
@@ -767,14 +783,15 @@ function renderTaskTableToolbar() {
     <div class="table-toolbar">
       <div>
         <strong>任务记录</strong>
-        <span>按创建时间倒序展示</span>
       </div>
       <div class="table-tools">
-        <button class="btn" type="button" data-action="refresh-task-list">${icon("refresh")}刷新</button>
+        <button class="icon-tool-btn ${state.taskCompact ? "active" : ""}" type="button" data-action="toggle-task-compact" aria-label="紧凑显示" title="紧凑">${icon("sliders")}</button>
         <div class="column-settings-wrap">
-          <button class="btn" type="button" data-action="toggle-column-settings">${icon("settings")}列设置</button>
+          <button class="icon-tool-btn" type="button" data-action="toggle-column-settings" aria-label="列设置" title="列设置">${icon("settings")}</button>
           ${state.columnSettingsOpen ? renderColumnSettingsPanel() : ""}
         </div>
+        <button class="icon-tool-btn" type="button" data-action="refresh-task-list" aria-label="刷新任务列表" title="刷新">${icon("refresh")}</button>
+        <button class="btn primary table-create-btn" type="button" data-route="create-task">${icon("plus")}新增任务</button>
       </div>
     </div>
   `;
@@ -803,7 +820,7 @@ function renderTaskColumnHeaders() {
     method: `<th style="width: 120px">升级方式</th>`,
     packageType: `<th style="width: 100px">升级包</th>`,
     targetVersion: `<th style="width: 140px">目标版本</th>`,
-    total: `<th class="center" style="width: 140px">升级设备总数</th>`,
+    total: `<th style="width: 140px">升级规模</th>`,
     time: `<th style="width: 240px">任务时间</th>`,
     result: `<th style="width: 180px">执行结果</th>`,
     region: `<th style="width: 190px">任务所属大区</th>`,
@@ -841,9 +858,9 @@ function renderTaskDataCells(task) {
     method: `<td>${task.method}</td>`,
     packageType: `<td>${task.packageType}</td>`,
     targetVersion: `<td>${task.targetVersion}</td>`,
-    total: `<td class="center"><button class="link-btn" type="button" data-route="task-detail">${task.total}</button></td>`,
+    total: `<td>${renderTaskScale(task)}</td>`,
     time: `<td title="${task.time}">${task.time}</td>`,
-    result: `<td>${renderTaskResult(task.result)}</td>`,
+    result: `<td>${renderTaskResult(task)}</td>`,
     region: `<td title="${task.region}">${task.region}</td>`,
     creator: `<td>${task.creator}</td>`,
     createdAt: `<td>${task.createdAt}</td>`,
@@ -851,8 +868,41 @@ function renderTaskDataCells(task) {
   return taskColumnOptions.map(([key]) => state.visibleTaskColumns[key] ? cellMap[key] : "").join("");
 }
 
-function renderTaskResult(result) {
+function renderTaskScale(task) {
+  if (task.method === "指定版本") {
+    if (task.quantityMode === "batch") {
+      return `<button class="link-btn task-scale-link" type="button" data-route="task-detail">${Number(task.planned || 0).toLocaleString()}</button>`;
+    }
+    return `<button class="link-btn task-scale-link" type="button" data-route="task-detail">全量</button>`;
+  }
+
+  if (!task.total || task.total === "-") return "-";
+  return `<button class="link-btn task-scale-link" type="button" data-route="task-detail">${Number(task.total).toLocaleString()}</button>`;
+}
+
+function renderTaskResult(task) {
+  const result = task.result;
   if (!result) return "-";
+  if (task.method === "指定版本") {
+    if (task.quantityMode === "batch") {
+      const planned = Number(task.planned || 0);
+      const matched = Number(result.matched || 0);
+      return `
+        <div class="result-stack">
+          <span class="success">已匹配 ${matched.toLocaleString()} / 计划 ${planned.toLocaleString()}</span>
+          <span class="failed">成功 ${Number(result.success || 0).toLocaleString()} / 失败 ${Number(result.failed || 0).toLocaleString()}</span>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="result-stack">
+        <span class="success">已匹配 ${Number(result.matched || 0).toLocaleString()}</span>
+        <span class="failed">成功 ${Number(result.success || 0).toLocaleString()} / 失败 ${Number(result.failed || 0).toLocaleString()}</span>
+      </div>
+    `;
+  }
+
   const successPercent = result.total ? ((result.success / result.total) * 100).toFixed(1) : "0.0";
   const failedPercent = result.total ? ((result.failed / result.total) * 100).toFixed(1) : "0.0";
   return `
@@ -1224,7 +1274,7 @@ function renderPreviewStep() {
           <span class="eyebrow">Step 3</span>
           <h3>预览发布</h3>
         </div>
-        ${renderPreviewScenarioSwitch()}
+        ${state.strategy === "version" ? `<span class="soft-pill blue-pill">动态匹配预览</span>` : renderPreviewScenarioSwitch()}
       </div>
       ${renderPreviewContent(false)}
     </section>
@@ -1265,13 +1315,25 @@ function renderFinishStep() {
             <dt>任务编号</dt><dd><code>OTA-2026-176660</code></dd>
             <dt>任务名称</dt><dd>IPC-杭州低功耗_安全补丁升级</dd>
             <dt>发布策略</dt><dd>${state.packageType === "whole" ? "整包" : "差分包"} · ${strategyMeta[state.strategy].title}</dd>
-            <dt>设备规模</dt><dd>${previewData().good} 台进入升级队列，${previewData().bad} 台异常跳过</dd>
+            <dt>设备规模</dt><dd>${finishDeviceScaleText()}</dd>
             <dt>当前状态</dt><dd>${statusTag(strategyMeta[state.strategy].nextStatus)}</dd>
           </dl>
         </div>
       </div>
     </section>
   `;
+}
+
+function finishDeviceScaleText() {
+  if (state.strategy === "version") {
+    if (state.quantityMode === "full") {
+      return "全量动态匹配，实际设备数以执行结果为准";
+    }
+    return `计划成功下发 ${Number(state.batchQuantity || 0).toLocaleString()} 台，执行期动态匹配`;
+  }
+
+  const data = previewData();
+  return `${data.good} 台进入升级队列，${data.bad} 台异常跳过`;
 }
 
 function renderWizardActions() {
@@ -1290,7 +1352,7 @@ function renderWizardActions() {
       <button class="btn" type="button" data-action="save-task">保存草稿</button>
       ${state.createStep < 3
         ? `<button class="btn primary" type="button" data-action="next-create-step">${state.createStep === 1 ? "下一步：配置升级策略" : "下一步：预览发布"}</button>`
-        : `${state.previewScenario !== "clean" ? `<button class="btn" type="button" data-action="download-exception">${icon("download")}下载异常明细</button>` : ""}${renderPublishButton()}`}
+        : `${shouldShowPreviewExceptions() ? `<button class="btn" type="button" data-action="download-exception">${icon("download")}下载异常明细</button>` : ""}${renderPublishButton()}`}
     </div>
   `;
 }
@@ -1740,7 +1802,7 @@ function upgradeProgressData(detail) {
     unit: "%",
     title: `${Number(processed).toLocaleString()} / ${Number(denominator).toLocaleString()} 台`,
     text: state.detailMetricMode === "versionBatch"
-      ? `已匹配成功 ${Number(stats.upgradeSuccess).toLocaleString()} 台，失败 ${Number(stats.upgradeFailed).toLocaleString()} 台；下发失败不占用计划名额`
+      ? `已匹配成功 ${Number(stats.upgradeSuccess).toLocaleString()} 台，失败 ${Number(stats.upgradeFailed).toLocaleString()} 台；系统持续匹配符合条件设备`
       : detail.status === "已完成"
         ? "升级任务已完成，可查看失败设备明细"
         : detail.status === "已结束"
@@ -2471,6 +2533,18 @@ function renderPreviewModal() {
 
 function previewData() {
   const meta = strategyMeta[state.strategy];
+  if (state.strategy === "version") {
+    return {
+      bad: 0,
+      good: 0,
+      total: 0,
+      alertClass: "success",
+      alertTitle: "指定版本升级任务待提交审批",
+      alertText: "请确认升级包、源版本范围、任务大区和策略条件；审批通过后进入执行窗口。",
+      action: "提交审批",
+      disabled: false,
+    };
+  }
   const diffPenalty = state.packageType === "diff" && state.strategy !== "manual" ? 418 : 0;
   const scenario = {
     mixed: { bad: Math.max(meta.bad + diffPenalty, 2), good: Math.max(meta.good - diffPenalty, 1), alertClass: "warn", alertTitle: "检测到部分设备不符合发布条件", alertText: "可过滤异常设备后继续发布可升级设备", action: state.strategy === "manual" ? "过滤异常并发布" : "过滤异常并提交审批", disabled: false },
@@ -2516,10 +2590,34 @@ function renderPreviewVersionRange() {
   `;
 }
 
+function renderPreviewStrategyNote() {
+  if (state.strategy !== "version") return "";
+
+  const text = state.quantityMode === "full"
+    ? "全量任务在执行期按源版本、区域和策略条件动态匹配设备，预览阶段不统计固定设备总数，实际设备数以执行结果为准。"
+    : "批量任务使用统一计划成功下发数量，系统会在选定源版本和区域内持续匹配符合条件设备。";
+
+  return `<div class="suggestion preview-strategy-note">${icon("info")} ${text}</div>`;
+}
+
+function renderPreviewCards(data) {
+  return `
+    <div class="preview-cards">
+      <div class="preview-card blue"><span>选定设备总数</span><strong>${data.total}</strong></div>
+      <div class="preview-card green"><span>可升级设备数</span><strong>${data.good}</strong></div>
+      <div class="preview-card orange"><span>不可升级设备数</span><strong>${data.bad}</strong></div>
+    </div>
+  `;
+}
+
+function shouldShowPreviewExceptions() {
+  return state.previewScenario !== "clean" && state.strategy !== "version";
+}
+
 function renderPreviewContent(compact) {
   const meta = strategyMeta[state.strategy];
   const data = previewData();
-  const exceptions = state.previewScenario !== "clean";
+  const exceptions = shouldShowPreviewExceptions();
   const regions = state.selectedRegions.length
     ? state.selectedRegions.map(region => `<span class="mini-tag blue">${region}</span>`).join("")
     : "-";
@@ -2543,6 +2641,7 @@ function renderPreviewContent(compact) {
       </div>
       <div class="modal-section preview-wide-section">
         <h3>升级策略</h3>
+        ${renderPreviewStrategyNote()}
         <div class="info-grid preview-strategy-grid">
           <dl>
             <dt>升级包：</dt><dd><span class="mini-tag blue">${state.packageType === "whole" ? "整包" : "差分包"}</span></dd>
@@ -2553,14 +2652,10 @@ function renderPreviewContent(compact) {
           </dl>
         </div>
       </div>
-      <div class="modal-section preview-wide-section">
+      ${state.strategy !== "version" ? `<div class="modal-section preview-wide-section">
         <h3>任务预览</h3>
-        <div class="preview-cards">
-          <div class="preview-card blue"><span>选定设备总数</span><strong>${data.total}</strong></div>
-          <div class="preview-card green"><span>可升级设备数</span><strong>${data.good}</strong></div>
-          <div class="preview-card orange"><span>不可升级设备数</span><strong>${data.bad}</strong></div>
-        </div>
-      </div>
+        ${renderPreviewCards(data)}
+      </div>` : ""}
       ${exceptions ? `
         <div class="modal-section preview-wide-section">
           <h3 style="border-left-color: var(--orange); color: var(--orange)">异常分类明细</h3>
@@ -3077,6 +3172,11 @@ function handleAction(action, el) {
       break;
     case "toggle-column-settings":
       state.columnSettingsOpen = !state.columnSettingsOpen;
+      render();
+      break;
+    case "toggle-task-compact":
+      state.taskCompact = !state.taskCompact;
+      showToast(state.taskCompact ? "已切换为紧凑显示" : "已切换为标准显示");
       render();
       break;
     case "toggle-task-column": {
