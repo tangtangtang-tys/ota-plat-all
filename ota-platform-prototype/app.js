@@ -3,10 +3,57 @@ const state = {
   packageType: "whole",
   strategy: "version",
   previewScenario: "mixed",
-  versionRule: "all",
   quantityMode: "full",
+  batchQuantity: 0,
   createStep: 1,
   regionDropdownOpen: false,
+  conditionRegionDropdownOpen: false,
+  conditionRegionEnabled: false,
+  regionOperatorOpen: false,
+  regionOperator: "等于",
+  quickRangeDays: 7,
+  datePickerOpen: false,
+  taskStartAt: "",
+  taskEndAt: "",
+  form: {
+    taskName: "IPC-杭州低功耗_安全补丁升级",
+    targetVersion: "23.422.209.17",
+    upgradeDesc: "修复低功耗设备夜间唤醒异常，按杭州低功耗大区灰度发布。",
+  },
+  errors: {},
+  selectedRegions: ["中国 / 杭州低功耗", "中国 / 杭州"],
+  selectedVersions: ["23.422.208.91", "23.110.105.46", "23.110.105.43", "10.176.42"],
+  manualDevices: [
+    { id: 1, deviceId: "IPC-HZ-LP-000128", version: "23.110.105.46", region: "杭州低功耗", status: "可升级", error: "" },
+    { id: 2, deviceId: "IPC-HZ-LP-000129", version: "23.110.105.43", region: "杭州低功耗", status: "可升级", error: "" },
+  ],
+  manualNextId: 3,
+  fileUploaded: false,
+  fileUploadStatus: "idle",
+  uploadProgress: 0,
+  uploadFileName: "",
+  uploadDeviceCount: 0,
+  draftTask: null,
+  editingDraft: false,
+  taskAdvancedOpen: false,
+  columnSettingsOpen: false,
+  taskPage: 1,
+  taskPageSize: 20,
+  detailStatus: "升级中",
+  detailMetricMode: "versionFull",
+  detailTab: "overview",
+  flowTab: "progress",
+  visibleTaskColumns: {
+    method: true,
+    packageType: true,
+    targetVersion: true,
+    total: true,
+    time: true,
+    result: true,
+    region: true,
+    creator: true,
+    createdAt: true,
+  },
   modal: null,
   toast: "",
   navCollapsed: {
@@ -36,6 +83,39 @@ const taskRows = [
   ["VSTC_0420_欧亚非(威视达康0509)", "文件导入", "852", "2026-05-09 16:41:08~2026-08-09 16:41:08", "5%", "0", "中国/杭州低功耗", "升级中", "2026-05-09 16:39:16", true],
   ["VSTC_0420_欧亚非(威视达康测试)", "文件导入", "1851", "2026-05-09 16:40:34~2026-08-09 16:40:34", "22%", "0", "中国/杭州低功耗", "升级中", "2026-05-09 16:37:40", true],
   ["测试数据（华拓20260507）", "文件导入", "2310", "2026-05-09 16:23:44~2026-08-09 16:23:44", "0%", "0", "中国/杭州低功耗", "升级中", "2026-05-09 16:22:11", true],
+];
+
+const taskStatusMeta = {
+  "待执行": { color: "gray", actions: ["detail"] },
+  "升级中": { color: "blue", actions: ["detail", "end"] },
+  "已完成": { color: "green", actions: ["detail"] },
+  "已结束": { color: "gray", actions: ["detail"] },
+  "待发布": { color: "orange", actions: ["editDraft", "deleteDraft"] },
+  "待审批": { color: "orange", actions: ["detail"] },
+  "已驳回": { color: "red", actions: ["detail", "copyRebuild"] },
+  "已失效": { color: "red", actions: ["detail", "copyRebuild"] },
+};
+
+const taskListRows = [
+  { name: "IPC-杭州低功耗_安全补丁升级", method: "指定版本", packageType: "整包", targetVersion: "23.422.209.17", total: "6505", time: "2026-06-10 09:00:00~2026-06-17 09:00:00", result: null, region: "中国/杭州低功耗", status: "待审批", creator: "汤彦珊", createdAt: "2026-06-03 17:20:18" },
+  { name: "杭州低功耗灰度定时升级", method: "指定版本", packageType: "差分包", targetVersion: "23.422.209.17", total: "2310", time: "2026-06-04 10:00:00~2026-06-11 10:00:00", result: null, region: "中国/杭州低功耗", status: "待执行", creator: "江锐", createdAt: "2026-06-03 16:42:05" },
+  { name: "文件导入_欧亚非补丁升级", method: "文件导入", packageType: "整包", targetVersion: "23.422.209.17", total: "664", time: "2026-06-01 18:59:01~2026-06-30 18:59:01", result: { success: 346, failed: 0, total: 664 }, region: "欧亚非", status: "升级中", creator: "钱江涛", createdAt: "2026-06-01 18:02:14" },
+  { name: "低功耗设备夜间唤醒修复", method: "指定版本", packageType: "整包", targetVersion: "23.422.209.17", total: "6505", time: "2026-05-13 11:25:20~2026-06-02 11:25:20", result: { success: 6488, failed: 17, total: 6505 }, region: "中国/杭州低功耗", status: "已完成", creator: "江锐", createdAt: "2026-05-13 11:22:42" },
+  { name: "黑光升级双光测试", method: "文件导入", packageType: "差分包", targetVersion: "23.110.105.46", total: "1196", time: "2026-05-19 16:33:42~2026-06-19 16:33:42", result: { success: 730, failed: 8, total: 1196 }, region: "中国/杭州", status: "已结束", creator: "钱江涛", createdAt: "2026-05-19 16:31:18" },
+  { name: "华拓测试数据异常明细", method: "文件导入", packageType: "整包", targetVersion: "23.422.209.17", total: "327", time: "2026-05-09 16:51:20~2026-08-09 16:51:20", result: null, region: "中国/杭州低功耗", status: "已驳回", creator: "江锐", createdAt: "2026-05-09 16:49:28" },
+  { name: "审批超时_安全补丁升级", method: "指定版本", packageType: "整包", targetVersion: "23.422.209.17", total: "1851", time: "2026-05-09 16:40:34~2026-06-09 16:40:34", result: null, region: "欧亚非", status: "已失效", creator: "汤彦珊", createdAt: "2026-05-09 16:37:40" },
+];
+
+const taskColumnOptions = [
+  ["method", "升级方式"],
+  ["packageType", "升级包"],
+  ["targetVersion", "目标版本"],
+  ["total", "升级设备总数"],
+  ["time", "任务时间"],
+  ["result", "执行结果"],
+  ["region", "任务所属大区"],
+  ["creator", "创建人"],
+  ["createdAt", "创建时间"],
 ];
 
 const deviceRows = [
@@ -91,10 +171,49 @@ const roles = [
 ];
 
 const firmwareVersions = [
-  { version: "23.422.209.17", count: 6505, diffReady: true, note: "4G 模组基线匹配" },
+  { version: "23.422.208.91", count: 6505, diffReady: true, note: "4G 模组基线匹配" },
   { version: "23.110.105.46", count: 2310, diffReady: true, note: "安全补丁版本" },
   { version: "23.110.105.43", count: 1250, diffReady: false, note: "无可用差分包" },
   { version: "10.176.42", count: 664, diffReady: false, note: "整包可跨版本升级" },
+];
+
+const regionOptions = [
+  "中国 / 杭州低功耗",
+  "中国 / 杭州",
+  "中国 / 深圳",
+  "中国 / 成都",
+  "中国 / 上海",
+  "中非 / 丹麦 / Kyiv",
+  "中非 / 乌克兰 / Odesa",
+];
+
+const regionTree = [
+  { label: "中国", children: [
+    { label: "杭州低功耗" },
+    { label: "杭州" },
+    { label: "深圳" },
+    { label: "成都" },
+    { label: "上海" },
+  ] },
+  { label: "中非", children: [
+    { label: "丹麦", children: [{ label: "Kyiv" }, { label: "Kyiv City" }, { label: "Odesa" }, { label: "Rivne" }] },
+    { label: "乌克兰", children: [{ label: "Chernihivtsi" }, { label: "Dnipropetrovsk" }, { label: "Kyiv" }, { label: "Kyiv City" }, { label: "Odesa" }] },
+    { label: "乌兹别克斯坦", children: [{ label: "Barishivka" }, { label: "Bohuslav" }, { label: "Bucha" }, { label: "Danylivka" }, { label: "Dymer" }] },
+  ] },
+  { label: "丹麦", children: [
+    { label: "Kyiv" },
+    { label: "Kyiv City" },
+    { label: "Odesa" },
+  ] },
+  { label: "乌克兰", children: [
+    { label: "Kyiv" },
+    { label: "Kyiv City" },
+    { label: "Odesa" },
+  ] },
+  { label: "班基", children: [
+    { label: "Bucha" },
+    { label: "Danylivka" },
+  ] },
 ];
 
 const strategyMeta = {
@@ -158,8 +277,59 @@ const routeMeta = {
   "role-permission": { title: "配置权限", section: "用户角色", parent: "role-list" },
 };
 
+let uploadTimers = [];
+
+const now = new Date();
+const defaultStartAt = addMinutes(now, 5);
+const defaultEndAt = addDays(defaultStartAt, state.quickRangeDays);
+state.taskStartAt = formatDateTime(defaultStartAt);
+state.taskEndAt = formatDateTime(defaultEndAt);
+
+const initialRoute = window.location.hash.slice(1);
+if (routeMeta[initialRoute]) {
+  state.route = initialRoute;
+  if (initialRoute === "create-task") syncCreateRoute();
+}
+
 function icon(name, className = "") {
   return `<svg class="icon ${className}" aria-hidden="true"><use href="#icon-${name}"></use></svg>`;
+}
+
+function pad(value) {
+  return String(value).padStart(2, "0");
+}
+
+function addMinutes(date, minutes) {
+  return new Date(date.getTime() + minutes * 60 * 1000);
+}
+
+function addDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function formatDate(date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function formatTime(date) {
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function formatDateTime(date) {
+  return `${formatDate(date)} ${formatTime(date)}`;
+}
+
+function parseDateTime(value) {
+  const [date = "", time = "00:00:00"] = value.split(" ");
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute, second] = time.split(":").map(Number);
+  return new Date(year, month - 1, day, hour || 0, minute || 0, second || 0);
 }
 
 function setRoute(route) {
@@ -167,10 +337,146 @@ function setRoute(route) {
   state.route = route;
   if (route === "create-task") {
     syncCreateRoute();
-    if (previousRoute !== "create-task") state.createStep = 1;
+    if (previousRoute !== "create-task" && !state.editingDraft) resetCreateTaskState();
   }
+  if (route !== "create-task") state.editingDraft = false;
   window.history.replaceState(null, "", `#${route}`);
+  render({ preserveScroll: false });
+}
+
+function resetCreateTaskState() {
+  clearUploadTimers();
+  const start = addMinutes(new Date(), 5);
+  state.packageType = "whole";
+  state.strategy = "version";
+  state.previewScenario = "mixed";
+  state.quantityMode = "full";
+  state.batchQuantity = 0;
+  state.createStep = 1;
+  state.conditionRegionEnabled = false;
+  state.regionOperator = "等于";
+  state.quickRangeDays = 7;
+  state.taskStartAt = formatDateTime(start);
+  state.taskEndAt = formatDateTime(addDays(start, 7));
+  state.form = {
+    taskName: "IPC-杭州低功耗_安全补丁升级",
+    targetVersion: "23.422.209.17",
+    upgradeDesc: "修复低功耗设备夜间唤醒异常，按杭州低功耗大区灰度发布。",
+  };
+  state.errors = {};
+  state.selectedRegions = ["中国 / 杭州低功耗", "中国 / 杭州"];
+  state.selectedVersions = ["23.422.208.91", "23.110.105.46", "23.110.105.43", "10.176.42"];
+  state.manualDevices = [
+    { id: 1, deviceId: "IPC-HZ-LP-000128", version: "23.110.105.46", region: "杭州低功耗", status: "可升级", error: "" },
+    { id: 2, deviceId: "IPC-HZ-LP-000129", version: "23.110.105.43", region: "杭州低功耗", status: "可升级", error: "" },
+  ];
+  state.manualNextId = 3;
+  state.fileUploaded = false;
+  state.fileUploadStatus = "idle";
+  state.uploadProgress = 0;
+  state.uploadFileName = "";
+  state.uploadDeviceCount = 0;
+  state.regionDropdownOpen = false;
+  state.conditionRegionDropdownOpen = false;
+  state.regionOperatorOpen = false;
+  state.datePickerOpen = false;
+}
+
+function snapshotDraftTask() {
+  return {
+    savedAt: formatDateTime(new Date()),
+    createStep: state.createStep,
+    packageType: state.packageType,
+    strategy: state.strategy,
+    previewScenario: state.previewScenario,
+    quantityMode: state.quantityMode,
+    batchQuantity: state.batchQuantity,
+    conditionRegionEnabled: state.conditionRegionEnabled,
+    regionOperator: state.regionOperator,
+    quickRangeDays: state.quickRangeDays,
+    taskStartAt: state.taskStartAt,
+    taskEndAt: state.taskEndAt,
+    form: { ...state.form },
+    selectedRegions: [...state.selectedRegions],
+    selectedVersions: [...state.selectedVersions],
+    manualDevices: state.manualDevices.map(device => ({ ...device })),
+    manualNextId: state.manualNextId,
+    fileUploaded: state.fileUploaded,
+    fileUploadStatus: state.fileUploadStatus,
+    uploadProgress: state.uploadProgress,
+    uploadFileName: state.uploadFileName,
+    uploadDeviceCount: state.uploadDeviceCount,
+  };
+}
+
+function restoreDraftTask() {
+  const draft = state.draftTask;
+  if (!draft) {
+    showToast("暂无可编辑草稿");
+    return;
+  }
+  clearUploadTimers();
+  state.createStep = draft.createStep;
+  state.packageType = draft.packageType;
+  state.strategy = draft.strategy;
+  state.previewScenario = draft.previewScenario;
+  state.quantityMode = draft.quantityMode;
+  state.batchQuantity = draft.batchQuantity;
+  state.conditionRegionEnabled = draft.conditionRegionEnabled;
+  state.regionOperator = draft.regionOperator;
+  state.quickRangeDays = draft.quickRangeDays;
+  state.taskStartAt = draft.taskStartAt;
+  state.taskEndAt = draft.taskEndAt;
+  state.form = { ...draft.form };
+  state.selectedRegions = [...draft.selectedRegions];
+  state.selectedVersions = [...draft.selectedVersions];
+  state.manualDevices = draft.manualDevices.map(device => ({ ...device }));
+  state.manualNextId = draft.manualNextId;
+  state.fileUploaded = draft.fileUploaded;
+  state.fileUploadStatus = draft.fileUploadStatus;
+  state.uploadProgress = draft.uploadProgress;
+  state.uploadFileName = draft.uploadFileName;
+  state.uploadDeviceCount = draft.uploadDeviceCount;
+  state.errors = {};
+  state.regionDropdownOpen = false;
+  state.conditionRegionDropdownOpen = false;
+  state.regionOperatorOpen = false;
+  state.datePickerOpen = false;
+  state.editingDraft = true;
+  setRoute("create-task");
+}
+
+function clearUploadTimers() {
+  uploadTimers.forEach(timer => window.clearTimeout(timer));
+  uploadTimers = [];
+}
+
+function simulateFileUpload() {
+  clearUploadTimers();
+  state.fileUploaded = true;
+  state.fileUploadStatus = "uploading";
+  state.uploadProgress = 36;
+  state.uploadFileName = "20.121.102.29.csv";
+  state.uploadDeviceCount = 72;
   render();
+
+  uploadTimers.push(window.setTimeout(() => {
+    state.uploadProgress = 78;
+    render();
+  }, 420));
+
+  uploadTimers.push(window.setTimeout(() => {
+    state.fileUploadStatus = "checking";
+    state.uploadProgress = 100;
+    render();
+  }, 860));
+
+  uploadTimers.push(window.setTimeout(() => {
+    state.fileUploadStatus = "uploaded";
+    delete state.errors.fileUpload;
+    showToast("设备清单已上传，共识别 72 台设备");
+    render();
+  }, 1420));
 }
 
 function syncCreateRoute() {
@@ -213,7 +519,10 @@ function routeForActive() {
   return state.route;
 }
 
-function render() {
+function render(options = {}) {
+  const preserveScroll = options.preserveScroll !== false;
+  const scrollX = window.scrollX;
+  const scrollY = window.scrollY;
   const app = document.getElementById("app");
   app.innerHTML = `
     ${renderTopbar()}
@@ -226,6 +535,11 @@ function render() {
   `;
   bindEvents(app);
   renderPortal();
+  if (preserveScroll) {
+    window.requestAnimationFrame(() => window.scrollTo(scrollX, scrollY));
+  } else {
+    window.requestAnimationFrame(() => window.scrollTo(0, 0));
+  }
 }
 
 function renderTopbar() {
@@ -348,57 +662,257 @@ function renderTaskList() {
       ${renderPageHeader("任务列表", {
         actions: `<button class="btn primary" type="button" data-route="create-task">${icon("plus")}新增任务</button>`,
       })}
-      <div class="toolbar">
-        <label class="field-control search">
-          ${icon("search")}
-          <input type="search" placeholder="请输入任务名称，按输入搜索" aria-label="任务名称搜索" />
-        </label>
-        <button class="btn subtle" type="button" data-action="open-status-filter">任务状态 ${icon("chevron")}</button>
-      </div>
+      ${renderTaskAreaStats()}
+      ${renderTaskFilters()}
+      ${renderTaskTableToolbar()}
       <div class="table-wrap">
-        <table>
+        <table class="task-table">
           <thead>
             <tr>
-              <th style="width: 190px">任务名称</th>
-              <th style="width: 120px">升级策略 ${icon("chevron")}</th>
-              <th class="center" style="width: 140px">升级设备总数</th>
-              <th style="width: 240px">任务时间</th>
-              <th class="center" style="width: 120px">升级成功率</th>
-              <th class="center" style="width: 140px">升级设备数失败</th>
-              <th style="width: 190px">任务所属大区</th>
+              <th style="width: 210px">任务名称</th>
+              ${renderTaskColumnHeaders()}
               <th style="width: 110px">任务状态 ${icon("chevron")}</th>
-              <th style="width: 170px">创建时间</th>
-              <th style="width: 110px">操作</th>
+              <th class="sticky-action-col" style="width: 150px">操作</th>
             </tr>
           </thead>
           <tbody>
-            ${taskRows.map(row => `
-              <tr>
-                <td title="${row[0]}">${row[0]}</td>
-                <td>${row[1]}</td>
-                <td class="center"><button class="link-btn" type="button" data-route="task-detail">${row[2]}</button></td>
-                <td title="${row[3]}">${row[3]}</td>
-                <td class="center">${row[4]}</td>
-                <td class="center">${row[5]}</td>
-                <td>${row[6]}</td>
-                <td>${statusTag(row[7])}</td>
-                <td>${row[8]}</td>
-                <td>
-                  <button class="link-btn" type="button" data-route="task-detail">详情</button>
-                  ${row[9] ? `<button class="link-btn danger" type="button" data-action="end-task">结束</button>` : ""}
-                </td>
-              </tr>
-            `).join("")}
+            ${renderDraftTaskRow()}
+            ${sortedTaskListRows().map(renderTaskTableRow).join("")}
           </tbody>
         </table>
       </div>
-      ${pagination(133, 7)}
+      ${pagination(133, Math.ceil(133 / state.taskPageSize), { page: state.taskPage, pageSize: state.taskPageSize, scope: "task" })}
     </section>
   `;
 }
 
+function renderTaskAreaStats() {
+  const rows = taskRowsForStats();
+  const count = status => rows.filter(row => row.status === status).length;
+  const total = rows.filter(row => row.status !== "待发布").length;
+  const stats = [
+    ["当前任务大区", "中国 / 杭州低功耗", "home"],
+    ["任务总数", total, "layer"],
+    ["待发布", state.draftTask ? 1 : 0, "log"],
+    ["待审批", count("待审批"), "clock"],
+    ["升级中", count("升级中"), "refresh"],
+    ["已完成", count("已完成"), "check"],
+  ];
+  return `
+    <div class="task-stats">
+      ${stats.map(([label, value, iconName], index) => `
+        <div class="task-stat-card ${index === 0 ? "area-card" : ""}">
+          <i>${icon(iconName)}</i>
+          <div>
+            <span>${label}</span>
+            <strong>${value}</strong>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function taskRowsForStats() {
+  const draft = state.draftTask ? [{ status: "待发布" }] : [];
+  return [...draft, ...taskListRows];
+}
+
+function renderTaskFilters() {
+  return `
+    <div class="task-filter-panel">
+      <div class="task-filter-grid">
+        <label class="field-control search">
+          ${icon("search")}
+          <input type="search" placeholder="任务名称 / 任务ID" aria-label="任务关键词搜索" />
+        </label>
+        <button class="filter-select" type="button" data-action="open-status-filter">任务状态 ${icon("chevron")}</button>
+        <label class="field-control">
+          <select aria-label="创建人">
+            <option>全部创建人</option>
+            <option>汤彦珊</option>
+            <option>江锐</option>
+            <option>钱江涛</option>
+          </select>
+        </label>
+        <label class="field-control date-range">
+          ${icon("clock")}
+          <input placeholder="创建开始时间" aria-label="创建开始时间" />
+          <span class="date-split">至</span>
+          <input placeholder="创建结束时间" aria-label="创建结束时间" />
+        </label>
+        <button class="btn primary" type="button" data-action="query">查询</button>
+        <button class="btn" type="button" data-action="reset">重置</button>
+        <button class="btn subtle" type="button" data-action="toggle-advanced-filter">${state.taskAdvancedOpen ? "收起高级筛选" : "展开高级筛选"} ${icon("chevron")}</button>
+      </div>
+      ${state.taskAdvancedOpen ? `
+        <div class="advanced-filter-grid">
+          <label class="field-control"><select aria-label="升级方式"><option>全部升级方式</option><option>指定版本</option><option>文件导入</option><option>手动导入</option></select></label>
+          <label class="field-control"><select aria-label="升级包"><option>全部升级包</option><option>整包</option><option>差分包</option></select></label>
+          <label class="field-control"><input placeholder="目标版本" aria-label="目标版本" /></label>
+          <label class="field-control date-range">
+            ${icon("clock")}
+            <input placeholder="任务开始时间" aria-label="任务开始时间" />
+            <span class="date-split">至</span>
+            <input placeholder="任务结束时间" aria-label="任务结束时间" />
+          </label>
+        </div>
+      ` : ""}
+    </div>
+  `;
+}
+
+function renderTaskTableToolbar() {
+  return `
+    <div class="table-toolbar">
+      <div>
+        <strong>任务记录</strong>
+        <span>按创建时间倒序展示</span>
+      </div>
+      <div class="table-tools">
+        <button class="btn" type="button" data-action="refresh-task-list">${icon("refresh")}刷新</button>
+        <div class="column-settings-wrap">
+          <button class="btn" type="button" data-action="toggle-column-settings">${icon("settings")}列设置</button>
+          ${state.columnSettingsOpen ? renderColumnSettingsPanel() : ""}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderColumnSettingsPanel() {
+  return `
+    <div class="column-settings-panel" data-stop>
+      <strong>列设置</strong>
+      ${taskColumnOptions.map(([key, label]) => `
+        <label class="checkbox-line">
+          <input type="checkbox" ${state.visibleTaskColumns[key] ? "checked" : ""} data-action="toggle-task-column" data-column="${key}" />
+          ${label}
+        </label>
+      `).join("")}
+      <div class="column-settings-actions">
+        <button class="link-btn" type="button" data-action="reset-task-columns">恢复默认</button>
+        <button class="btn primary" type="button" data-action="save-task-columns">保存设置</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderTaskColumnHeaders() {
+  const headerMap = {
+    method: `<th style="width: 120px">升级方式</th>`,
+    packageType: `<th style="width: 100px">升级包</th>`,
+    targetVersion: `<th style="width: 140px">目标版本</th>`,
+    total: `<th class="center" style="width: 140px">升级设备总数</th>`,
+    time: `<th style="width: 240px">任务时间</th>`,
+    result: `<th style="width: 180px">执行结果</th>`,
+    region: `<th style="width: 190px">任务所属大区</th>`,
+    creator: `<th style="width: 110px">创建人</th>`,
+    createdAt: `<th style="width: 170px">创建时间</th>`,
+  };
+  return taskColumnOptions.map(([key]) => state.visibleTaskColumns[key] ? headerMap[key] : "").join("");
+}
+
+function sortedTaskListRows() {
+  return [...taskListRows].sort((a, b) => parseDateTime(b.createdAt) - parseDateTime(a.createdAt));
+}
+
+function strategyMethodLabel(strategy) {
+  return {
+    version: "指定版本",
+    file: "文件导入",
+    manual: "手动导入",
+  }[strategy] || "-";
+}
+
+function renderTaskTableRow(task) {
+  return `
+    <tr>
+      <td title="${task.name}">${task.name}</td>
+      ${renderTaskDataCells(task)}
+      <td>${renderTaskStatus(task.status)}</td>
+      <td class="sticky-action-col">${renderTaskActions(task.status)}</td>
+    </tr>
+  `;
+}
+
+function renderTaskDataCells(task) {
+  const cellMap = {
+    method: `<td>${task.method}</td>`,
+    packageType: `<td>${task.packageType}</td>`,
+    targetVersion: `<td>${task.targetVersion}</td>`,
+    total: `<td class="center"><button class="link-btn" type="button" data-route="task-detail">${task.total}</button></td>`,
+    time: `<td title="${task.time}">${task.time}</td>`,
+    result: `<td>${renderTaskResult(task.result)}</td>`,
+    region: `<td title="${task.region}">${task.region}</td>`,
+    creator: `<td>${task.creator}</td>`,
+    createdAt: `<td>${task.createdAt}</td>`,
+  };
+  return taskColumnOptions.map(([key]) => state.visibleTaskColumns[key] ? cellMap[key] : "").join("");
+}
+
+function renderTaskResult(result) {
+  if (!result) return "-";
+  const successPercent = result.total ? ((result.success / result.total) * 100).toFixed(1) : "0.0";
+  const failedPercent = result.total ? ((result.failed / result.total) * 100).toFixed(1) : "0.0";
+  return `
+    <div class="result-stack">
+      <span class="success">成功 ${Number(result.success).toLocaleString()}（${successPercent}%）</span>
+      <span class="failed">失败 ${Number(result.failed).toLocaleString()}（${failedPercent}%）</span>
+    </div>
+  `;
+}
+
+function renderTaskStatus(status) {
+  return statusTag(status);
+}
+
+function renderTaskActions(status) {
+  const actions = taskStatusMeta[status]?.actions || ["detail"];
+  const actionMap = {
+    detail: `<button class="link-btn" type="button" data-route="task-detail">详情</button>`,
+    end: `<button class="link-btn danger" type="button" data-action="end-task">结束任务</button>`,
+    copyRebuild: `<button class="link-btn" type="button" data-action="copy-rebuild-task">复制重建</button>`,
+    editDraft: `<button class="link-btn" type="button" data-action="edit-draft">编辑</button>`,
+    deleteDraft: `<button class="link-btn danger" type="button" data-action="delete-draft">删除</button>`,
+  };
+  return `<div class="table-actions">${actions.map(action => actionMap[action]).filter(Boolean).join("")}</div>`;
+}
+
+function renderDraftTaskRow() {
+  const draft = state.draftTask;
+  if (!draft) return "";
+  const packageLabel = draft.packageType === "whole" ? "整包" : "差分包";
+  const regions = draft.selectedRegions.length ? draft.selectedRegions.join("、") : "-";
+  const taskTime = draft.taskStartAt && draft.taskEndAt ? `${draft.taskStartAt}~${draft.taskEndAt}` : "-";
+  const draftRow = {
+    method: strategyMethodLabel(draft.strategy),
+    packageType: packageLabel,
+    targetVersion: draft.form.targetVersion || "-",
+    total: "-",
+    time: taskTime,
+    result: null,
+    region: regions,
+    creator: "汤彦珊",
+    createdAt: draft.savedAt,
+  };
+  return `
+    <tr class="draft-row">
+      <td title="${draft.form.taskName || "未命名草稿"}">
+        <div class="task-name-cell">
+          <strong>${draft.form.taskName || "未命名草稿"}</strong>
+          <span class="mini-tag orange">草稿</span>
+        </div>
+      </td>
+      ${renderTaskDataCells(draftRow)}
+      <td>${renderTaskStatus("待发布")}</td>
+      <td class="sticky-action-col">${renderTaskActions("待发布")}</td>
+    </tr>
+  `;
+}
+
 function statusTag(status) {
-  const cls = {
+  const cls = taskStatusMeta[status]?.color || {
     "升级中": "green",
     "已完成": "blue",
     "待执行": "gray",
@@ -406,6 +920,10 @@ function statusTag(status) {
     "已驳回": "red",
     "不可升级": "orange",
     "可升级": "green",
+    "可发布": "green",
+    "需处理": "orange",
+    "异常": "orange",
+    "草稿": "orange",
     "纳入升级": "green",
     "本版本不升级": "orange",
   }[status] || "gray";
@@ -439,7 +957,7 @@ function renderCreateSteps() {
       ${steps.map(([title, desc], index) => {
         const step = index + 1;
         const cls = step < state.createStep ? "done" : step === state.createStep ? "active" : "locked";
-        return `<li class="${cls}"><span>${step}</span><strong>${title}</strong><em>${desc}</em></li>`;
+        return `<li class="${cls}"><span>${step < state.createStep ? "✓" : step}</span><strong>${title}</strong><em>${desc}</em></li>`;
       }).join("")}
     </ol>
   `;
@@ -462,74 +980,208 @@ function renderBasicInfoStep() {
         </div>
       </div>
       <div class="form-grid element-form">
-        <label class="field-stack">
+        <label class="field-stack ${state.errors.taskName ? "has-error" : ""}">
           <span><span class="required">*</span> 任务名称</span>
           <div class="input-with-count">
-            <input class="input" value="IPC-杭州低功耗_安全补丁升级" aria-label="任务名称" />
-            <span class="count">17 / 64</span>
+            <input class="input" value="${state.form.taskName}" aria-label="任务名称" data-field="taskName" maxlength="64" />
+            <span class="count">${state.form.taskName.length} / 64</span>
           </div>
+          ${renderFieldError("taskName")}
         </label>
-        <label class="field-stack">
+        <label class="field-stack ${state.errors.selectedRegions ? "has-error" : ""}">
           <span><span class="required">*</span> 任务执行大区</span>
           <div class="select-field multi-select-field ${state.regionDropdownOpen ? "open" : ""}" data-action="toggle-region-dropdown">
             <div class="multi-select-values">
-              <span class="chip">${icon("check")} 中国 / 杭州低功耗</span>
-              <span class="chip">${icon("check")} 中国 / 杭州</span>
+              ${renderSelectedRegionTags("请选择任务执行大区")}
             </div>
             ${icon("chevron", "select-arrow")}
-            ${state.regionDropdownOpen ? renderRegionDropdown() : ""}
+            ${state.regionDropdownOpen ? renderRegionCascaderDropdown() : ""}
           </div>
+          ${renderFieldError("selectedRegions")}
         </label>
-        <label class="field-stack">
+        <label class="field-stack ${state.errors.targetVersion ? "has-error" : ""}">
           <span><span class="required">*</span> 目标固件版本</span>
-          <select class="select" aria-label="目标固件版本">
-            <option>${state.packageType === "diff" ? "23.422.209.17（差分包生成成功）" : "23.422.209.17（已上架）"}</option>
+          <select class="select" aria-label="目标固件版本" data-field="targetVersion">
+            <option value="23.422.209.17" ${state.form.targetVersion === "23.422.209.17" ? "selected" : ""}>${state.packageType === "diff" ? "23.422.209.17（差分包生成成功）" : "23.422.209.17（已上架）"}</option>
             <option>23.110.105.46</option>
             <option>10.176.46</option>
           </select>
           <em class="field-help">已是目标版本的设备不会进入升级范围。</em>
+          ${renderFieldError("targetVersion")}
         </label>
-        <label class="field-stack">
+        <label class="field-stack ${state.errors.taskTime ? "has-error" : ""}">
           <span><span class="required">*</span> 任务起止时间</span>
-          <div class="date-inputs">
-            <input value="2026-06-03 09:00:00" aria-label="开始日期时间" />
-            <span>至</span>
-            <input value="2026-06-06 18:00:00" aria-label="结束日期时间" />
-          </div>
-          <em class="field-help">任务周期不超过 90 天。</em>
+          ${renderDateRangePicker()}
+          ${renderQuickRangeButtons()}
+          ${renderFieldError("taskTime")}
         </label>
-        <label class="field-stack wide-field">
+        <label class="field-stack wide-field ${state.errors.upgradeDesc ? "has-error" : ""}">
           <span><span class="required">*</span> 任务升级说明</span>
-          <textarea class="textarea compact-textarea" placeholder="请输入升级目标、影响范围、灰度或回滚关注点。" aria-label="任务升级说明">修复低功耗设备夜间唤醒异常，按杭州低功耗大区灰度发布。</textarea>
+          <textarea class="textarea compact-textarea" placeholder="请输入升级目标、影响范围、灰度或回滚关注点。" aria-label="任务升级说明" data-field="upgradeDesc">${state.form.upgradeDesc}</textarea>
+          ${renderFieldError("upgradeDesc")}
         </label>
       </div>
     </section>
   `;
 }
 
-function renderRegionDropdown() {
-  const options = [
-    ["中国 / 杭州低功耗", true],
-    ["中国 / 杭州", true],
-    ["中国 / 深圳", false],
-    ["中国 / 成都", false],
-    ["中国 / 上海", false],
-  ];
+function renderQuickRangeButtons() {
   return `
-    <div class="select-dropdown" data-stop>
-      ${options.map(([label, checked]) => `
-        <label class="select-option">
-          <input type="checkbox" ${checked ? "checked" : ""} />
-          <span>${label}</span>
-        </label>
+    <div class="quick-range-row" role="group" aria-label="快捷选择任务周期">
+      ${[
+        [7, "未来7天"],
+        [30, "未来30天"],
+        [90, "未来90天"],
+      ].map(([days, label]) => `
+        <button class="quick-range-btn ${state.quickRangeDays === days ? "active" : ""}" type="button" data-action="set-quick-range" data-days="${days}">${label}</button>
       `).join("")}
     </div>
   `;
 }
 
+function renderFieldError(key) {
+  return state.errors[key] ? `<em class="field-error">${state.errors[key]}</em>` : "";
+}
+
+function renderDateRangePicker() {
+  const startLabel = state.taskStartAt || "请选择开始时间";
+  const endLabel = state.taskEndAt || "请选择结束时间";
+  return `
+    <div class="date-range-picker ${state.datePickerOpen ? "open" : ""}">
+      <button class="date-range-trigger" type="button" data-action="toggle-date-picker" aria-expanded="${state.datePickerOpen}">
+        ${icon("clock")}
+        <span class="${state.taskStartAt ? "" : "placeholder"}">${startLabel}</span>
+        <em>至</em>
+        <span class="${state.taskEndAt ? "" : "placeholder"}">${endLabel}</span>
+        <i data-action="clear-date-range" aria-label="清空时间">${icon("close")}</i>
+      </button>
+      ${state.datePickerOpen ? renderDateRangePanel() : ""}
+    </div>
+  `;
+}
+
+function renderDateRangePanel() {
+  const fallbackStart = addMinutes(new Date(), 5);
+  const start = state.taskStartAt ? parseDateTime(state.taskStartAt) : fallbackStart;
+  const end = state.taskEndAt ? parseDateTime(state.taskEndAt) : addDays(fallbackStart, 7);
+  const nextMonth = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+  return `
+    <div class="date-range-panel" data-stop>
+      <div class="date-range-panel-inputs">
+        <input value="${state.taskStartAt ? formatDate(start) : ""}" placeholder="开始日期" aria-label="开始日期" readonly />
+        <input value="${state.taskStartAt ? formatTime(start) : ""}" placeholder="开始时间" aria-label="开始时间" readonly />
+        <span>›</span>
+        <input value="${state.taskEndAt ? formatDate(end) : ""}" placeholder="结束日期" aria-label="结束日期" readonly />
+        <input value="${state.taskEndAt ? formatTime(end) : ""}" placeholder="结束时间" aria-label="结束时间" readonly />
+      </div>
+      <div class="calendar-switch">
+        <button type="button" data-action="shift-calendar" data-shift="-2">«</button>
+        <button type="button" data-action="shift-calendar" data-shift="-1">‹</button>
+        <strong>${start.getFullYear()} 年 ${start.getMonth() + 1} 月</strong>
+        <strong>${nextMonth.getFullYear()} 年 ${nextMonth.getMonth() + 1} 月</strong>
+        <button type="button" data-action="shift-calendar" data-shift="1">›</button>
+        <button type="button" data-action="shift-calendar" data-shift="2">»</button>
+      </div>
+      <div class="calendar-grid-wrap">
+        ${renderCalendarMonth(start, "start")}
+        ${renderCalendarMonth(nextMonth, "end")}
+      </div>
+      <div class="date-range-footer">
+        <button class="link-btn" type="button" data-action="clear-date-range">清空</button>
+        <button class="btn primary" type="button" data-action="confirm-date-range">确定</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderCalendarMonth(date, target) {
+  const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+  const gridStart = addDays(monthStart, -monthStart.getDay());
+  const startDate = state.taskStartAt ? startOfDay(parseDateTime(state.taskStartAt)) : null;
+  const endDate = state.taskEndAt ? startOfDay(parseDateTime(state.taskEndAt)) : null;
+  const today = startOfDay(new Date());
+  const days = Array.from({ length: 42 }, (_, index) => addDays(gridStart, index));
+  return `
+    <div class="calendar-month">
+      <div class="calendar-weekdays">${["日", "一", "二", "三", "四", "五", "六"].map(day => `<span>${day}</span>`).join("")}</div>
+      <div class="calendar-days">
+        ${days.map(day => {
+          const inMonth = day.getMonth() === date.getMonth();
+          const disabled = startOfDay(day) < today;
+          const selected = Boolean(startDate && endDate) && (startOfDay(day).getTime() === startDate.getTime() || startOfDay(day).getTime() === endDate.getTime());
+          const inRange = Boolean(startDate && endDate) && startOfDay(day) > startDate && startOfDay(day) < endDate;
+          return `
+            <button
+              type="button"
+              class="${inMonth ? "" : "muted"} ${disabled ? "disabled" : ""} ${selected ? "selected" : ""} ${inRange ? "in-range" : ""}"
+              ${disabled ? "disabled" : ""}
+              data-action="select-date"
+              data-target="${target}"
+              data-date="${formatDate(day)}"
+            >${day.getDate()}</button>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderSelectedRegionTags(placeholder) {
+  if (!state.selectedRegions.length) return `<span class="select-placeholder">${placeholder}</span>`;
+  const visible = state.selectedRegions.slice(0, 3);
+  const more = state.selectedRegions.length - visible.length;
+  return `
+    ${visible.map(region => `
+      <span class="chip removable-chip">
+        ${region}
+        <button type="button" aria-label="移除 ${region}" data-action="remove-region" data-region="${region}">${icon("close")}</button>
+      </span>
+    `).join("")}
+    ${more > 0 ? `<span class="chip muted-chip">+ ${more}</span>` : ""}
+  `;
+}
+
+function renderRegionCascaderDropdown() {
+  const selectedSet = new Set(state.selectedRegions);
+  return `
+    <div class="cascader-dropdown" data-stop>
+      <div class="select-dropdown-tools">
+        <button class="link-btn" type="button" data-action="select-all-regions">全选</button>
+        <button class="link-btn" type="button" data-action="clear-regions">清空</button>
+      </div>
+      <div class="cascader-columns">
+        <div class="cascader-column">
+          ${regionTree.map(region => renderCascaderOption(region.label, region.label, selectedSet, true)).join("")}
+        </div>
+        <div class="cascader-column">
+          ${regionTree.flatMap(region => (region.children || []).map(child => {
+            const path = `${region.label} / ${child.label}`;
+            return renderCascaderOption(child.label, path, selectedSet, Boolean(child.children));
+          })).join("")}
+        </div>
+        <div class="cascader-column">
+          ${regionTree.flatMap(region => (region.children || []).flatMap(child => (child.children || []).map(area => {
+            const path = `${region.label} / ${child.label} / ${area.label}`;
+            return renderCascaderOption(area.label, path, selectedSet, false);
+          }))).join("")}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCascaderOption(label, path, selectedSet, hasChildren) {
+  return `
+    <label class="cascader-option ${selectedSet.has(path) ? "checked" : ""}" data-action="toggle-region" data-region="${path}">
+      <input type="checkbox" ${selectedSet.has(path) ? "checked" : ""} />
+      <span>${label}</span>
+      ${hasChildren ? icon("back", "cascader-next") : ""}
+    </label>
+  `;
+}
+
 function renderStrategyStep() {
   const packageLabel = state.packageType === "whole" ? "整包" : "差分包";
-  const meta = strategyMeta[state.strategy];
   return `
     <section class="workbench-card step-card">
       <div class="card-heading">
@@ -537,32 +1189,29 @@ function renderStrategyStep() {
           <span class="eyebrow">Step 2</span>
           <h3>配置升级策略</h3>
         </div>
-        <span class="mini-tag ${state.strategy === "manual" ? "green" : "blue"}">${meta.approval}</span>
+        <span class="soft-pill">策略选择后，仅展示相关配置项</span>
       </div>
-      <div class="package-panel">
-        <div>
-          <span class="field-caption"><span class="required">*</span> 升级包类型</span>
-          <div class="radio-group" role="radiogroup" aria-label="升级包">
-            ${radio("packageType", "whole", "整包", state.packageType)}
-            ${radio("packageType", "diff", "差分包", state.packageType)}
-          </div>
-        </div>
-        <div class="package-note ${state.packageType === "diff" ? "warn" : ""}">
-          ${icon(state.packageType === "diff" ? "alert" : "info")}
-          <span>${state.packageType === "diff"
-            ? "差分包仅支持 4G 模组，预检会校验源版本是否存在可用差分包。"
-            : "整包适用于常规升级和跨版本升级。"}</span>
+      <div class="config-section">
+        <h4>升级包类型</h4>
+        <div class="package-choice-panel" role="radiogroup" aria-label="升级包类型">
+          ${packageTypeCard("whole", "整包")}
+          ${packageTypeCard("diff", "差分包")}
+          <div class="package-desc-card">${icon("info")} ${state.packageType === "whole"
+            ? "整包适用于常规升级和跨版本升级，兼容性更高。"
+            : "差分包适合连续版本小包升级，下发更快；仅支持 4G 模组产线。"}</div>
         </div>
       </div>
-      ${renderPackageGate()}
-      <div class="section-divider"></div>
-      <span class="field-caption"><span class="required">*</span> 升级策略</span>
-      <div class="strategy-grid">
-        ${strategyCard("version", "指定版本号升级", "按当前指定版本批量升级到目标版本，支持区域筛选")}
-        ${strategyCard("file", "文件导入升级", "上传 CSV / Excel 设备清单，适合批量定向升级")}
-        ${strategyCard("manual", "手动导入升级", "最多 10 台，适合灰度测试或单台处理")}
+      <div class="config-section">
+        <h4>选择升级策略</h4>
+        <div class="strategy-grid">
+          ${strategyCard("version", "指定版本号升级", "按当前指定源版本批量升级到目标版本，适合正式灰度与区域筛选。", ["版本范围", "批量控制", "可灰度"])}
+          ${strategyCard("file", "文件导入升级", "上传 CSV / Excel 设备清单，适合运营定向升级和名单制发布。", ["CSV/Excel", "自动校验", "可下载异常"])}
+          ${strategyCard("manual", "手动导入升级", "最多 10 台，适合灰度测试、单台验证或临时处理。", ["≤10台", "实时校验", "测试友好"])}
+        </div>
       </div>
-      ${renderStrategyBody(packageLabel)}
+      <div class="strategy-config-panel">
+        ${renderStrategyBody(packageLabel)}
+      </div>
     </section>
   `;
 }
@@ -575,10 +1224,25 @@ function renderPreviewStep() {
           <span class="eyebrow">Step 3</span>
           <h3>预览发布</h3>
         </div>
-        <span class="mini-tag ${previewData().disabled ? "orange" : "green"}">${previewData().disabled ? "不可发布" : "可继续"}</span>
+        ${renderPreviewScenarioSwitch()}
       </div>
       ${renderPreviewContent(false)}
     </section>
+  `;
+}
+
+function renderPreviewScenarioSwitch() {
+  const options = [
+    ["mixed", "部分可升级"],
+    ["blocked", "无可升级"],
+    ["clean", "全部可升级"],
+  ];
+  return `
+    <div class="preview-scenario-switch" role="group" aria-label="预览发布模拟场景">
+      ${options.map(([value, label]) => `
+        <button class="${state.previewScenario === value ? "active" : ""}" type="button" data-preview="${value}">${label}</button>
+      `).join("")}
+    </div>
   `;
 }
 
@@ -590,12 +1254,20 @@ function renderFinishStep() {
           <span class="eyebrow">Step 4</span>
           <h3>完成</h3>
         </div>
+        <span class="soft-pill">任务已创建</span>
       </div>
       <div class="finish-panel">
-        ${icon("check")}
-        <div>
-          <strong>${state.strategy === "manual" ? "发布成功，任务已进入待执行" : "任务已提交，等待产线负责人审批"}</strong>
-          <p>任务创建完成后可在任务列表和审批日志中追踪状态。</p>
+        <div class="finish-check">${icon("check")}</div>
+        <h3>OTA 升级任务创建成功</h3>
+        <p>系统将在设定时间窗口内执行任务，执行状态可在任务列表中查看。</p>
+        <div class="finish-summary">
+          <dl>
+            <dt>任务编号</dt><dd><code>OTA-2026-176660</code></dd>
+            <dt>任务名称</dt><dd>IPC-杭州低功耗_安全补丁升级</dd>
+            <dt>发布策略</dt><dd>${state.packageType === "whole" ? "整包" : "差分包"} · ${strategyMeta[state.strategy].title}</dd>
+            <dt>设备规模</dt><dd>${previewData().good} 台进入升级队列，${previewData().bad} 台异常跳过</dd>
+            <dt>当前状态</dt><dd>${statusTag(strategyMeta[state.strategy].nextStatus)}</dd>
+          </dl>
         </div>
       </div>
     </section>
@@ -632,13 +1304,21 @@ function radio(name, value, label, current) {
   `;
 }
 
-function strategyCard(value, title, desc) {
-  const meta = strategyMeta[value];
+function packageTypeCard(value, title) {
+  return `
+    <button class="package-type-card ${state.packageType === value ? "active" : ""}" type="button" data-package-card="${value}">
+      <span class="radio-dot"></span>
+      <strong>${title}</strong>
+    </button>
+  `;
+}
+
+function strategyCard(value, title, desc, tags) {
   return `
     <button class="strategy-card ${state.strategy === value ? "active" : ""}" type="button" data-strategy="${value}">
       <strong>${title}</strong>
       <span>${desc}</span>
-      <em>${meta.approval}</em>
+      <div class="strategy-tags">${tags.map(tag => `<em>${tag}</em>`).join("")}</div>
     </button>
   `;
 }
@@ -650,30 +1330,39 @@ function renderStrategyBody(packageLabel) {
 }
 
 function renderVersionStrategy(packageLabel) {
+  const selectableVersions = firmwareVersions.filter(item => !(state.packageType === "diff" && !item.diffReady));
+  const allChecked = selectableVersions.every(item => state.selectedVersions.includes(item.version));
   return `
-    ${renderStrategyNote(packageLabel)}
+    <div class="config-panel-heading">
+      <div>
+        <strong>指定版本号升级配置</strong>
+        <p>先选择可升级源版本，再设置全量 / 批量策略。</p>
+      </div>
+      <span class="soft-pill blue-pill">已选择 ${state.selectedVersions.length} 个源版本</span>
+    </div>
     <div class="rule-panel">
-      <div class="rule-header">
-        <span class="field-caption">版本升级规则</span>
-        <span class="mini-tag">统一使用版本表格选择</span>
-      </div>
-      <div class="segmented" role="radiogroup" aria-label="版本过滤规则">
-        ${radio("versionRule", "all", "全部版本升级", state.versionRule)}
-        ${radio("versionRule", "include", "仅指定版本升级", state.versionRule)}
-        ${radio("versionRule", "exclude", "排除指定版本不升级", state.versionRule)}
-      </div>
-      <div class="info-strip">${icon("info")} ${versionRuleDescription()}</div>
+      ${renderFieldError("strategy")}
       <div class="quantity-panel">
         <span class="field-caption">配置升级数量</span>
         <div class="segmented compact-segmented" role="radiogroup" aria-label="升级数量">
           ${radio("quantityMode", "full", "全量", state.quantityMode)}
           ${radio("quantityMode", "batch", "批量", state.quantityMode)}
         </div>
-        <span class="text-muted">${state.quantityMode === "full" ? "全量模式按表格选中版本自动加载全部可升级设备。" : "批量模式可在表格里配置每个版本的指定下发设备数量。"}</span>
+        ${state.quantityMode === "batch"
+          ? `<label class="quantity-input"><span>统一下发数量</span><input class="table-input" type="number" min="0" value="${state.batchQuantity}" aria-label="统一下发数量" data-batch-quantity /><em>台</em></label>`
+          : ""}
+        <span class="quantity-copy">${state.quantityMode === "full" ? "按表格勾选范围下发全部可升级版本" : "所有勾选源版本统一按该数量下发"}</span>
       </div>
+      ${renderFieldError("batchQuantity")}
       <div class="version-table">
         <table>
-          <thead><tr><th style="width: 190px">${state.versionRule === "exclude" ? "排除版本" : "选择版本"}</th><th>可升级设备</th><th>下发数量</th><th>策略结果</th><th>说明</th><th>操作</th></tr></thead>
+          <thead>
+            <tr>
+              <th style="width: 72px"><label class="table-check"><input type="checkbox" ${allChecked ? "checked" : ""} aria-label="全选源版本" data-action="toggle-all-versions" /></label></th>
+              <th>源版本号</th>
+              <th>升级设备数</th>
+            </tr>
+          </thead>
           <tbody>${renderVersionRows()}</tbody>
         </table>
       </div>
@@ -684,151 +1373,173 @@ function renderVersionStrategy(packageLabel) {
 
 function renderFileStrategy(packageLabel) {
   return `
-    ${renderStrategyNote(packageLabel)}
-    <div class="import-layout">
+    <div class="config-panel-heading">
+      <div>
+        <strong>文件导入升级配置</strong>
+        <p>上传设备清单后，系统会自动完成设备识别与发布预检。</p>
+      </div>
+      <div class="template-actions">
+        <button class="btn" type="button" data-action="download-template">下载 CSV 模板</button>
+        <button class="btn" type="button" data-action="download-template">下载 Excel 模板</button>
+      </div>
+    </div>
+    <div class="import-panel">
+      ${renderUploadState()}
+    </div>
+    ${renderFieldError("fileUpload")}
+    ${renderStrategyConditions()}
+  `;
+}
+
+function renderUploadState() {
+  if (!state.fileUploaded) {
+    return `
       <button class="upload-box" type="button" data-action="mock-upload">
         ${icon("upload")}
         <strong>点击或拖拽上传设备清单</strong>
-        <span>下载设备导入模板，按要求填写设备 ID 后上传；一次最多入库 20,000 个设备。</span>
+        <span>支持 CSV / Excel 文件，一次最多导入 20,000 台设备。</span>
       </button>
-      <div class="file-rules">
-        <strong>文件校验规则</strong>
-        <span>第一列为设备标识，首行表头自动跳过</span>
-        <span>自动去重、跳过空行、清理首尾空格</span>
-        <span>自动过滤重复设备 ID 号</span>
-        <div class="inline-actions left">
-          <button class="btn" type="button" data-action="download-template">${icon("download")}CSV 模板</button>
-          <button class="btn" type="button" data-action="download-template">${icon("download")}Excel 模板</button>
+    `;
+  }
+
+  if (state.fileUploadStatus === "uploading" || state.fileUploadStatus === "checking") {
+    const isChecking = state.fileUploadStatus === "checking";
+    return `
+      <div class="uploaded-file-card is-processing" aria-live="polite">
+        <span class="file-icon-box">${icon(isChecking ? "check" : "upload")}</span>
+        <div class="uploaded-file-main">
+          <div class="uploaded-file-title">
+            <strong>${state.uploadFileName}</strong>
+            <span>${isChecking ? "正在校验" : "上传中"}</span>
+          </div>
+          <div class="upload-progress" aria-label="上传进度 ${state.uploadProgress}%">
+            <span style="width: ${state.uploadProgress}%"></span>
+          </div>
+          <p>${isChecking ? "正在匹配设备大区、源固件版本与升级包可用性。" : `已上传 ${state.uploadProgress}%，请稍候。`}</p>
         </div>
       </div>
+    `;
+  }
+
+  return `
+    <div class="uploaded-file-card">
+      <span class="file-icon-box">${icon("log")}</span>
+      <div class="uploaded-file-main">
+        <div class="uploaded-file-title">
+          <strong>${state.uploadFileName}</strong>
+          <span>上传完成</span>
+        </div>
+        <p>共 <b>${state.uploadDeviceCount}</b> 台设备，文件已就绪，可继续配置策略条件。</p>
+      </div>
+      <button class="btn" type="button" data-action="mock-upload">重新上传/替换文件</button>
     </div>
-    <div class="version-table">
-      <table>
-        <thead><tr><th>文件名称</th><th>导入设备总数</th><th>重复过滤</th><th>校验状态</th><th>操作</th></tr></thead>
-        <tbody><tr><td>IPC_杭州低功耗_设备导入.xlsx</td><td>1,250</td><td>18</td><td>${statusTag("可升级")} 1,248 台可发布</td><td><button class="link-btn" type="button" data-action="mock-upload">重新上传</button></td></tr></tbody>
-      </table>
-    </div>
-    ${renderImportOwnershipPanel()}
   `;
 }
 
 function renderManualStrategy(packageLabel) {
+  const count = state.manualDevices.length;
   return `
-    ${renderStrategyNote(packageLabel)}
-    <div class="manual-toolbar">
-      <label class="field-control search">
-        ${icon("plus")}
-        <input placeholder="输入设备ID后回车添加，最多10台" aria-label="手动输入设备ID" />
-      </label>
-      <button class="btn primary" type="button" data-action="validate-manual">${icon("check")}批量校验</button>
-    </div>
-    <div class="version-table">
-      <table>
-        <thead><tr><th>设备ID</th><th>源固件版本号</th><th>所属大区</th><th>校验状态</th><th>异常说明</th><th>操作</th></tr></thead>
-        <tbody>
-          <tr><td>VQDG2122086ZPUF</td><td>23.110.105.46</td><td>中国 / 杭州低功耗</td><td>${statusTag("可升级")}</td><td>-</td><td><button class="link-btn" data-action="remove-device">删减</button></td></tr>
-          <tr><td>VQDG2122132LYVU</td><td>23.110.105.43</td><td>中国 / 杭州低功耗</td><td>${statusTag("可升级")}</td><td>-</td><td><button class="link-btn" data-action="remove-device">删减</button></td></tr>
-          <tr><td>VQDG2122182RUJZ</td><td>23.422.209.17</td><td>中国 / 杭州</td><td>${statusTag("不可升级")}</td><td>已是目标版本</td><td><button class="link-btn" data-action="remove-device">删减</button></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="preview-line">
-      <span class="chip">${icon("check")} 已添加 3 台${packageLabel}设备</span>
-      <span class="chip">${icon("info")} 手动导入无需审批，发布后进入待执行</span>
-      <span class="chip">${icon("alert")} 超过 10 台需改用文件导入并进入审批</span>
-    </div>
-    ${renderImportOwnershipPanel()}
-  `;
-}
-
-function renderPackageGate() {
-  if (state.packageType === "diff") {
-    return `
-      <div class="gate-list warn">
-        <div>${icon("alert")} 差分包校验要求</div>
-        <span>4G 模组</span>
-        <span>基线版本匹配</span>
-        <span>差分包生成成功</span>
+    <div class="manual-import-panel">
+      <div class="manual-import-header">
+        <div>
+          <strong>手动导入升级配置</strong>
+          <p>适合小范围验证；最多 10 台，设备 ID 输入后实时校验。</p>
+        </div>
+        <span class="manual-count-pill">当前 ${count} / 10 台</span>
       </div>
-    `;
-  }
-  return `
-    <div class="gate-list">
-      <div>${icon("check")} 整包校验要求</div>
-      <span>目标固件已上架</span>
-      <span>机型兼容</span>
-      <span>源版本低于目标版本</span>
+      <div class="manual-import-table">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 52px">#</th>
+              <th>设备 ID</th>
+              <th>源固件版本号</th>
+              <th>所属大区</th>
+              <th>校验状态</th>
+              <th style="width: 86px">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${renderManualDeviceRows()}
+            <tr class="manual-add-table-row">
+              <td colspan="6">
+                <button class="manual-add-row" type="button" data-action="add-manual-device" ${count >= 10 ? "disabled" : ""}>${icon("plus")}添加设备</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+    ${renderFieldError("manualDevices")}
+    ${renderStrategyConditions()}
   `;
 }
 
-function renderVersionRows() {
-  return firmwareVersions.map(item => {
-    const disabled = state.packageType === "diff" && !item.diffReady;
-    const selected = state.versionRule === "all" ? !disabled : item.diffReady || item.count > 1000;
-    const result = state.versionRule === "exclude" && selected ? "本版本不升级" : disabled ? "不可升级" : "纳入升级";
+function renderManualDeviceRows() {
+  return state.manualDevices.map((device, index) => {
+    const value = device.deviceId || "";
+    const version = device.version || (value ? "自动检索中" : "-");
+    const region = device.region || (value ? "自动检索中" : "-");
+    const status = value ? statusTag(device.status || "可升级") : "-";
     return `
-      <tr class="${disabled ? "muted-row" : ""}">
-        <td>
-          <label class="table-check">
-            <input type="checkbox" ${selected ? "checked" : ""} ${disabled || state.versionRule === "all" ? "disabled" : ""} />
-            <span>${item.version}</span>
-          </label>
-        </td>
-        <td>${item.count.toLocaleString()} 台</td>
-        <td>${state.quantityMode === "batch" && !disabled ? `<input class="table-input" value="${Math.min(item.count, 500)}" aria-label="${item.version} 下发数量" />` : "全量"}</td>
-        <td>${statusTag(result)}</td>
-        <td>${item.note}</td>
-        <td>${state.versionRule === "all" ? `<span class="text-muted">自动加载</span>` : `<button class="link-btn" type="button" data-action="remove-version">删减</button>`}</td>
+      <tr>
+        <td>${index + 1}</td>
+        <td><input class="input manual-device-input" value="${value}" placeholder="请输入设备 ID" aria-label="设备ID ${index + 1}" data-manual-device-input data-device-id="${device.id}" /></td>
+        <td>${version}</td>
+        <td>${region}</td>
+        <td>${status}</td>
+        <td><button class="link-btn danger-link" data-action="remove-device" data-device-id="${device.id}">删除</button></td>
       </tr>
     `;
   }).join("");
 }
 
-function versionRuleDescription() {
-  if (state.versionRule === "include") {
-    return "适用于问题修复 / 灰度验证，仅升级表格中勾选的固件版本号。";
-  }
-  if (state.versionRule === "exclude") {
-    return "适用于大规模发布但需避开风险固件版本，表格中勾选版本将不会升级。";
-  }
-  return "适用于正式发版 / 安全补丁，全量覆盖所有符合目标版本升级的固件版本号设备。";
+function renderVersionRows() {
+  return firmwareVersions.map(item => {
+    const disabled = state.packageType === "diff" && !item.diffReady;
+    const selected = state.selectedVersions.includes(item.version) && !disabled;
+    const deviceCount = state.quantityMode === "batch" ? `${Number(state.batchQuantity || 0).toLocaleString()} 台` : "全量";
+    return `
+      <tr class="${disabled ? "muted-row" : ""}">
+        <td>
+          <label class="table-check">
+            <input type="checkbox" ${selected ? "checked" : ""} ${disabled ? "disabled" : ""} aria-label="选择 ${item.version}" data-action="toggle-version" data-version="${item.version}" />
+          </label>
+        </td>
+        <td>${item.version}</td>
+        <td>${disabled ? "-" : deviceCount}</td>
+      </tr>
+    `;
+  }).join("");
 }
 
 function renderStrategyConditions() {
+  const disabled = !state.conditionRegionEnabled;
   return `
     <div class="condition-panel">
-      <div class="rule-header">
-        <span class="field-caption">策略条件（非必填）</span>
-        <span class="mini-tag">支持多选</span>
-      </div>
-      <label class="checkbox-line"><input type="checkbox" checked /> 指定地区</label>
-      <div class="condition-tags">
-        <span class="chip">${icon("check")} 中国 / 杭州低功耗</span>
-        <span class="chip">${icon("check")} 中国 / 杭州</span>
-        <button class="btn" type="button" data-action="open-region">选择地区</button>
-      </div>
-    </div>
-  `;
-}
-
-function renderImportOwnershipPanel() {
-  return `
-    <div class="condition-panel ownership-panel">
-      <div class="rule-header">
-        <span class="field-caption">设备归属与地区条件</span>
-        <span class="mini-tag blue">系统自动识别</span>
-      </div>
-      <div class="ownership-grid">
-        <div>
-          <strong>设备归属</strong>
-          <p>导入后系统自动识别设备所属区域；不需要手动选择集群或节点。</p>
+      <div class="condition-row">
+        <span class="condition-label">策略条件</span>
+        <label class="checkbox-line condition-check"><input type="checkbox" ${state.conditionRegionEnabled ? "checked" : ""} data-action="toggle-condition-region-enabled" /> 指定地区</label>
+        <div class="select-field condition-operator ${state.regionOperatorOpen ? "open" : ""} ${disabled ? "disabled" : ""}" data-action="toggle-region-operator">
+          <span>${state.regionOperator}</span>
+          ${icon("chevron", "select-arrow")}
+          ${state.regionOperatorOpen && !disabled ? `
+            <div class="operator-dropdown" data-stop>
+              ${["等于", "不等于"].map(option => `
+                <button class="${state.regionOperator === option ? "active" : ""}" type="button" data-action="set-region-operator" data-operator="${option}">${option}</button>
+              `).join("")}
+            </div>
+          ` : ""}
         </div>
-        <div>
-          <strong>地区过滤</strong>
-          <p>可按地区进一步筛选目标设备；不属于当前大区的设备会在预检中剔除。</p>
+        <div class="select-field multi-select-field condition-cascader ${state.conditionRegionDropdownOpen ? "open" : ""} ${disabled ? "disabled" : ""}" data-action="toggle-condition-region-dropdown">
+          <div class="multi-select-values">
+            ${disabled ? `<span class="select-placeholder">未启用指定地区</span>` : renderSelectedRegionTags("请选择地区")}
+          </div>
+          ${icon("chevron", "select-arrow")}
+          ${state.conditionRegionDropdownOpen && !disabled ? renderRegionCascaderDropdown() : ""}
         </div>
       </div>
+      ${renderFieldError("conditionRegion")}
     </div>
   `;
 }
@@ -847,62 +1558,613 @@ function renderStrategyNote(packageLabel) {
 }
 
 function renderTaskDetail() {
+  const detail = taskDetailData(state.detailStatus);
   return `
     <section class="page">
       ${renderPageHeader("任务详情", {
         back: "task-list",
-        actions: `<button class="btn danger" type="button" data-action="end-task">结束任务</button>`,
+        actions: detail.status === "升级中" ? `<button class="btn danger" type="button" data-action="end-task">结束任务</button>` : "",
       })}
-      <div class="detail-hero">
-        <div class="detail-title">所有id综合导入 ${statusTag("升级中")}</div>
-        <dl class="detail-item"><dt>目标固件版本:</dt><dd>23.422.209.17</dd></dl>
-        <dl class="detail-item"><dt>创建时间:</dt><dd>2026-05-13 11:22:42</dd></dl>
-        <dl class="detail-item"><dt>升级策略:</dt><dd>文件导入 <button class="link-btn" data-action="show-strategy">详情</button></dd></dl>
-        <dl class="detail-item"><dt>升级时间:</dt><dd>2026-05-13 11:25:20</dd></dl>
-        <dl class="detail-item"><dt>升级说明:</dt><dd>-</dd></dl>
-        <dl class="detail-item"><dt>审批信息:</dt><dd>2026-05-13 11:22:46 江锐 提交至 钱江涛【审批通过】</dd></dl>
-        <dl class="detail-item"><dt>备注:</dt><dd>-</dd></dl>
+      ${renderDetailStatusSwitch()}
+      ${renderDetailHero(detail)}
+      ${renderDetailTabs()}
+      ${renderDetailTabContent(detail)}
+    </section>
+  `;
+}
+
+function renderDetailTabs() {
+  const tabs = [
+    ["overview", "概览"],
+    ["devices", "设备明细"],
+  ];
+  return `
+    <div class="detail-tabs">
+      ${tabs.map(([key, label]) => `<button class="${state.detailTab === key ? "active" : ""}" type="button" data-action="set-detail-tab" data-tab="${key}">${label}</button>`).join("")}
+    </div>
+  `;
+}
+
+function renderDetailTabContent(detail) {
+  const isExecutionStatus = ["升级中", "已完成", "已结束"].includes(detail.status);
+  if (state.detailTab === "devices") {
+    return isExecutionStatus
+      ? renderDeviceDetailTable(detail)
+      : `<div class="empty-state-panel">${icon("info")} 任务尚未进入执行阶段，暂无设备执行明细。</div>`;
+  }
+  return `
+    ${renderTaskFlow(detail)}
+    <h3 class="section-title">${icon("layer")}执行概览</h3>
+    ${renderExecutionOverview(detail)}
+    ${isExecutionStatus ? renderExceptionSummary(detail) : ""}
+  `;
+}
+
+function taskDetailData(status) {
+  const base = {
+    name: "IPC-杭州低功耗_安全补丁升级",
+    status,
+    creator: "汤彦珊",
+    approver: "钱江涛",
+    createdAt: "2026-06-03 16:40:12",
+    submittedAt: "2026-06-03 17:20:18",
+    approvedAt: "2026-06-03 18:10:42",
+    startAt: "2026-06-10 09:00:00",
+    endAt: "2026-06-17 09:00:00",
+    targetVersion: "23.422.209.17",
+    method: "指定版本",
+    packageType: "整包",
+    total: 6505,
+    region: "中国 / 杭州低功耗",
+    desc: "修复低功耗设备夜间唤醒异常，按杭州低功耗大区灰度发布。",
+    sourceScope: "23.422.208.91、23.110.105.46、23.110.105.43、10.176.42",
+    condition: "指定地区 = 中国 / 杭州低功耗",
+  };
+  const variants = {
+    "待审批": { success: 0, failed: 0, running: 0, pending: 6505 },
+    "已驳回": { success: 0, failed: 0, running: 0, pending: 6505, rejectReason: "目标版本与当前大区策略不一致" },
+    "已失效": { success: 0, failed: 0, running: 0, pending: 6505, invalidReason: "审批超时，任务开始时间已过" },
+    "待执行": { success: 0, failed: 0, running: 0, pending: 6505 },
+    "升级中": { success: 346, failed: 12, running: 3838, pending: 2309 },
+    "已完成": { success: 6488, failed: 17, running: 0, pending: 0 },
+    "已结束": { success: 730, failed: 8, running: 0, pending: 5767, endedAt: "2026-06-11 15:20:10", endReason: "发现部分设备升级失败率异常，提前停止继续下发" },
+  };
+  return { ...base, ...(variants[status] || variants["升级中"]) };
+}
+
+function renderDetailStatusSwitch() {
+  const statuses = ["待审批", "已驳回", "已失效", "待执行", "升级中", "已完成", "已结束"];
+  const metricModes = [
+    ["imported", "文件/手动导入"],
+    ["versionFull", "指定版本全量"],
+    ["versionBatch", "指定版本批量"],
+  ];
+  return `
+    <div class="detail-status-switch">
+      <div class="simulation-row">
+        <span>状态模拟</span>
+        <div>
+          ${statuses.map(status => `<button class="${state.detailStatus === status ? "active" : ""}" type="button" data-action="set-detail-status" data-status="${status}">${status}</button>`).join("")}
+        </div>
       </div>
-      <h3 class="section-title">数据概览</h3>
-      <div class="metrics-row">
-        <div class="metric-card">
+      <div class="simulation-row">
+        <span>统计口径</span>
+        <div>
+          ${metricModes.map(([mode, label]) => `<button class="${state.detailMetricMode === mode ? "active" : ""}" type="button" data-action="set-detail-metric-mode" data-mode="${mode}">${label}</button>`).join("")}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderDetailHero(detail) {
+  const summary = taskFlowSummary(detail);
+  const progress = upgradeProgressData(detail);
+  const meterPercent = `${progress.percent / 2}%`;
+  return `
+    <div class="task-overview-card ${summary.tone}">
+      <div class="task-overview-head">
+        <div>
+          <h2>任务信息</h2>
+        </div>
+        ${statusTag(detail.status)}
+      </div>
+      <div class="task-overview-body">
+        <section class="task-overview-info">
+          <dl>
+            <dt>${icon("log")}任务名称</dt><dd>${detail.name}</dd>
+            <dt>${icon("clock")}任务时间</dt><dd>${detail.startAt} ~ ${detail.endAt}</dd>
+            <dt>${icon("layer")}目标版本</dt><dd>${detail.targetVersion}</dd>
+            <dt>${icon("map")}任务大区</dt><dd>${detail.region}</dd>
+            <dt>${icon("users")}创建人</dt><dd>${detail.creator}</dd>
+            <dt>${icon("shield")}升级配置</dt><dd>${overviewConfigSummary(detail)}</dd>
+          </dl>
+        </section>
+        <aside class="task-overview-progress">
+          <div class="flow-progress-meter" style="--meter-percent:${meterPercent}">
+            <b>${progress.label}<small>${progress.unit}</small></b>
+          </div>
           <div>
-            <strong>升级设备总数</strong>
-            <p class="metric-value">6,505</p>
+            <span>升级进度：</span><strong>${progress.title}</strong>
+            <p>${progress.text}</p>
           </div>
-          <div class="metric-illustration" aria-hidden="true"></div>
+        </aside>
+      </div>
+    </div>
+  `;
+}
+
+function overviewConfigSummary(detail) {
+  const condition = detail.condition ? "指定地区" : "无额外条件";
+  if (state.detailMetricMode === "imported") return `文件/手动导入 · ${detail.packageType} · ${Number(detail.total).toLocaleString()} 台 · ${condition}`;
+  if (state.detailMetricMode === "versionBatch") return `${detail.method} · ${detail.packageType} · 计划 ${Number(plannedBatchTotal()).toLocaleString()} 台 · ${condition}`;
+  return `${detail.method} · ${detail.packageType} · 全量 · ${condition}`;
+}
+
+function upgradeProgressData(detail) {
+  const executionStatuses = ["升级中", "已完成", "已结束"];
+  if (!executionStatuses.includes(detail.status)) {
+    return {
+      percent: 0,
+      label: "-",
+      unit: "",
+      title: "未开始升级",
+      text: state.detailMetricMode === "imported"
+        ? "设备清单已确定，等待进入 OTA 下发阶段"
+        : detail.status === "待执行"
+          ? "尚未开始动态匹配设备，等待任务开始时间"
+          : "任务尚未进入 OTA 下发阶段",
+    };
+  }
+  const stats = metricStats(detail);
+  if (state.detailMetricMode === "versionFull") {
+    const visualPercent = detail.status === "已完成" ? 100 : detail.status === "已结束" ? 72 : 48;
+    return {
+      percent: visualPercent,
+      label: Number(stats.stocked).toLocaleString(),
+      unit: "台",
+      title: `已匹配数 ${Number(stats.stocked).toLocaleString()} 台`,
+      text: detail.status === "已完成"
+        ? `升级成功 ${Number(stats.upgradeSuccess).toLocaleString()} 台，失败 ${Number(stats.upgradeFailed).toLocaleString()} 台`
+        : detail.status === "已结束"
+          ? `任务已提前结束，升级成功 ${Number(stats.upgradeSuccess).toLocaleString()} 台，失败 ${Number(stats.upgradeFailed).toLocaleString()} 台`
+          : `设备持续动态匹配中，已成功 ${Number(stats.upgradeSuccess).toLocaleString()} 台，失败 ${Number(stats.upgradeFailed).toLocaleString()} 台`,
+    };
+  }
+  const denominator = state.detailMetricMode === "versionBatch" ? plannedBatchTotal() : detail.total;
+  const processed = Math.min(stats.stocked, denominator);
+  const percent = denominator ? Number(((processed / denominator) * 100).toFixed(1)) : 0;
+  return {
+    percent,
+    label: String(percent),
+    unit: "%",
+    title: `${Number(processed).toLocaleString()} / ${Number(denominator).toLocaleString()} 台`,
+    text: state.detailMetricMode === "versionBatch"
+      ? `已匹配成功 ${Number(stats.upgradeSuccess).toLocaleString()} 台，失败 ${Number(stats.upgradeFailed).toLocaleString()} 台；下发失败不占用计划名额`
+      : detail.status === "已完成"
+        ? "升级任务已完成，可查看失败设备明细"
+        : detail.status === "已结束"
+          ? "任务已提前结束，未处理设备不再继续下发"
+          : "OTA 执行中，设备结果持续回传",
+  };
+}
+
+function plannedBatchTotal() {
+  return 5000;
+}
+
+function metricStats(detail) {
+  const dispatchedFailed = state.detailMetricMode === "imported" ? 0 : detail.status === "升级中" ? 12 : detail.status === "已结束" ? 18 : 0;
+  const stocked = Math.max(detail.success + detail.failed, 0);
+  return {
+    stocked,
+    dispatchedFailed,
+    upgradeSuccess: detail.success,
+    upgradeFailed: detail.failed,
+    pending: Math.max(detail.total - stocked, 0),
+  };
+}
+
+function taskFlowSummary(detail) {
+  const processed = detail.success + detail.failed;
+  const map = {
+    "待审批": {
+      node: "等待审批",
+      text: "任务已提交发布申请，等待产线负责人审批。",
+      extra: "产线负责人处理中",
+      tone: "orange",
+    },
+    "已驳回": {
+      node: "审批驳回",
+      text: "审批未通过，任务未生效，不会下发 OTA。",
+      extra: `驳回原因：${detail.rejectReason}`,
+      tone: "red",
+    },
+    "已失效": {
+      node: "审批失效",
+      text: "审批未在有效时间内完成，任务已失效，不会下发 OTA。",
+      extra: `失效原因：${detail.invalidReason}`,
+      tone: "red",
+    },
+    "待执行": {
+      node: "等待执行",
+      text: "任务已审批通过，等待到达任务开始时间后自动下发。",
+      extra: `计划开始时间：${detail.startAt}`,
+      tone: "gray",
+    },
+    "升级中": {
+      node: "执行中",
+      text: "任务已进入 OTA 下发阶段，设备正在回传升级结果。",
+      extra: `执行进度：已处理 ${processed} / ${detail.total} 台`,
+      tone: "blue",
+    },
+    "已完成": {
+      node: "任务完成",
+      text: "所有纳入升级范围的设备均已产生最终升级结果。",
+      extra: "完成时间：2026-06-12 18:30:22",
+      tone: "green",
+    },
+    "已结束": {
+      node: "手动结束",
+      text: "任务已被用户提前结束，未处理设备不再继续下发。",
+      extra: `结束原因：${detail.endReason}`,
+      tone: "gray",
+    },
+  };
+  return map[detail.status] || map["升级中"];
+}
+
+function renderTaskFlow(detail) {
+  const summary = taskFlowSummary(detail);
+  const metaItems = flowMetaItems(detail, summary);
+  return `
+    <section class="task-flow-card ${summary.tone}">
+      <div class="task-flow-overview">
+        <div class="task-flow-summary">
+          <i>${icon(flowIcon(detail.status))}</i>
+          <div>
+            <h3>任务流转</h3>
+            <strong>当前状态：${detail.status}</strong>
+            <p>${summary.text}</p>
+            <em>${summary.extra}</em>
+          </div>
         </div>
-        <div class="metric-card donut-zone">
-          <div class="donut-metric">
-            <div>
-              <div class="dot-label metric-green"><span class="dot"></span>升级成功</div>
-              <p class="metric-value metric-green">401</p>
-            </div>
-            <div class="donut" style="--value: 22deg; --color: #20c96a" data-label="6%"></div>
-          </div>
-          <span class="divider-vertical"></span>
-          <div class="donut-metric">
-            <div>
-              <div class="dot-label metric-red"><span class="dot"></span>升级失败</div>
-              <p class="metric-value metric-red">0</p>
-            </div>
-            <div class="donut" style="--value: 5deg; --color: #f05261" data-label="0%"></div>
-          </div>
+        <div class="task-flow-meta">
+          ${metaItems.map(([label, value]) => `<span>${label} <b>${value}</b></span>`).join("")}
         </div>
       </div>
-      <div class="toolbar" style="margin-top: 28px">
-        <label class="field-control search">
-          ${icon("search")}
-          <input placeholder="请输入设备ID,按Enter搜索" aria-label="设备ID搜索" />
-        </label>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>设备ID</th><th>完成时间</th><th>耗时</th><th>升级进度</th><th>升级状态 ${icon("chevron")}</th><th>原因</th></tr></thead>
-          <tbody>${deviceRows.map(id => `<tr><td>${id}</td><td>-</td><td>-</td><td>0%</td><td>待升级</td><td>-</td></tr>`).join("")}</tbody>
-        </table>
+      <div class="task-progress-panel">
+        <div class="task-progress-tabs">
+          <div>
+            ${["progress", "records"].map(key => `
+              <button class="${state.flowTab === key ? "active" : ""}" type="button" data-action="set-flow-tab" data-tab="${key}">
+                ${key === "progress" ? "任务进度" : "流转明细"}
+              </button>
+            `).join("")}
+          </div>
+        </div>
+        ${state.flowTab === "records" ? renderFlowRecordsPanel(detail) : renderFlowProgressPanel(detail)}
       </div>
     </section>
+  `;
+}
+
+function renderFlowProgressPanel(detail) {
+  return `
+    ${renderFlowStages(detail)}
+  `;
+}
+
+function renderFlowRecordsPanel(detail) {
+  return `
+    <div class="task-flow-records">
+      <h4>流转明细</h4>
+      ${renderApprovalTimeline(detail)}
+    </div>
+  `;
+}
+
+function renderFlowProgressSummary(detail) {
+  const percent = flowProgressPercent(detail);
+  const meterPercent = `${percent / 2}%`;
+  const textMap = {
+    "待审批": "审批处理中，审批通过后进入等待执行阶段",
+    "已驳回": "审批未通过，任务不会继续下发",
+    "已失效": "审批超时失效，任务不会继续下发",
+    "待执行": "审批已通过，等待任务开始时间自动下发",
+    "升级中": "OTA 正在下发执行，预计在任务窗口内完成",
+    "已完成": "任务已完成，所有纳入设备已有最终结果",
+    "已结束": "任务已提前结束，未处理设备不再继续下发",
+  };
+  return `
+    <div class="flow-progress-summary">
+      <div>
+        <span>任务进度</span>
+        <strong>${percent}%</strong>
+      </div>
+      <div class="flow-progress-meter" style="--meter-percent:${meterPercent}">
+        <b>${percent}<small>%</small></b>
+      </div>
+      <p>${textMap[detail.status] || "任务状态更新中"}</p>
+    </div>
+  `;
+}
+
+function flowProgressPercent(detail) {
+  const map = {
+    "待审批": 38,
+    "已驳回": 38,
+    "已失效": 38,
+    "待执行": 62,
+    "升级中": 84,
+    "已完成": 100,
+    "已结束": 86,
+  };
+  return map[detail.status] || 0;
+}
+
+function flowMetaItems(detail, summary) {
+  const actionMap = {
+    "待审批": "等待产线负责人审批",
+    "已驳回": "支持复制重建后重新发布",
+    "已失效": "支持复制重建后重新发布",
+    "待执行": `等待 ${detail.startAt} 自动下发`,
+    "升级中": "持续接收设备升级结果",
+    "已完成": "任务已产生最终结果",
+    "已结束": "未处理设备不再继续下发",
+  };
+  return [
+    ["提交人", detail.creator],
+    ["审批人", detail.approver],
+    ["当前节点", summary.node],
+    ["提交时间", detail.submittedAt],
+    ["审批时间", approvalTimeText(detail)],
+    ["下一步/结果", actionMap[detail.status] || "-"],
+  ];
+}
+
+function approvalTimeText(detail) {
+  if (["待审批"].includes(detail.status)) return "-";
+  if (detail.status === "已失效") return "2026-06-04 09:00:00";
+  return detail.approvedAt || "-";
+}
+
+function flowIcon(status) {
+  return {
+    "待审批": "clock",
+    "已驳回": "alert",
+    "已失效": "clock",
+    "待执行": "clock",
+    "升级中": "refresh",
+    "已完成": "check",
+    "已结束": "close",
+  }[status] || "info";
+}
+
+function renderApprovalTimeline(detail) {
+  const items = [
+    ["创建任务", detail.creator, detail.createdAt, "创建 OTA 升级任务", "done"],
+    ["提交审批", detail.creator, detail.submittedAt, "提交至产线负责人审批", "done"],
+  ];
+  if (detail.status === "待审批") items.push(["等待审批", detail.approver, "-", "产线负责人处理中", "active"]);
+  if (detail.status === "已驳回") items.push(["审批驳回", detail.approver, detail.approvedAt, detail.rejectReason, "error"]);
+  if (detail.status === "已失效") items.push(["审批失效", "系统", "2026-06-04 09:00:00", detail.invalidReason, "error"]);
+  if (["待执行", "升级中", "已完成", "已结束"].includes(detail.status)) items.push(["审批通过", detail.approver, detail.approvedAt, "审批通过，任务进入执行队列", "done"]);
+  if (detail.status === "待执行") items.push(["等待执行", "系统", detail.startAt, "未到任务下发时间，等待自动执行", "active"]);
+  if (["升级中", "已完成", "已结束"].includes(detail.status)) items.push(["开始下发", "系统", detail.startAt, "到达任务开始时间，开始下发 OTA 指令", "done"]);
+  if (detail.status === "升级中") items.push(["执行中", "系统", "-", `已处理 ${detail.success + detail.failed} / ${detail.total} 台`, "active"]);
+  if (detail.status === "已完成") items.push(["任务完成", "系统", "2026-06-12 18:30:22", "所有纳入设备已有最终结果", "done"]);
+  if (detail.status === "已结束") items.push(["手动结束", detail.creator, detail.endedAt, detail.endReason, "error"]);
+  return `
+    <div class="approval-timeline">
+      ${items.map(([title, actor, time, desc, type]) => `
+        <div class="timeline-item ${type}">
+          <span></span>
+          <div>
+            <strong>${title}</strong>
+            <p>${actor} · ${time}</p>
+            <em>${desc}</em>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderFlowStages(detail) {
+  const stages = flowStageData(detail);
+  const percent = flowProgressPercent(detail);
+  return `
+    <div class="flow-stage-board" aria-label="任务阶段进度">
+      <div class="flow-stage-track" style="--percent:${percent}%">
+        ${stages.map((stage, index) => `
+          <div class="flow-stage-dot ${stage.type}">
+            <i>${stage.type === "done" ? icon("check") : stage.type === "error" ? icon("close") : icon(stage.icon)}</i>
+          </div>
+        `).join("")}
+      </div>
+      <div class="flow-stage-cards">
+        ${stages.map(stage => `
+          <article class="flow-stage-card ${stage.type}">
+            <span>${stage.date}</span>
+            <strong>${stage.title}</strong>
+            <p>${stage.body}</p>
+          </article>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function flowStageData(detail) {
+  const approvalDone = ["待执行", "升级中", "已完成", "已结束"].includes(detail.status);
+  const executionStarted = ["升级中", "已完成", "已结束"].includes(detail.status);
+  const stages = [
+    { title: "创建任务", date: "06月03日", body: "创建 OTA 升级任务，完成基础信息与升级策略配置。", type: "done", icon: "log" },
+    { title: "提交审批", date: "06月03日", body: "任务提交至产线负责人审批，等待审批结果。", type: "done", icon: "users" },
+    { title: "审批结果", date: "06月03日", body: "等待产线负责人确认发布风险与升级范围。", type: "pending", icon: "shield" },
+    { title: "等待执行", date: "06月10日", body: "审批通过后进入执行队列，等待到达任务开始时间。", type: "pending", icon: "clock" },
+    { title: "OTA 下发", date: "06月10日-06月17日", body: "系统按策略下发 OTA 指令，并接收设备升级结果。", type: "pending", icon: "refresh" },
+    { title: "任务结束", date: "06月17日", body: "任务窗口结束后汇总成功、失败与异常设备结果。", type: "pending", icon: "check" },
+  ];
+
+  if (detail.status === "待审批") {
+    stages[2] = { ...stages[2], body: "当前等待产线负责人审批，审批通过后进入待执行状态。", type: "active" };
+  } else if (detail.status === "已驳回") {
+    stages[2] = { ...stages[2], body: `审批未通过：${detail.rejectReason}`, type: "error" };
+  } else if (detail.status === "已失效") {
+    stages[2] = { ...stages[2], body: `审批已失效：${detail.invalidReason}`, type: "error" };
+  } else if (approvalDone) {
+    stages[2] = { ...stages[2], body: "审批通过，任务进入待执行队列。", type: "done" };
+  }
+
+  if (detail.status === "待执行") {
+    stages[3] = { ...stages[3], body: `计划 ${detail.startAt} 自动开始下发。`, type: "active" };
+  } else if (executionStarted) {
+    stages[3] = { ...stages[3], body: "已到达任务开始时间，系统已开始下发。", type: "done" };
+  }
+
+  if (detail.status === "升级中") {
+    stages[4] = { ...stages[4], body: `执行中，已处理 ${detail.success + detail.failed} / ${detail.total} 台设备。`, type: "active" };
+  } else if (detail.status === "已完成") {
+    stages[4] = { ...stages[4], type: "done" };
+    stages[5] = { ...stages[5], body: "所有纳入设备已有最终升级结果。", type: "done" };
+  } else if (detail.status === "已结束") {
+    stages[4] = { ...stages[4], body: "执行过程中被用户提前结束。", type: "error" };
+    stages[5] = { ...stages[5], body: detail.endReason, type: "error" };
+  }
+
+  return stages;
+}
+
+function renderFlowExecutionProgress(detail) {
+  if (!["升级中", "已完成", "已结束"].includes(detail.status)) return "";
+  const processed = detail.success + detail.failed;
+  const remaining = Math.max(detail.total - processed, 0);
+  const successRate = detail.total ? (detail.success / detail.total) * 100 : 0;
+  const failedRate = detail.total ? (detail.failed / detail.total) * 100 : 0;
+  const pendingRate = Math.max(100 - successRate - failedRate, 0);
+  return `
+    <div class="flow-execution-progress">
+      <div class="flow-progress-head">
+        <strong>执行进度</strong>
+        <span>已处理 ${Number(processed).toLocaleString()} / ${Number(detail.total).toLocaleString()} 台，剩余 ${Number(remaining).toLocaleString()} 台</span>
+      </div>
+      <div class="flow-progress-bar" aria-label="执行进度">
+        <span class="success" style="width:${successRate}%"></span>
+        <span class="failed" style="width:${failedRate}%"></span>
+        <span class="pending" style="width:${pendingRate}%"></span>
+      </div>
+      <div class="flow-progress-legend">
+        <span><i class="success"></i>成功 ${Number(detail.success).toLocaleString()} 台</span>
+        <span><i class="failed"></i>失败 ${Number(detail.failed).toLocaleString()} 台</span>
+        <span><i class="pending"></i>未完成 ${Number(remaining).toLocaleString()} 台</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderExecutionOverview(detail) {
+  const stats = metricStats(detail);
+  if (!["升级中", "已完成", "已结束"].includes(detail.status)) {
+    const label = state.detailMetricMode === "versionFull" ? "升级规模" : state.detailMetricMode === "versionBatch" ? "计划成功下发数量" : "升级设备总数";
+    const value = state.detailMetricMode === "versionFull" ? "全量" : state.detailMetricMode === "versionBatch" ? `${Number(plannedBatchTotal()).toLocaleString()} 台` : `${Number(detail.total).toLocaleString()} 台`;
+    return `<div class="detail-metrics single"><div class="detail-metric blue"><span>${label}</span><strong>${value}</strong></div></div>`;
+  }
+  const cards = executionMetricCards(detail, stats);
+  const denominator = state.detailMetricMode === "versionBatch" ? plannedBatchTotal() : state.detailMetricMode === "versionFull" ? Math.max(stats.stocked + stats.dispatchedFailed, 1) : detail.total;
+  const successRate = denominator ? ((stats.upgradeSuccess / denominator) * 100).toFixed(1) : "0.0";
+  const failedRate = denominator ? ((stats.upgradeFailed / denominator) * 100).toFixed(1) : "0.0";
+  return `
+    <div class="detail-metrics">
+      ${cards.map(([label, value, tone]) => `<div class="detail-metric ${tone}"><span>${label}</span><strong>${value}</strong></div>`).join("")}
+      <div class="detail-result-bar">
+        <span style="width:${successRate}%"></span>
+        <em style="width:${failedRate}%"></em>
+      </div>
+    </div>
+  `;
+}
+
+function executionMetricCards(detail, stats) {
+  if (state.detailMetricMode === "versionFull") {
+    return [
+      ["已匹配数", `${Number(stats.stocked).toLocaleString()} 台`, "blue"],
+      ["升级成功", `${Number(stats.upgradeSuccess).toLocaleString()} 台`, "green"],
+      ["升级失败", `${Number(stats.upgradeFailed).toLocaleString()} 台`, "red"],
+      [detail.status === "已结束" ? "停止继续匹配" : "匹配状态", detail.status === "已完成" ? "匹配完成" : "动态匹配中", "gray"],
+    ];
+  }
+  if (state.detailMetricMode === "versionBatch") {
+    const plan = plannedBatchTotal();
+    const rate = plan ? ((stats.stocked / plan) * 100).toFixed(1) : "0.0";
+    return [
+      ["计划成功下发数量", `${Number(plan).toLocaleString()} 台`, "blue"],
+      ["已匹配数", `${Number(stats.stocked).toLocaleString()} (${rate}%)`, "green"],
+      ["升级失败", `${Number(stats.upgradeFailed).toLocaleString()} 台`, "red"],
+      ["待匹配名额", `${Number(Math.max(plan - stats.stocked, 0)).toLocaleString()} 台`, "gray"],
+    ];
+  }
+  const successRate = detail.total ? ((stats.upgradeSuccess / detail.total) * 100).toFixed(1) : "0.0";
+  const failedRate = detail.total ? ((stats.upgradeFailed / detail.total) * 100).toFixed(1) : "0.0";
+  return [
+    ["升级设备总数", Number(detail.total).toLocaleString(), "blue"],
+    ["升级成功", `${Number(stats.upgradeSuccess).toLocaleString()} (${successRate}%)`, "green"],
+    ["升级失败", `${Number(stats.upgradeFailed).toLocaleString()} (${failedRate}%)`, "red"],
+    ["进行中/未处理", `${Number(detail.running + detail.pending).toLocaleString()} 台`, "gray"],
+  ];
+}
+
+function renderExceptionSummary(detail) {
+  return `
+    <h3 class="section-title">${icon("alert")}异常分类</h3>
+    <div class="exception-list">
+      <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>设备离线或长时间未上报</span><span class="mini-tag">${Math.max(detail.failed - 5, 0)}台</span></div>
+      <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>升级超时或设备主动失败</span><span class="mini-tag">${Math.min(detail.failed, 5)}台</span></div>
+    </div>
+    <button class="btn" type="button" data-action="download-exception" style="margin-top: 12px">${icon("download")}下载异常明细</button>
+  `;
+}
+
+function renderDeviceDetailTable(detail) {
+  return `
+    <h3 class="section-title">${icon("layer")}设备明细</h3>
+    <div class="toolbar">
+      <label class="field-control search">${icon("search")}<input placeholder="请输入设备ID,按Enter搜索" aria-label="设备ID搜索" /></label>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>设备ID</th><th>源版本</th><th>目标版本</th><th>所属大区</th><th>下发状态</th><th>升级状态</th><th>完成时间</th><th>失败原因</th><th>最近上报时间</th></tr></thead>
+        <tbody>${deviceRows.map((id, index) => {
+          const failed = index < Math.min(detail.failed, 3);
+          const success = index < Math.max(detail.success, 4) && !failed;
+          return `<tr><td>${id}</td><td>23.110.105.${index % 2 ? "46" : "43"}</td><td>${detail.targetVersion}</td><td>${detail.region}</td><td>已下发</td><td>${failed ? statusTag("异常") : statusTag(success ? "已完成" : "升级中")}</td><td>${success || failed ? "2026-06-10 11:32:18" : "-"}</td><td>${failed ? "设备离线，升级状态未回传" : "-"}</td><td>2026-06-10 11:35:22</td></tr>`;
+        }).join("")}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderOperationRecords(detail) {
+  const records = [
+    ["创建任务", detail.creator, detail.createdAt, "创建 OTA 升级任务"],
+    ["提交审批", detail.creator, detail.submittedAt, "提交至产线负责人审批"],
+  ];
+  if (detail.status === "待审批") records.push(["等待审批", detail.approver, "-", "产线负责人处理中"]);
+  if (detail.status === "已驳回") records.push(["审批驳回", detail.approver, detail.approvedAt, detail.rejectReason]);
+  if (detail.status === "已失效") records.push(["审批失效", "系统", "2026-06-04 09:00:00", detail.invalidReason]);
+  if (["待执行", "升级中", "已完成", "已结束"].includes(detail.status)) records.push(["审批通过", detail.approver, detail.approvedAt, "审批通过，任务进入执行队列"]);
+  if (["升级中", "已完成", "已结束"].includes(detail.status)) records.push(["开始下发", "系统", detail.startAt, "到达任务开始时间，开始下发 OTA 指令"]);
+  if (detail.status === "已完成") records.push(["任务完成", "系统", "2026-06-12 18:30:22", "所有纳入设备已有最终结果"]);
+  if (detail.status === "已结束") records.push(["手动结束", "汤彦珊", detail.endedAt, detail.endReason]);
+  return `
+    <h3 class="section-title">${icon("log")}操作记录</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>操作动作</th><th>操作人</th><th>操作时间</th><th>说明</th></tr></thead>
+        <tbody>${records.map(row => `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td title="${row[3]}">${row[3]}</td></tr>`).join("")}</tbody>
+      </table>
+    </div>
   `;
 }
 
@@ -1134,19 +2396,38 @@ function permissionLabel(text, disabled) {
   `;
 }
 
-function pagination(total, pages) {
+function pagination(total, pages, options = {}) {
+  const page = Math.min(Math.max(Number(options.page || 1), 1), pages);
+  const pageSize = Number(options.pageSize || 20);
+  const scope = options.scope || "default";
+  const visiblePages = pageWindow(page, pages);
   return `
     <div class="pagination" aria-label="分页">
       <span>共 ${total} 条</span>
-      <button class="page-size" type="button">20条/页 ${icon("chevron")}</button>
-      <button class="page-btn" type="button" aria-label="上一页" disabled>‹</button>
-      ${Array.from({ length: Math.min(pages, 7) }, (_, i) => `<button class="page-btn ${i === 0 ? "active" : ""}" type="button">${i + 1}</button>`).join("")}
-      <button class="page-btn" type="button" aria-label="下一页">›</button>
+      <button class="page-size" type="button" data-action="change-page-size" data-scope="${scope}">${pageSize}条/页 ${icon("chevron")}</button>
+      <button class="page-btn" type="button" aria-label="上一页" data-action="change-page" data-scope="${scope}" data-page="${page - 1}" ${page <= 1 ? "disabled" : ""}>‹</button>
+      ${visiblePages.map(item => item === "..."
+        ? `<span class="page-ellipsis">...</span>`
+        : `<button class="page-btn ${item === page ? "active" : ""}" type="button" data-action="change-page" data-scope="${scope}" data-page="${item}">${item}</button>`
+      ).join("")}
+      <button class="page-btn" type="button" aria-label="下一页" data-action="change-page" data-scope="${scope}" data-page="${page + 1}" ${page >= pages ? "disabled" : ""}>›</button>
       <span>前往</span>
-      <input class="page-input" value="1" aria-label="页码" />
+      <input class="page-input" value="${page}" aria-label="页码" data-page-jump data-scope="${scope}" data-pages="${pages}" />
       <span>页</span>
     </div>
   `;
+}
+
+function pageWindow(page, pages) {
+  if (pages <= 7) return Array.from({ length: pages }, (_, index) => index + 1);
+  const items = [1];
+  const start = Math.max(2, page - 1);
+  const end = Math.min(pages - 1, page + 1);
+  if (start > 2) items.push("...");
+  for (let i = start; i <= end; i += 1) items.push(i);
+  if (end < pages - 1) items.push("...");
+  items.push(pages);
+  return items;
 }
 
 function renderPortal() {
@@ -1176,12 +2457,7 @@ function renderPreviewModal() {
           <button class="modal-close" data-action="close-modal" aria-label="关闭">${icon("close")}</button>
         </header>
         <div class="modal-body">
-          <div class="toolbar" style="margin-bottom: 14px">
-            <span class="text-muted">异常场景切换：</span>
-            <button class="chip" data-preview="mixed">存在可升级+异常</button>
-            <button class="chip" data-preview="blocked">可升级为0</button>
-            <button class="chip" data-preview="clean">无异常</button>
-          </div>
+          <div class="preview-modal-switch">${renderPreviewScenarioSwitch()}</div>
           ${renderPreviewContent(false)}
         </div>
         <footer class="modal-footer">
@@ -1204,87 +2480,99 @@ function previewData() {
   return { ...scenario, total: meta.devices };
 }
 
+function renderPreviewVersionRange() {
+  if (state.strategy !== "version") return "-";
+  const selectedSet = new Set(state.selectedVersions);
+  const rows = firmwareVersions
+    .filter(item => selectedSet.has(item.version) && !(state.packageType === "diff" && !item.diffReady))
+    .map(item => {
+      const deviceCount = state.quantityMode === "full" ? "全量" : `${Number(state.batchQuantity || 0).toLocaleString()} 台`;
+      return `
+        <tr>
+          <td>${item.version}</td>
+          <td>${deviceCount}</td>
+        </tr>
+      `;
+    }).join("");
+
+  if (!rows) return `<span class="empty-inline">未选择源版本</span>`;
+
+  return `
+    <div class="preview-version-scope">
+      <div class="preview-version-head">
+        <span>已选源版本</span>
+        <strong>${state.selectedVersions.length} 个</strong>
+      </div>
+      <table class="preview-version-table">
+        <thead>
+          <tr>
+            <th>源版本号</th>
+            <th>升级设备数</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
 function renderPreviewContent(compact) {
   const meta = strategyMeta[state.strategy];
   const data = previewData();
   const exceptions = state.previewScenario !== "clean";
+  const regions = state.selectedRegions.length
+    ? state.selectedRegions.map(region => `<span class="mini-tag blue">${region}</span>`).join("")
+    : "-";
   return `
     <div class="preview-alert ${data.alertClass}">
       ${icon(data.alertClass === "success" ? "check" : "alert")}
       <div><strong>${data.alertTitle}</strong><br /><span>${data.alertText}</span></div>
     </div>
-    <div class="release-route">
-      <div>
-        <span>发布后状态</span>
-        <strong>${state.strategy === "manual" ? "待执行" : "待审批"}</strong>
-      </div>
-      <div>
-        <span>目标设备</span>
-        <strong>${meta.centerTargets.toLocaleString()} 台</strong>
-      </div>
-      <div>
-        <span>已过滤设备</span>
-        <strong>${meta.filteredOut.toLocaleString()} 台</strong>
-      </div>
-      <div>
-        <span>待确认归属</span>
-        <strong>${meta.candidates.toLocaleString()} 台</strong>
-      </div>
-    </div>
     <div class="preview-layout ${compact ? "compact" : ""}">
-      <div class="modal-section">
+      <div class="modal-section preview-wide-section">
         <h3>基本信息</h3>
-        <div class="info-grid">
+        <div class="info-grid preview-basic-grid">
           <dl>
-            <dt>任务名称：</dt><dd>IPC-杭州低功耗_安全补丁升级</dd>
-            <dt>目标固件版本：</dt><dd><button class="link-btn">23.422.209.17</button></dd>
-            <dt>任务执行大区：</dt><dd><span class="mini-tag blue">中国 / 杭州低功耗</span><span class="mini-tag blue">中国 / 杭州</span></dd>
-            <dt>任务起止时间：</dt><dd>2026-06-03 09:00:00 ~ 2026-06-06 18:00:00</dd>
-            <dt>升级说明：</dt><dd>修复低功耗设备夜间唤醒异常，按杭州低功耗大区灰度发布。</dd>
+            <dt>任务名称：</dt><dd>${state.form.taskName || "-"}</dd>
+            <dt>目标固件版本：</dt><dd><button class="link-btn">${state.form.targetVersion || "-"}</button></dd>
+            <dt>任务执行大区：</dt><dd class="preview-tag-list">${regions}</dd>
+            <dt>任务起止时间：</dt><dd>${state.taskStartAt || "-"} ~ ${state.taskEndAt || "-"}</dd>
+            <dt>升级说明：</dt><dd class="preview-wide-value">${state.form.upgradeDesc || "-"}</dd>
           </dl>
         </div>
       </div>
-      <div class="modal-section">
+      <div class="modal-section preview-wide-section">
         <h3>升级策略</h3>
-        <div class="info-grid">
+        <div class="info-grid preview-strategy-grid">
           <dl>
             <dt>升级包：</dt><dd><span class="mini-tag blue">${state.packageType === "whole" ? "整包" : "差分包"}</span></dd>
             <dt>升级策略：</dt><dd>${meta.title}</dd>
-            <dt>版本规则：</dt><dd>${state.strategy === "version" ? ({ all: "全部版本升级", include: "仅指定版本升级", exclude: "排除指定版本不升级" }[state.versionRule]) : "-"}</dd>
             <dt>升级数量：</dt><dd>${state.quantityMode === "full" ? "全量" : "批量"}</dd>
             <dt>审批流程：</dt><dd>${state.strategy === "manual" ? "无需审批" : "需产线负责人审批"}</dd>
+            <dt class="preview-version-label">版本范围：</dt><dd class="preview-version-cell">${renderPreviewVersionRange()}</dd>
           </dl>
         </div>
       </div>
-    </div>
-    <div class="modal-section">
-      <h3>任务预览</h3>
-      <div class="preview-cards">
-        <div class="preview-card blue"><span>选定设备总数</span><strong>${data.total}</strong></div>
-        <div class="preview-card green"><span>可升级设备数</span><strong>${data.good}</strong></div>
-        <div class="preview-card orange"><span>不可升级设备数</span><strong>${data.bad}</strong></div>
-      </div>
-    </div>
-    <div class="modal-section">
-      <h3>发布校验闭环</h3>
-      <div class="publish-checks">
-        <span class="validation-item pass">${icon("check")} 执行周期合规</span>
-        <span class="validation-item pass">${icon("check")} 升级数量合规</span>
-        <span class="validation-item pass">${icon("check")} 设备无并发升级冲突</span>
-        <span class="validation-item ${state.packageType === "diff" ? "warn" : "pass"}">${icon(state.packageType === "diff" ? "alert" : "check")} ${state.packageType === "diff" ? "差分包需继续校验" : "整包兼容性通过"}</span>
-      </div>
-    </div>
-    ${exceptions ? `
-      <div class="modal-section">
-        <h3 style="border-left-color: var(--orange); color: var(--orange)">异常分类明细</h3>
-        <div class="exception-list">
-          <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>已是目标版本：设备当前版本与目标固件版本一致</span><span class="mini-tag">${state.previewScenario === "blocked" ? Math.ceil(data.bad * 0.42) : Math.min(data.bad, 2)}台</span></div>
-          <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>${state.packageType === "diff" ? "无可用差分包：源版本未匹配差分基线" : "设备不在任务执行大区或机型不匹配"}</span><span class="mini-tag">${state.previewScenario === "blocked" ? Math.floor(data.bad * 0.58) : Math.max(data.bad - 2, 0)}台</span></div>
+      <div class="modal-section preview-wide-section">
+        <h3>任务预览</h3>
+        <div class="preview-cards">
+          <div class="preview-card blue"><span>选定设备总数</span><strong>${data.total}</strong></div>
+          <div class="preview-card green"><span>可升级设备数</span><strong>${data.good}</strong></div>
+          <div class="preview-card orange"><span>不可升级设备数</span><strong>${data.bad}</strong></div>
         </div>
-        <div class="suggestion">${icon("info")} 建议下载异常明细排查；存在部分可升级时，可过滤异常设备后继续发布。</div>
-        <button class="btn" type="button" data-action="download-exception" style="margin-top: 12px">${icon("download")}下载异常文件明细</button>
       </div>
-    ` : ""}
+      ${exceptions ? `
+        <div class="modal-section preview-wide-section">
+          <h3 style="border-left-color: var(--orange); color: var(--orange)">异常分类明细</h3>
+          <div class="exception-list">
+            <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>已是目标版本：设备当前版本与目标固件版本一致</span><span class="mini-tag">${state.previewScenario === "blocked" ? Math.ceil(data.bad * 0.42) : Math.min(data.bad, 2)}台</span></div>
+            <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>${state.packageType === "diff" ? "无可用差分包：源版本未匹配差分基线" : "设备不在任务执行大区或机型不匹配"}</span><span class="mini-tag">${state.previewScenario === "blocked" ? Math.floor(data.bad * 0.58) : Math.max(data.bad - 2, 0)}台</span></div>
+          </div>
+          <div class="suggestion">${icon("info")} 建议下载异常明细排查；存在部分可升级时，可过滤异常设备后继续发布。</div>
+          <button class="btn" type="button" data-action="download-exception" style="margin-top: 12px">${icon("download")}下载异常文件明细</button>
+        </div>
+      ` : ""}
+      </div>
   `;
 }
 
@@ -1297,23 +2585,31 @@ function renderRegionModal() {
   return `
     <div class="modal-backdrop" data-action="close-modal">
       <section class="modal medium" role="dialog" aria-modal="true" aria-labelledby="regionTitle" data-stop>
-        <header class="modal-header"><span id="regionTitle">选择当前中心可管理区域</span><button class="modal-close" data-action="close-modal">${icon("close")}</button></header>
+        <header class="modal-header"><span id="regionTitle">选择地区</span><button class="modal-close" data-action="close-modal">${icon("close")}</button></header>
         <div class="modal-body">
-          <div class="split-shell" style="grid-template-columns: 180px 1fr; min-height: 260px">
-            <div class="role-sidebar">
-              <button class="role-row active">中国大区中心</button>
-              <button class="role-row" disabled>亚洲大区</button>
-              <button class="role-row" disabled>北美大区</button>
-              <button class="role-row" disabled>欧洲大区</button>
+          <div class="region-picker-panel">
+            <div class="region-picker-toolbar">
+              <span class="text-muted">已选择 ${state.selectedRegions.length} 个地区</span>
+              <div>
+                <button class="link-btn" type="button" data-action="select-all-regions">全选</button>
+                <button class="link-btn" type="button" data-action="clear-regions">清空</button>
+              </div>
             </div>
-            <div class="role-content" style="padding: 20px">
-              ${["杭州", "杭州低功耗", "深圳", "成都", "上海"].map((item, index) => `
-                <button class="role-row ${index === 1 ? "active" : ""}" data-action="choose-region">${index === 1 ? "✓ " : ""}${item}</button>
+            <div class="region-option-list">
+              ${regionOptions.map(region => `
+                <label class="region-option" data-action="toggle-region" data-region="${region}">
+                  <input type="checkbox" ${state.selectedRegions.includes(region) ? "checked" : ""} />
+                  <span>${region}</span>
+                </label>
               `).join("")}
-              <div class="suggestion">${icon("info")} 当前中心只允许选择中国大区下区域；跨大区任务需在对应中心新建。</div>
             </div>
+            <div class="suggestion">${icon("info")} 支持多选地区；未选择时默认按任务执行大区下发。</div>
           </div>
         </div>
+        <footer class="modal-footer">
+          <button class="btn" data-action="close-modal">取消</button>
+          <button class="btn primary" data-action="confirm-region">确定</button>
+        </footer>
       </section>
     </div>
   `;
@@ -1326,7 +2622,7 @@ function renderStatusModal() {
         <header class="modal-header"><span id="statusTitle">任务状态筛选</span><button class="modal-close" data-action="close-modal">${icon("close")}</button></header>
         <div class="modal-body">
           <div class="permission-group">
-            ${["全部", "待执行", "升级中", "已完成", "已结束", "待发布", "等待", "已驳回", "已失效"].map(label => `<button class="chip" data-action="choose-status">${label}</button>`).join("")}
+            ${["全部", ...Object.keys(taskStatusMeta)].map(label => `<button class="chip" data-action="choose-status">${label}</button>`).join("")}
           </div>
         </div>
       </section>
@@ -1405,6 +2701,9 @@ function bindEvents(root) {
     el.addEventListener("click", event => {
       const action = el.dataset.action;
       if (action === "close-modal" && event.target !== el && !el.classList.contains("modal-close") && !el.classList.contains("btn")) return;
+      if (["toggle-region", "remove-region", "select-all-regions", "clear-regions", "toggle-version", "toggle-all-versions", "remove-device", "clear-date-range"].includes(action)) {
+        event.stopPropagation();
+      }
       event.preventDefault();
       handleAction(action, el);
     });
@@ -1421,16 +2720,18 @@ function bindEvents(root) {
     });
   });
 
-  root.querySelectorAll("[data-radio='versionRule']").forEach(input => {
+  root.querySelectorAll("[data-radio='quantityMode']").forEach(input => {
     input.addEventListener("change", () => {
-      state.versionRule = input.value;
+      state.quantityMode = input.value;
+      if (state.quantityMode === "batch" && state.batchQuantity == null) state.batchQuantity = 0;
       render();
     });
   });
 
-  root.querySelectorAll("[data-radio='quantityMode']").forEach(input => {
-    input.addEventListener("change", () => {
-      state.quantityMode = input.value;
+  root.querySelectorAll("[data-package-card]").forEach(el => {
+    el.addEventListener("click", () => {
+      state.packageType = el.dataset.packageCard;
+      delete state.errors.strategy;
       render();
     });
   });
@@ -1438,6 +2739,9 @@ function bindEvents(root) {
   root.querySelectorAll("[data-strategy]").forEach(el => {
     el.addEventListener("click", () => {
       state.strategy = el.dataset.strategy;
+      delete state.errors.strategy;
+      delete state.errors.fileUpload;
+      delete state.errors.manualDevices;
       render();
     });
   });
@@ -1462,6 +2766,194 @@ function bindEvents(root) {
       render();
     });
   });
+
+  root.querySelectorAll("[data-field]").forEach(input => {
+    const isTextControl = input.matches("input, textarea");
+    if (isTextControl) {
+      input.addEventListener("input", () => updateFormField(input, false));
+      input.addEventListener("change", () => updateFormField(input, false));
+    } else {
+      input.addEventListener("change", () => updateFormField(input, true));
+    }
+  });
+
+  root.querySelectorAll("[data-manual-device-input]").forEach(input => {
+    input.addEventListener("change", () => updateManualDevice(input));
+    input.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        updateManualDevice(input);
+      }
+    });
+  });
+
+  root.querySelectorAll("[data-batch-quantity]").forEach(input => {
+    input.addEventListener("change", () => updateBatchQuantity(input));
+    input.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        updateBatchQuantity(input);
+      }
+    });
+  });
+
+  root.querySelectorAll("[data-page-jump]").forEach(input => {
+    input.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        jumpPage(input);
+      }
+    });
+    input.addEventListener("change", () => jumpPage(input));
+  });
+}
+
+function updateFormField(input, shouldRender = false) {
+  const key = input.dataset.field;
+  state.form[key] = input.value;
+  delete state.errors[key];
+
+  const field = input.closest(".field-stack");
+  field?.classList.remove("has-error");
+  field?.querySelector(".field-error")?.remove();
+
+  if (key === "taskName") {
+    const counter = field?.querySelector(".count");
+    if (counter) counter.textContent = `${input.value.length} / ${input.maxLength || 64}`;
+  }
+
+  if (shouldRender) render();
+}
+
+function updateBatchQuantity(input) {
+  state.batchQuantity = Math.max(0, Number(input.value || 0));
+  if (state.batchQuantity > 0) delete state.errors.batchQuantity;
+  render();
+}
+
+function updateManualDevice(input) {
+  const id = Number(input.dataset.deviceId);
+  const value = input.value.trim();
+  state.manualDevices = state.manualDevices.map((device, index) => {
+    if (device.id !== id) return device;
+    if (!value) return { ...device, deviceId: "", version: "", region: "", status: "", error: "" };
+    return {
+      ...device,
+      deviceId: value,
+      version: index % 2 === 0 ? "23.110.105.46" : "23.110.105.43",
+      region: "杭州低功耗",
+      status: "可升级",
+      error: "",
+    };
+  });
+  delete state.errors.manualDevices;
+  render();
+}
+
+function updateTaskDate(target, dateValue) {
+  const fallbackStart = addMinutes(new Date(), 5);
+  const currentStart = state.taskStartAt ? parseDateTime(state.taskStartAt) : fallbackStart;
+  const currentEnd = state.taskEndAt ? parseDateTime(state.taskEndAt) : addDays(currentStart, 7);
+  const picked = new Date(`${dateValue}T${target === "start" ? formatTime(currentStart) : formatTime(currentEnd)}`);
+  state.quickRangeDays = null;
+  if (target === "start") {
+    const nextEnd = picked > currentEnd ? addDays(picked, 1) : currentEnd;
+    state.taskStartAt = formatDateTime(picked);
+    state.taskEndAt = formatDateTime(nextEnd);
+  } else {
+    const nextEnd = picked < currentStart ? addDays(currentStart, 1) : picked;
+    state.taskEndAt = formatDateTime(nextEnd);
+  }
+  delete state.errors.taskTime;
+  render();
+}
+
+function resetDateRange() {
+  state.taskStartAt = "";
+  state.taskEndAt = "";
+  state.quickRangeDays = null;
+  state.errors.taskTime = "请选择任务起止时间";
+}
+
+function validateStep(step) {
+  const errors = {};
+  if (step === 1) {
+    if (!state.form.taskName.trim()) errors.taskName = "请输入任务名称";
+    if (!state.selectedRegions.length) errors.selectedRegions = "请选择任务执行大区";
+    if (!state.form.targetVersion) errors.targetVersion = "请选择目标固件版本";
+    if (!state.taskStartAt || !state.taskEndAt) errors.taskTime = "请选择任务起止时间";
+    if (!state.form.upgradeDesc.trim()) errors.upgradeDesc = "请输入任务升级说明";
+  }
+  if (step === 2) {
+    if (!state.packageType) errors.strategy = "请选择升级包类型";
+    if (!state.strategy) errors.strategy = "请选择升级策略";
+    if (state.strategy === "version" && !state.selectedVersions.length) errors.strategy = "请至少选择一个源版本";
+    if (state.strategy === "version" && state.quantityMode === "batch" && Number(state.batchQuantity) <= 0) errors.batchQuantity = "请输入大于 0 的统一下发数量";
+    if (state.strategy === "file" && state.fileUploadStatus !== "uploaded") errors.fileUpload = "请先上传设备清单";
+    if (state.strategy === "manual" && !state.manualDevices.some(device => device.deviceId && device.status === "可升级")) errors.manualDevices = "请至少添加一台可升级设备";
+    if (state.conditionRegionEnabled && !state.selectedRegions.length) errors.conditionRegion = "请选择指定地区";
+  }
+  state.errors = errors;
+  return Object.keys(errors);
+}
+
+function ensureStepValid(step) {
+  const keys = validateStep(step);
+  if (!keys.length) return true;
+  const firstMessage = state.errors[keys[0]];
+  showToast(firstMessage || "请完善必填信息");
+  render();
+  return false;
+}
+
+function setQuickRange(days, shouldRender = true) {
+  const start = addMinutes(new Date(), 5);
+  state.quickRangeDays = days;
+  state.taskStartAt = formatDateTime(start);
+  state.taskEndAt = formatDateTime(addDays(start, days));
+  delete state.errors.taskTime;
+  if (shouldRender) render();
+}
+
+function shiftCalendar(months) {
+  const today = startOfDay(new Date());
+  const fallbackStart = addMinutes(new Date(), 5);
+  const start = state.taskStartAt ? parseDateTime(state.taskStartAt) : fallbackStart;
+  const end = state.taskEndAt ? parseDateTime(state.taskEndAt) : addDays(start, 7);
+  const shiftedStart = new Date(start);
+  shiftedStart.setMonth(shiftedStart.getMonth() + months);
+  const safeStart = startOfDay(shiftedStart) < today ? addMinutes(new Date(), 5) : shiftedStart;
+  const durationDays = Math.max(1, Math.round((startOfDay(end) - startOfDay(start)) / (24 * 60 * 60 * 1000)));
+  state.quickRangeDays = null;
+  state.taskStartAt = formatDateTime(safeStart);
+  state.taskEndAt = formatDateTime(addDays(safeStart, durationDays));
+  render();
+}
+
+function changePage(scope, page) {
+  if (scope !== "task") return;
+  const pages = Math.ceil(133 / state.taskPageSize);
+  state.taskPage = Math.min(Math.max(page, 1), pages);
+  render();
+}
+
+function changePageSize(scope) {
+  if (scope !== "task") return;
+  const sizes = [10, 20, 50];
+  const currentIndex = sizes.indexOf(state.taskPageSize);
+  state.taskPageSize = sizes[(currentIndex + 1) % sizes.length];
+  state.taskPage = 1;
+  showToast(`已切换为 ${state.taskPageSize} 条/页`);
+  render();
+}
+
+function jumpPage(input) {
+  const scope = input.dataset.scope;
+  if (scope !== "task") return;
+  const pages = Number(input.dataset.pages || 1);
+  const value = Math.min(Math.max(Number(input.value || 1), 1), pages);
+  state.taskPage = value;
+  render();
 }
 
 function handleAction(action, el) {
@@ -1483,57 +2975,269 @@ function handleAction(action, el) {
       break;
     case "toggle-region-dropdown":
       state.regionDropdownOpen = !state.regionDropdownOpen;
+      state.conditionRegionDropdownOpen = false;
+      state.regionOperatorOpen = false;
       render();
+      break;
+    case "toggle-condition-region-dropdown":
+      if (!state.conditionRegionEnabled) {
+        showToast("请先勾选指定地区");
+        break;
+      }
+      state.conditionRegionDropdownOpen = !state.conditionRegionDropdownOpen;
+      state.regionDropdownOpen = false;
+      state.regionOperatorOpen = false;
+      render();
+      break;
+    case "toggle-region-operator":
+      if (!state.conditionRegionEnabled) {
+        showToast("请先勾选指定地区");
+        break;
+      }
+      state.regionOperatorOpen = !state.regionOperatorOpen;
+      state.regionDropdownOpen = false;
+      state.conditionRegionDropdownOpen = false;
+      render();
+      break;
+    case "toggle-condition-region-enabled":
+      state.conditionRegionEnabled = !state.conditionRegionEnabled;
+      state.conditionRegionDropdownOpen = false;
+      state.regionOperatorOpen = false;
+      if (!state.conditionRegionEnabled) delete state.errors.conditionRegion;
+      render();
+      break;
+    case "set-region-operator":
+      state.regionOperator = el.dataset.operator || "等于";
+      state.regionOperatorOpen = false;
+      render();
+      break;
+    case "toggle-region": {
+      const region = el.dataset.region;
+      if (!region) break;
+      if (state.selectedRegions.includes(region)) {
+        state.selectedRegions = state.selectedRegions.filter(item => item !== region);
+      } else {
+        state.selectedRegions = [...state.selectedRegions, region];
+      }
+      delete state.errors.selectedRegions;
+      delete state.errors.conditionRegion;
+      render();
+      break;
+    }
+    case "remove-region": {
+      const region = el.dataset.region;
+      state.selectedRegions = state.selectedRegions.filter(item => item !== region);
+      if (state.selectedRegions.length) delete state.errors.selectedRegions;
+      render();
+      break;
+    }
+    case "select-all-regions":
+      state.selectedRegions = [...regionOptions];
+      delete state.errors.selectedRegions;
+      delete state.errors.conditionRegion;
+      render();
+      break;
+    case "clear-regions":
+      state.selectedRegions = [];
+      render();
+      break;
+    case "toggle-version": {
+      const version = el.dataset.version;
+      if (!version) break;
+      if (state.selectedVersions.includes(version)) {
+        state.selectedVersions = state.selectedVersions.filter(item => item !== version);
+      } else {
+        state.selectedVersions = [...state.selectedVersions, version];
+      }
+      delete state.errors.strategy;
+      render();
+      break;
+    }
+    case "toggle-all-versions": {
+      const selectableVersions = firmwareVersions
+        .filter(item => !(state.packageType === "diff" && !item.diffReady))
+        .map(item => item.version);
+      const allChecked = selectableVersions.every(version => state.selectedVersions.includes(version));
+      state.selectedVersions = allChecked ? [] : selectableVersions;
+      if (state.selectedVersions.length) delete state.errors.strategy;
+      render();
+      break;
+    }
+    case "confirm-region":
+      closeModal();
+      state.regionDropdownOpen = false;
+      showToast("地区条件已更新");
       break;
     case "open-status-filter":
       openModal("status");
       break;
+    case "toggle-advanced-filter":
+      state.taskAdvancedOpen = !state.taskAdvancedOpen;
+      render();
+      break;
+    case "toggle-column-settings":
+      state.columnSettingsOpen = !state.columnSettingsOpen;
+      render();
+      break;
+    case "toggle-task-column": {
+      const column = el.dataset.column;
+      if (column && Object.prototype.hasOwnProperty.call(state.visibleTaskColumns, column)) {
+        state.visibleTaskColumns[column] = !state.visibleTaskColumns[column];
+        render();
+      }
+      break;
+    }
+    case "reset-task-columns":
+      state.visibleTaskColumns = Object.fromEntries(taskColumnOptions.map(([key]) => [key, true]));
+      render();
+      break;
+    case "save-task-columns":
+      state.columnSettingsOpen = false;
+      showToast("列设置已保存");
+      render();
+      break;
+    case "refresh-task-list":
+      showToast("列表已刷新");
+      break;
+    case "set-detail-status":
+      state.detailStatus = el.dataset.status || "升级中";
+      state.detailTab = "overview";
+      render();
+      break;
+    case "set-detail-metric-mode":
+      state.detailMetricMode = el.dataset.mode || "versionFull";
+      state.detailTab = "overview";
+      render();
+      break;
+    case "set-detail-tab":
+      state.detailTab = el.dataset.tab || "overview";
+      render();
+      break;
+    case "set-flow-tab":
+      state.flowTab = el.dataset.tab || "progress";
+      render();
+      break;
+    case "change-page":
+      changePage(el.dataset.scope, Number(el.dataset.page || 1));
+      break;
+    case "change-page-size":
+      changePageSize(el.dataset.scope);
+      break;
     case "open-preview":
       state.createStep = 3;
-      render();
+      render({ preserveScroll: false });
       break;
     case "close-modal":
       closeModal();
       break;
     case "save-task":
-      showToast("任务草稿已保存");
+      state.draftTask = snapshotDraftTask();
+      state.editingDraft = false;
+      state.regionDropdownOpen = false;
+      state.conditionRegionDropdownOpen = false;
+      state.regionOperatorOpen = false;
+      state.datePickerOpen = false;
+      showToast("任务草稿已保存，可在任务列表编辑");
+      setRoute("task-list");
+      break;
+    case "edit-draft":
+      restoreDraftTask();
+      showToast("已进入草稿编辑");
+      break;
+    case "copy-rebuild-task":
+      state.editingDraft = true;
+      resetCreateTaskState();
+      state.createStep = 2;
+      showToast("已复制原任务配置，可重新创建发布");
+      setRoute("create-task");
+      break;
+    case "delete-draft":
+      state.draftTask = null;
+      showToast("草稿已删除");
+      render();
+      break;
+    case "set-quick-range":
+      setQuickRange(Number(el.dataset.days || 7));
+      break;
+    case "toggle-date-picker":
+      state.datePickerOpen = !state.datePickerOpen;
+      state.regionDropdownOpen = false;
+      state.conditionRegionDropdownOpen = false;
+      state.regionOperatorOpen = false;
+      render();
+      break;
+    case "select-date":
+      updateTaskDate(el.dataset.target || "start", el.dataset.date);
+      break;
+    case "clear-date-range":
+      resetDateRange();
+      state.datePickerOpen = true;
+      render();
+      break;
+    case "confirm-date-range":
+      state.datePickerOpen = false;
+      render();
+      break;
+    case "shift-calendar":
+      shiftCalendar(Number(el.dataset.shift || 0));
       break;
     case "publish-task":
+      if (!ensureStepValid(1) || !ensureStepValid(2)) break;
       closeModal();
       state.createStep = 4;
       showToast(state.strategy === "manual" ? "发布成功，任务已进入待执行" : "任务已提交，等待产线负责人审批");
-      render();
+      render({ preserveScroll: false });
       break;
     case "next-create-step":
+      if (!ensureStepValid(state.createStep)) break;
       state.regionDropdownOpen = false;
+      state.conditionRegionDropdownOpen = false;
+      state.regionOperatorOpen = false;
       state.createStep = Math.min(state.createStep + 1, 4);
-      render();
+      render({ preserveScroll: false });
       break;
     case "prev-create-step":
       state.regionDropdownOpen = false;
+      state.conditionRegionDropdownOpen = false;
+      state.regionOperatorOpen = false;
       state.createStep = Math.max(state.createStep - 1, 1);
-      render();
+      render({ preserveScroll: false });
       break;
     case "cancel-create":
-      state.route = "task-list";
       state.createStep = 1;
-      render();
+      setRoute("task-list");
       break;
     case "mock-upload":
-      showToast("已读取导入文件，发现 1250 台设备");
+      simulateFileUpload();
+      delete state.errors.fileUpload;
       break;
     case "download-template":
       showToast("设备导入模板已生成");
       break;
-    case "validate-manual":
-      showToast("校验完成：2 台设备可升级，1 台异常");
+    case "add-manual-device":
+      if (state.manualDevices.length >= 10) {
+        showToast("手动导入最多支持 10 台设备");
+        break;
+      }
+      state.manualDevices = [
+        ...state.manualDevices,
+        { id: state.manualNextId, deviceId: "", version: "", region: "", status: "", error: "" },
+      ];
+      state.manualNextId += 1;
+      showToast("已添加设备输入行");
+      render();
       break;
-    case "remove-version":
-      showToast("版本已从当前策略中删减");
-      break;
-    case "remove-device":
+    case "remove-device": {
+      const id = Number(el.dataset.deviceId);
+      if (state.manualDevices.length <= 1) {
+        showToast("至少保留一行设备输入");
+        break;
+      }
+      state.manualDevices = state.manualDevices.filter(device => device.id !== id);
       showToast("设备已从手动导入列表删减");
+      render();
       break;
+    }
     case "download-exception":
       showToast("异常明细已生成");
       break;
@@ -1557,23 +3261,17 @@ function handleAction(action, el) {
     case "reset":
       showToast("筛选条件已重置");
       break;
-    case "choose-region":
-      closeModal();
-      showToast("当前大区已切换");
-      break;
     case "choose-status":
       closeModal();
       showToast("任务状态筛选已更新");
       break;
     case "save-user-permission":
       showToast("用户权限已保存");
-      state.route = "user-list";
-      render();
+      setRoute("user-list");
       break;
     case "save-role-permission":
       showToast("角色权限已保存");
-      state.route = "role-list";
-      render();
+      setRoute("role-list");
       break;
     case "delete-role":
       showToast("默认角色不允许删除");
