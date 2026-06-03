@@ -816,18 +816,59 @@ tbody tr:hover .sticky-action-col {
   background: #fff;
 }
 
-.task-filter-grid,
-.advanced-filter-grid {
+.task-filter-grid {
   display: grid;
-  grid-template-columns: minmax(130px, 160px) minmax(150px, 180px) minmax(320px, 1fr) minmax(320px, 440px) auto auto auto;
-  gap: 8px;
-  align-items: center;
+  grid-template-columns:
+    minmax(220px, 1.1fr)
+    minmax(118px, 0.58fr)
+    minmax(126px, 0.62fr)
+    minmax(112px, 0.52fr)
+    minmax(154px, 0.72fr)
+    minmax(150px, 0.7fr)
+    auto;
+  gap: 10px;
+  align-items: end;
 }
 
-.advanced-filter-grid {
-  grid-template-columns: repeat(4, minmax(180px, 1fr));
-  padding-top: 12px;
-  border-top: 1px dashed #d8e1ee;
+.filter-field {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  color: #617086;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.filter-field > span:first-child {
+  line-height: 18px;
+}
+
+.filter-field .field-control {
+  width: 100%;
+  min-height: 36px;
+  color: #344256;
+}
+
+.filter-keyword .field-control {
+  padding-left: 12px;
+}
+
+.filter-created-time {
+  min-width: 150px;
+}
+
+.filter-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  align-self: end;
+  white-space: nowrap;
+}
+
+.filter-actions .btn {
+  min-height: 36px;
+  padding-inline: 14px;
 }
 
 .filter-select {
@@ -845,12 +886,32 @@ tbody tr:hover .sticky-action-col {
 }
 
 .task-search {
-  min-width: 320px;
+  min-width: 0;
+}
+
+.task-search .icon {
+  color: #7a8799;
+}
+
+.date-field {
+  gap: 10px;
+  padding: 0 12px;
+}
+
+.date-field input {
+  min-width: 0;
+}
+
+.filter-combobox {
+  position: relative;
+}
+
+.filter-combobox .field-control {
   padding-left: 12px;
 }
 
-.task-search button {
-  width: 42px;
+.combo-trigger {
+  width: 36px;
   align-self: stretch;
   display: inline-grid;
   place-items: center;
@@ -860,9 +921,57 @@ tbody tr:hover .sticky-action-col {
   background: #fff;
 }
 
-.task-search button:hover {
+.combo-trigger:hover {
   color: var(--blue);
   background: #f7fbff;
+}
+
+.filter-combobox-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 35;
+  width: 100%;
+  min-width: 180px;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #d8e1ee;
+  border-radius: 6px;
+  padding: 6px;
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(20, 35, 70, 0.12);
+}
+
+.filter-option {
+  width: 100%;
+  min-height: 32px;
+  border: 0;
+  border-radius: 4px;
+  padding: 0 10px;
+  color: #233047;
+  background: transparent;
+  text-align: left;
+}
+
+.filter-option:hover,
+.filter-option.active {
+  color: var(--blue);
+  background: #f2f7ff;
+}
+
+.filter-empty {
+  display: block;
+  padding: 8px 10px;
+  color: #8a96a8;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.empty-row td {
+  height: 96px;
+  color: #8a96a8;
+  text-align: center;
+  background: #fff;
 }
 
 .table-toolbar {
@@ -4513,6 +4622,20 @@ tbody tr:hover .sticky-action-col {
   }
 }
 
+@media (max-width: 1500px) {
+  .task-filter-grid {
+    grid-template-columns: minmax(240px, 1fr) repeat(2, minmax(140px, 0.52fr)) minmax(154px, 0.64fr);
+  }
+
+  .filter-created-time {
+    min-width: 0;
+  }
+
+  .filter-actions {
+    justify-content: flex-end;
+  }
+}
+
 @media (max-width: 1024px) {
   :root {
     --sidebar-width: 210px;
@@ -4563,7 +4686,6 @@ tbody tr:hover .sticky-action-col {
   .import-panel,
   .task-stats,
   .task-filter-grid,
-  .advanced-filter-grid,
   .metrics-row,
   .detail-hero,
   .task-overview-body,
@@ -4602,6 +4724,19 @@ tbody tr:hover .sticky-action-col {
 
   .task-filter-panel {
     padding: 12px;
+  }
+
+  .filter-created-time {
+    min-width: 0;
+  }
+
+  .date-field input {
+    min-width: 0;
+  }
+
+  .filter-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .table-tools,

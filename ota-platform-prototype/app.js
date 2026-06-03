@@ -1,3 +1,24 @@
+function defaultTaskFilters() {
+  return {
+    keyword: "",
+    status: "全部",
+    creator: "",
+    createdDate: "",
+    method: "全部",
+    packageType: "全部",
+  };
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  }[char]));
+}
+
 const state = {
   route: "task-list",
   packageType: "whole",
@@ -35,7 +56,8 @@ const state = {
   uploadDeviceCount: 0,
   draftTask: null,
   editingDraft: false,
-  taskAdvancedOpen: false,
+  taskCreatorDropdownOpen: false,
+  taskFilters: defaultTaskFilters(),
   columnSettingsOpen: false,
   taskCompact: true,
   taskPage: 1,
@@ -98,14 +120,18 @@ const taskStatusMeta = {
 };
 
 const taskListRows = [
-  { name: "IPC-杭州低功耗_安全补丁升级", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-06-10 09:00:00~2026-06-17 09:00:00", result: null, region: "中国/杭州低功耗", status: "待审批", creator: "汤彦珊", createdAt: "2026-06-03 17:20:18" },
-  { name: "杭州低功耗灰度定时升级", method: "指定版本", quantityMode: "batch", planned: 5000, packageType: "差分包", targetVersion: "23.422.209.17", total: null, time: "2026-06-04 10:00:00~2026-06-11 10:00:00", result: null, region: "中国/杭州低功耗", status: "待执行", creator: "江锐", createdAt: "2026-06-03 16:42:05" },
-  { name: "文件导入_欧亚非补丁升级", method: "文件导入", packageType: "整包", targetVersion: "23.422.209.17", total: "664", time: "2026-06-01 18:59:01~2026-06-30 18:59:01", result: { success: 346, failed: 0, total: 664 }, region: "欧亚非", status: "升级中", creator: "钱江涛", createdAt: "2026-06-01 18:02:14" },
-  { name: "低功耗设备夜间唤醒修复", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-05-13 11:25:20~2026-06-02 11:25:20", result: { matched: 6505, success: 6488, failed: 17 }, region: "中国/杭州低功耗", status: "已完成", creator: "江锐", createdAt: "2026-05-13 11:22:42" },
-  { name: "黑光升级双光测试", method: "文件导入", packageType: "差分包", targetVersion: "23.110.105.46", total: "1196", time: "2026-05-19 16:33:42~2026-06-19 16:33:42", result: { success: 730, failed: 8, total: 1196 }, region: "中国/杭州", status: "已结束", creator: "钱江涛", createdAt: "2026-05-19 16:31:18" },
-  { name: "华拓测试数据异常明细", method: "文件导入", packageType: "整包", targetVersion: "23.422.209.17", total: "327", time: "2026-05-09 16:51:20~2026-08-09 16:51:20", result: null, region: "中国/杭州低功耗", status: "已驳回", creator: "江锐", createdAt: "2026-05-09 16:49:28" },
-  { name: "审批超时_安全补丁升级", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-05-09 16:40:34~2026-06-09 16:40:34", result: null, region: "欧亚非", status: "已失效", creator: "汤彦珊", createdAt: "2026-05-09 16:37:40" },
+  { id: "OTA202606030001", name: "IPC-杭州低功耗_安全补丁升级", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-06-10 09:00:00~2026-06-17 09:00:00", result: null, region: "中国/杭州低功耗", status: "待审批", creator: "汤彦珊", createdAt: "2026-06-03 17:20:18" },
+  { id: "OTA202606030002", name: "杭州低功耗灰度定时升级", method: "指定版本", quantityMode: "batch", planned: 5000, packageType: "差分包", targetVersion: "23.422.209.17", total: null, time: "2026-06-04 10:00:00~2026-06-11 10:00:00", result: null, region: "中国/杭州低功耗", status: "待执行", creator: "江锐", createdAt: "2026-06-03 16:42:05" },
+  { id: "OTA202606010001", name: "文件导入_欧亚非补丁升级", method: "文件导入", packageType: "整包", targetVersion: "23.422.209.17", total: "664", time: "2026-06-01 18:59:01~2026-06-30 18:59:01", result: { success: 346, failed: 0, total: 664 }, region: "欧亚非", status: "升级中", creator: "钱江涛", createdAt: "2026-06-01 18:02:14" },
+  { id: "OTA202605130001", name: "低功耗设备夜间唤醒修复", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-05-13 11:25:20~2026-06-02 11:25:20", result: { matched: 6505, success: 6488, failed: 17 }, region: "中国/杭州低功耗", status: "已完成", creator: "江锐", createdAt: "2026-05-13 11:22:42" },
+  { id: "OTA202605190001", name: "黑光升级双光测试", method: "文件导入", packageType: "差分包", targetVersion: "23.110.105.46", total: "1196", time: "2026-05-19 16:33:42~2026-06-19 16:33:42", result: { success: 730, failed: 8, total: 1196 }, region: "中国/杭州", status: "已结束", creator: "钱江涛", createdAt: "2026-05-19 16:31:18" },
+  { id: "OTA202605090002", name: "华拓测试数据异常明细", method: "文件导入", packageType: "整包", targetVersion: "23.422.209.17", total: "327", time: "2026-05-09 16:51:20~2026-08-09 16:51:20", result: null, region: "中国/杭州低功耗", status: "已驳回", creator: "江锐", createdAt: "2026-05-09 16:49:28" },
+  { id: "OTA202605090001", name: "审批超时_安全补丁升级", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-05-09 16:40:34~2026-06-09 16:40:34", result: null, region: "欧亚非", status: "已失效", creator: "汤彦珊", createdAt: "2026-05-09 16:37:40" },
 ];
+
+const taskStatusOptions = ["全部", "待发布", "待审批", "待执行", "升级中", "已完成", "已结束", "已驳回", "已失效"];
+const taskMethodOptions = ["全部", "指定版本", "文件导入", "手动导入"];
+const taskPackageOptions = ["全部", "整包", "差分包"];
 
 const taskColumnOptions = [
   ["method", "升级方式"],
@@ -524,6 +550,8 @@ function render(options = {}) {
   const preserveScroll = options.preserveScroll !== false;
   const scrollX = window.scrollX;
   const scrollY = window.scrollY;
+  const focusSelector = options.focusSelector;
+  const focusSelectionStart = options.focusSelectionStart;
   const app = document.getElementById("app");
   app.innerHTML = `
     ${renderTopbar()}
@@ -536,11 +564,20 @@ function render(options = {}) {
   `;
   bindEvents(app);
   renderPortal();
-  if (preserveScroll) {
-    window.requestAnimationFrame(() => window.scrollTo(scrollX, scrollY));
-  } else {
-    window.requestAnimationFrame(() => window.scrollTo(0, 0));
-  }
+  window.requestAnimationFrame(() => {
+    if (preserveScroll) {
+      window.scrollTo(scrollX, scrollY);
+    } else {
+      window.scrollTo(0, 0);
+    }
+    if (!focusSelector) return;
+    const focusTarget = app.querySelector(focusSelector);
+    if (!focusTarget) return;
+    focusTarget.focus({ preventScroll: true });
+    if (typeof focusSelectionStart === "number" && typeof focusTarget.setSelectionRange === "function") {
+      focusTarget.setSelectionRange(focusSelectionStart, focusSelectionStart);
+    }
+  });
 }
 
 function renderTopbar() {
@@ -658,6 +695,13 @@ function renderBreadcrumb() {
 }
 
 function renderTaskList() {
+  const rows = sortedTaskListRows();
+  const total = rows.length;
+  const pages = Math.max(Math.ceil(total / state.taskPageSize), 1);
+  state.taskPage = Math.min(Math.max(state.taskPage, 1), pages);
+  const pageStart = (state.taskPage - 1) * state.taskPageSize;
+  const visibleRows = rows.slice(pageStart, pageStart + state.taskPageSize);
+  const columnCount = visibleTaskColumnCount() + 3;
   return `
     <section class="page">
       ${renderTaskListHero()}
@@ -675,12 +719,13 @@ function renderTaskList() {
             </tr>
           </thead>
           <tbody>
-            ${renderDraftTaskRow()}
-            ${sortedTaskListRows().map(renderTaskTableRow).join("")}
+            ${visibleRows.length
+              ? visibleRows.map(renderTaskListRow).join("")
+              : `<tr class="empty-row"><td colspan="${columnCount}">暂无符合条件的任务</td></tr>`}
           </tbody>
         </table>
       </div>
-      ${pagination(133, Math.ceil(133 / state.taskPageSize), { page: state.taskPage, pageSize: state.taskPageSize, scope: "task" })}
+      ${pagination(total, pages, { page: state.taskPage, pageSize: state.taskPageSize, scope: "task" })}
     </section>
   `;
 }
@@ -735,45 +780,81 @@ function taskRowsForStats() {
 }
 
 function renderTaskFilters() {
+  const filters = state.taskFilters;
   return `
     <div class="task-filter-panel">
       <div class="task-filter-grid">
-        <button class="filter-select" type="button" data-action="open-status-filter">任务状态 ${icon("chevron")}</button>
-        <label class="field-control">
-          <select aria-label="创建人">
-            <option>全部创建人</option>
-            <option>汤彦珊</option>
-            <option>江锐</option>
-            <option>钱江涛</option>
-          </select>
+        <label class="filter-field filter-keyword">
+          <span>任务名称</span>
+          <span class="field-control task-search">
+            ${icon("search")}
+            <input type="search" value="${escapeHtml(filters.keyword)}" placeholder="请输入任务名称" aria-label="任务名称" data-task-filter="keyword" />
+          </span>
         </label>
-        <label class="field-control date-range">
-          ${icon("clock")}
-          <input placeholder="创建开始时间" aria-label="创建开始时间" />
-          <span class="date-split">至</span>
-          <input placeholder="创建结束时间" aria-label="创建结束时间" />
+        <label class="filter-field">
+          <span>任务状态</span>
+          <span class="field-control">
+            <select aria-label="任务状态" data-task-filter="status">
+              ${renderOptions(taskStatusOptions, filters.status)}
+            </select>
+          </span>
         </label>
-        <label class="field-control search task-search">
-          <input type="search" placeholder="任务名称 / 任务ID" aria-label="任务关键词搜索" />
-          <button type="button" data-action="query" aria-label="搜索任务">${icon("search")}</button>
+        <label class="filter-field">
+          <span>升级方式</span>
+          <span class="field-control">
+            <select aria-label="升级方式" data-task-filter="method">
+              ${renderOptions(taskMethodOptions, filters.method)}
+            </select>
+          </span>
         </label>
-        <button class="btn primary" type="button" data-action="query">查询</button>
-        <button class="btn" type="button" data-action="reset">重置</button>
-        <button class="btn subtle" type="button" data-action="toggle-advanced-filter">${state.taskAdvancedOpen ? "收起高级筛选" : "展开高级筛选"} ${icon("chevron")}</button>
-      </div>
-      ${state.taskAdvancedOpen ? `
-        <div class="advanced-filter-grid">
-          <label class="field-control"><select aria-label="升级方式"><option>全部升级方式</option><option>指定版本</option><option>文件导入</option><option>手动导入</option></select></label>
-          <label class="field-control"><select aria-label="升级包"><option>全部升级包</option><option>整包</option><option>差分包</option></select></label>
-          <label class="field-control"><input placeholder="目标版本" aria-label="目标版本" /></label>
-          <label class="field-control date-range">
-            ${icon("clock")}
-            <input placeholder="任务开始时间" aria-label="任务开始时间" />
-            <span class="date-split">至</span>
-            <input placeholder="任务结束时间" aria-label="任务结束时间" />
-          </label>
+        <label class="filter-field">
+          <span>升级包</span>
+          <span class="field-control">
+            <select aria-label="升级包" data-task-filter="packageType">
+              ${renderOptions(taskPackageOptions, filters.packageType)}
+            </select>
+          </span>
+        </label>
+        <div class="filter-field filter-combobox ${state.taskCreatorDropdownOpen ? "open" : ""}" data-stop>
+          <span>创建人</span>
+          <span class="field-control">
+            <input type="text" value="${escapeHtml(filters.creator)}" placeholder="输入创建人搜索" aria-label="创建人" autocomplete="off" data-task-filter="creator" />
+            <button class="combo-trigger" type="button" data-action="${filters.creator ? "clear-creator-filter" : "toggle-creator-filter"}" aria-label="${filters.creator ? "清空创建人" : "展开创建人"}">${filters.creator ? icon("close") : icon("chevron")}</button>
+          </span>
+          ${renderCreatorFilterMenu()}
         </div>
-      ` : ""}
+        <label class="filter-field filter-created-time">
+          <span>创建时间</span>
+          <span class="field-control date-field">
+            ${icon("clock")}
+            <input type="date" value="${escapeHtml(filters.createdDate)}" aria-label="创建时间" data-task-filter="createdDate" />
+          </span>
+        </label>
+        <div class="filter-actions">
+          <button class="btn primary" type="button" data-action="query">查询</button>
+          <button class="btn" type="button" data-action="reset">重置</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderOptions(options, selected) {
+  return options.map(option => `<option value="${escapeHtml(option)}" ${option === selected ? "selected" : ""}>${escapeHtml(option)}</option>`).join("");
+}
+
+function renderCreatorFilterMenu() {
+  if (!state.taskCreatorDropdownOpen) return "";
+  const keyword = normalizeText(state.taskFilters.creator);
+  const creators = taskCreatorOptions().filter(creator => !keyword || normalizeText(creator).includes(keyword));
+  return `
+    <div class="filter-combobox-menu">
+      <button class="filter-option ${state.taskFilters.creator ? "" : "active"}" type="button" data-action="select-creator-filter" data-creator="">全部创建人</button>
+      ${creators.length
+        ? creators.map(creator => `
+            <button class="filter-option ${state.taskFilters.creator === creator ? "active" : ""}" type="button" data-action="select-creator-filter" data-creator="${escapeHtml(creator)}">${escapeHtml(creator)}</button>
+          `).join("")
+        : `<span class="filter-empty">无匹配创建人</span>`}
     </div>
   `;
 }
@@ -830,8 +911,65 @@ function renderTaskColumnHeaders() {
   return taskColumnOptions.map(([key]) => state.visibleTaskColumns[key] ? headerMap[key] : "").join("");
 }
 
+function visibleTaskColumnCount() {
+  return taskColumnOptions.filter(([key]) => state.visibleTaskColumns[key]).length;
+}
+
 function sortedTaskListRows() {
-  return [...taskListRows].sort((a, b) => parseDateTime(b.createdAt) - parseDateTime(a.createdAt));
+  return taskRowsWithDraft()
+    .filter(taskMatchesFilters)
+    .sort((a, b) => parseDateTime(b.createdAt) - parseDateTime(a.createdAt));
+}
+
+function taskRowsWithDraft() {
+  const rows = [...taskListRows];
+  if (state.draftTask) rows.push(draftTaskAsRow());
+  return rows;
+}
+
+function draftTaskAsRow() {
+  const draft = state.draftTask;
+  const packageLabel = draft.packageType === "whole" ? "整包" : "差分包";
+  const regions = draft.selectedRegions.length ? draft.selectedRegions.join("、") : "-";
+  const taskTime = draft.taskStartAt && draft.taskEndAt ? `${draft.taskStartAt}~${draft.taskEndAt}` : "-";
+  return {
+    id: draft.id || "DRAFT",
+    name: draft.form.taskName || "未命名草稿",
+    method: strategyMethodLabel(draft.strategy),
+    packageType: packageLabel,
+    targetVersion: draft.form.targetVersion || "-",
+    total: "-",
+    time: taskTime,
+    result: null,
+    region: regions,
+    status: "待发布",
+    creator: "汤彦珊",
+    createdAt: draft.savedAt,
+    isDraft: true,
+  };
+}
+
+function taskMatchesFilters(task) {
+  const filters = state.taskFilters;
+  const keyword = normalizeText(filters.keyword);
+  if (keyword) {
+    if (!normalizeText(task.name).includes(keyword)) return false;
+  }
+  if (filters.status !== "全部" && task.status !== filters.status) return false;
+  if (filters.creator.trim() && !normalizeText(task.creator).includes(normalizeText(filters.creator))) return false;
+  if (filters.method !== "全部" && task.method !== filters.method) return false;
+  if (filters.packageType !== "全部" && task.packageType !== filters.packageType) return false;
+
+  if (filters.createdDate && formatDate(parseDateTime(task.createdAt)) !== filters.createdDate) return false;
+  return true;
+}
+
+function normalizeText(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function taskCreatorOptions() {
+  return [...new Set(taskRowsWithDraft().map(task => task.creator).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-Hans-CN"));
 }
 
 function strategyMethodLabel(strategy) {
@@ -840,6 +978,10 @@ function strategyMethodLabel(strategy) {
     file: "文件导入",
     manual: "手动导入",
   }[strategy] || "-";
+}
+
+function renderTaskListRow(task) {
+  return task.isDraft ? renderDraftTaskRow(task) : renderTaskTableRow(task);
 }
 
 function renderTaskTableRow(task) {
@@ -929,28 +1071,12 @@ function renderTaskActions(status) {
   return `<div class="table-actions">${actions.map(action => actionMap[action]).filter(Boolean).join("")}</div>`;
 }
 
-function renderDraftTaskRow() {
-  const draft = state.draftTask;
-  if (!draft) return "";
-  const packageLabel = draft.packageType === "whole" ? "整包" : "差分包";
-  const regions = draft.selectedRegions.length ? draft.selectedRegions.join("、") : "-";
-  const taskTime = draft.taskStartAt && draft.taskEndAt ? `${draft.taskStartAt}~${draft.taskEndAt}` : "-";
-  const draftRow = {
-    method: strategyMethodLabel(draft.strategy),
-    packageType: packageLabel,
-    targetVersion: draft.form.targetVersion || "-",
-    total: "-",
-    time: taskTime,
-    result: null,
-    region: regions,
-    creator: "汤彦珊",
-    createdAt: draft.savedAt,
-  };
+function renderDraftTaskRow(draftRow) {
   return `
     <tr class="draft-row">
-      <td title="${draft.form.taskName || "未命名草稿"}">
+      <td title="${draftRow.name}">
         <div class="task-name-cell">
-          <strong>${draft.form.taskName || "未命名草稿"}</strong>
+          <strong>${draftRow.name}</strong>
           <span class="mini-tag orange">草稿</span>
         </div>
       </td>
@@ -2808,6 +2934,24 @@ function bindEvents(root) {
     el.addEventListener("click", event => event.stopPropagation());
   });
 
+  root.querySelectorAll("[data-task-filter]").forEach(input => {
+    if (input.matches("input")) {
+      if (input.type === "date") {
+        input.addEventListener("change", () => updateTaskFilter(input));
+      } else {
+        input.addEventListener("input", () => updateTaskFilter(input));
+      }
+      input.addEventListener("focus", () => {
+        if (input.dataset.taskFilter !== "creator") return;
+        if (state.taskCreatorDropdownOpen) return;
+        state.taskCreatorDropdownOpen = true;
+        render({ focusSelector: `[data-task-filter="${input.dataset.taskFilter}"]`, focusSelectionStart: input.selectionStart ?? input.value.length });
+      });
+    } else {
+      input.addEventListener("change", () => updateTaskFilter(input));
+    }
+  });
+
   root.querySelectorAll("[data-radio='packageType']").forEach(input => {
     input.addEventListener("change", () => {
       state.packageType = input.value;
@@ -2970,6 +3114,26 @@ function resetDateRange() {
   state.errors.taskTime = "请选择任务起止时间";
 }
 
+function updateTaskFilter(input) {
+  const key = input.dataset.taskFilter;
+  if (!key) return;
+  state.taskFilters[key] = input.value;
+  state.taskPage = 1;
+  state.columnSettingsOpen = false;
+  state.taskCreatorDropdownOpen = key === "creator";
+  const isInput = input.matches("input");
+  render(isInput
+    ? { focusSelector: `[data-task-filter="${key}"]`, focusSelectionStart: input.selectionStart ?? input.value.length }
+    : undefined);
+}
+
+function resetTaskFilters() {
+  state.taskFilters = defaultTaskFilters();
+  state.taskCreatorDropdownOpen = false;
+  state.taskPage = 1;
+  state.columnSettingsOpen = false;
+}
+
 function validateStep(step) {
   const errors = {};
   if (step === 1) {
@@ -3027,7 +3191,7 @@ function shiftCalendar(months) {
 
 function changePage(scope, page) {
   if (scope !== "task") return;
-  const pages = Math.ceil(133 / state.taskPageSize);
+  const pages = Math.max(Math.ceil(sortedTaskListRows().length / state.taskPageSize), 1);
   state.taskPage = Math.min(Math.max(page, 1), pages);
   render();
 }
@@ -3163,12 +3327,25 @@ function handleAction(action, el) {
       state.regionDropdownOpen = false;
       showToast("地区条件已更新");
       break;
+    case "toggle-creator-filter":
+      state.taskCreatorDropdownOpen = !state.taskCreatorDropdownOpen;
+      render({ focusSelector: `[data-task-filter="creator"]`, focusSelectionStart: state.taskFilters.creator.length });
+      break;
+    case "select-creator-filter":
+      state.taskFilters.creator = el.dataset.creator || "";
+      state.taskCreatorDropdownOpen = false;
+      state.taskPage = 1;
+      showToast(state.taskFilters.creator ? `已筛选创建人：${state.taskFilters.creator}` : "已切换为全部创建人");
+      render();
+      break;
+    case "clear-creator-filter":
+      state.taskFilters.creator = "";
+      state.taskCreatorDropdownOpen = false;
+      state.taskPage = 1;
+      render({ focusSelector: `[data-task-filter="creator"]`, focusSelectionStart: 0 });
+      break;
     case "open-status-filter":
       openModal("status");
-      break;
-    case "toggle-advanced-filter":
-      state.taskAdvancedOpen = !state.taskAdvancedOpen;
-      render();
       break;
     case "toggle-column-settings":
       state.columnSettingsOpen = !state.columnSettingsOpen;
@@ -3356,10 +3533,14 @@ function handleAction(action, el) {
       showToast("任务已结束");
       break;
     case "query":
-      showToast("筛选条件已应用");
+      state.taskCreatorDropdownOpen = false;
+      showToast(`筛选条件已应用，共 ${sortedTaskListRows().length} 条`);
+      render();
       break;
     case "reset":
+      resetTaskFilters();
       showToast("筛选条件已重置");
+      render();
       break;
     case "choose-status":
       closeModal();
