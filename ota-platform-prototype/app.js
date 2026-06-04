@@ -65,6 +65,7 @@ const state = {
   detailStatus: "升级中",
   detailMetricMode: "versionFull",
   detailTab: "overview",
+  detailDeviceKeyword: "",
   flowTab: "progress",
   visibleTaskColumns: {
     method: true,
@@ -109,7 +110,7 @@ const taskRows = [
 ];
 
 const taskStatusMeta = {
-  "待执行": { color: "gray", actions: ["detail"] },
+  "待执行": { color: "gray", actions: ["detail", "end"] },
   "升级中": { color: "blue", actions: ["detail", "end"] },
   "已完成": { color: "green", actions: ["detail"] },
   "已结束": { color: "gray", actions: ["detail"] },
@@ -1099,6 +1100,7 @@ function statusTag(status) {
     "可发布": "green",
     "需处理": "orange",
     "异常": "orange",
+    "已终止": "gray",
     "草稿": "orange",
     "纳入升级": "green",
     "本版本不升级": "orange",
@@ -1746,12 +1748,13 @@ function renderStrategyNote(packageLabel) {
 }
 
 function renderTaskDetail() {
+  normalizeDetailStatusForMode();
   const detail = taskDetailData(state.detailStatus);
   return `
     <section class="page">
       ${renderPageHeader("任务详情", {
         back: "task-list",
-        actions: detail.status === "升级中" ? `<button class="btn danger" type="button" data-action="end-task">结束任务</button>` : "",
+        actions: renderDetailHeaderActions(detail),
       })}
       ${renderDetailStatusSwitch()}
       ${renderDetailHero(detail)}
@@ -1759,6 +1762,16 @@ function renderTaskDetail() {
       ${renderDetailTabContent(detail)}
     </section>
   `;
+}
+
+function renderDetailHeaderActions(detail) {
+  if (["待执行", "升级中"].includes(detail.status)) {
+    return `<button class="btn danger" type="button" data-action="end-task">结束任务</button>`;
+  }
+  if (["已驳回", "已失效"].includes(detail.status)) {
+    return `<button class="btn primary" type="button" data-action="copy-rebuild-task">${icon("copy")}复制重建</button>`;
+  }
+  return "";
 }
 
 function renderDetailTabs() {
@@ -1774,21 +1787,59 @@ function renderDetailTabs() {
 }
 
 function renderDetailTabContent(detail) {
-  const isExecutionStatus = ["升级中", "已完成", "已结束"].includes(detail.status);
+  const isExecutionStatus = isDetailExecutionStatus(detail);
   if (state.detailTab === "devices") {
     return isExecutionStatus
       ? renderDeviceDetailTable(detail)
       : `<div class="empty-state-panel">${icon("info")} 任务尚未进入执行阶段，暂无设备执行明细。</div>`;
   }
   return `
-    ${renderTaskFlow(detail)}
-    <h3 class="section-title">${icon("layer")}执行概览</h3>
+    ${renderTaskFlowOverview(detail)}
+    <h3 class="section-title">${icon("layer")}${isExecutionStatus ? "执行概览" : "任务配置摘要"}</h3>
     ${renderExecutionOverview(detail)}
     ${isExecutionStatus ? renderExceptionSummary(detail) : ""}
   `;
 }
 
+function isDetailExecutionStatus(detail) {
+  return ["升级中", "已完成", "已结束"].includes(detail.status);
+}
+
+function isManualDetailMode() {
+  return state.detailMetricMode === "manual";
+}
+
+function requiresApprovalForDetail() {
+  return !isManualDetailMode();
+}
+
+function isVersionFullDetailMode() {
+  return state.detailMetricMode === "versionFull";
+}
+
+function isVersionBatchDetailMode() {
+  return state.detailMetricMode === "versionBatch";
+}
+
+function isFixedDeviceDetailMode() {
+  return ["file", "manual"].includes(state.detailMetricMode);
+}
+
+function detailStatusOptionsForMode() {
+  return isManualDetailMode()
+    ? ["待执行", "升级中", "已完成", "已结束"]
+    : ["待审批", "已驳回", "已失效", "待执行", "升级中", "已完成", "已结束"];
+}
+
+function normalizeDetailStatusForMode() {
+  const statuses = detailStatusOptionsForMode();
+  if (!statuses.includes(state.detailStatus)) {
+    state.detailStatus = statuses[0];
+  }
+}
+
 function taskDetailData(status) {
+  const modeConfig = detailModeConfig();
   const base = {
     name: "IPC-杭州低功耗_安全补丁升级",
     status,
@@ -1800,13 +1851,14 @@ function taskDetailData(status) {
     startAt: "2026-06-10 09:00:00",
     endAt: "2026-06-17 09:00:00",
     targetVersion: "23.422.209.17",
-    method: "指定版本",
-    packageType: "整包",
-    total: 6505,
+    method: modeConfig.method,
+    packageType: modeConfig.packageType,
+    total: modeConfig.total,
     region: "中国 / 杭州低功耗",
-    desc: "修复低功耗设备夜间唤醒异常，按杭州低功耗大区灰度发布。",
-    sourceScope: "23.422.208.91、23.110.105.46、23.110.105.43、10.176.42",
-    condition: "指定地区 = 中国 / 杭州低功耗",
+    desc: modeConfig.desc,
+    sourceScope: modeConfig.sourceScope,
+    sourceVersions: modeConfig.sourceVersions || [],
+    condition: modeConfig.condition,
   };
   const variants = {
     "待审批": { success: 0, failed: 0, running: 0, pending: 6505 },
@@ -1817,13 +1869,78 @@ function taskDetailData(status) {
     "已完成": { success: 6488, failed: 17, running: 0, pending: 0 },
     "已结束": { success: 730, failed: 8, running: 0, pending: 5767, endedAt: "2026-06-11 15:20:10", endReason: "发现部分设备升级失败率异常，提前停止继续下发" },
   };
-  return { ...base, ...(variants[status] || variants["升级中"]) };
+  return normalizeDetailMetrics({ ...base, ...(variants[status] || variants["升级中"]) });
+}
+
+function detailModeConfig() {
+  const common = {
+    packageType: "整包",
+    desc: "修复低功耗设备夜间唤醒异常，按杭州低功耗大区灰度发布。",
+    condition: "指定地区 = 中国 / 杭州低功耗",
+  };
+  const configs = {
+    file: {
+      ...common,
+      method: "文件导入",
+      total: 6505,
+      sourceScope: "已导入设备清单：6505 台",
+    },
+    manual: {
+      ...common,
+      method: "手动导入",
+      total: 2,
+      sourceScope: "手动录入设备：VQDG2122086ZPUF、VQDG2122132LYVU",
+      desc: "用于少量设备灰度验证，发布后直接进入待执行。",
+    },
+    versionBatch: {
+      ...common,
+      method: "指定版本",
+      packageType: "差分包",
+      total: 6505,
+      sourceScope: "23.422.208.91、23.110.105.46、23.110.105.43、10.176.42",
+      sourceVersions: ["23.422.208.91", "23.110.105.46", "23.110.105.43", "10.176.42"],
+    },
+    versionFull: {
+      ...common,
+      method: "指定版本",
+      total: 6505,
+      sourceScope: "23.422.208.91、23.110.105.46、23.110.105.43、10.176.42",
+      sourceVersions: ["23.422.208.91", "23.110.105.46", "23.110.105.43", "10.176.42"],
+    },
+  };
+  return configs[state.detailMetricMode] || configs.versionFull;
+}
+
+function normalizeDetailMetrics(detail) {
+  if (isManualDetailMode()) {
+    const manualMetrics = {
+      "待执行": { success: 0, failed: 0, running: 0, pending: 2 },
+      "升级中": { success: 1, failed: 0, running: 1, pending: 0 },
+      "已完成": { success: 2, failed: 0, running: 0, pending: 0 },
+      "已结束": { success: 1, failed: 0, running: 0, pending: 1 },
+    };
+    return { ...detail, ...(manualMetrics[detail.status] || manualMetrics["升级中"]) };
+  }
+  if (isVersionBatchDetailMode()) {
+    const batchMetrics = {
+      "待审批": { success: 0, failed: 0, running: 0, pending: plannedBatchTotal() },
+      "已驳回": { success: 0, failed: 0, running: 0, pending: plannedBatchTotal() },
+      "已失效": { success: 0, failed: 0, running: 0, pending: plannedBatchTotal() },
+      "待执行": { success: 0, failed: 0, running: 0, pending: plannedBatchTotal() },
+      "升级中": { success: 2600, failed: 32, running: 960, pending: 1408 },
+      "已完成": { success: 4962, failed: 38, running: 0, pending: 0 },
+      "已结束": { success: 2380, failed: 24, running: 0, pending: 2596 },
+    };
+    return { ...detail, ...(batchMetrics[detail.status] || batchMetrics["升级中"]) };
+  }
+  return detail;
 }
 
 function renderDetailStatusSwitch() {
-  const statuses = ["待审批", "已驳回", "已失效", "待执行", "升级中", "已完成", "已结束"];
+  const statuses = detailStatusOptionsForMode();
   const metricModes = [
-    ["imported", "文件/手动导入"],
+    ["file", "文件导入"],
+    ["manual", "手动导入"],
     ["versionFull", "指定版本全量"],
     ["versionBatch", "指定版本批量"],
   ];
@@ -1847,8 +1964,6 @@ function renderDetailStatusSwitch() {
 
 function renderDetailHero(detail) {
   const summary = taskFlowSummary(detail);
-  const progress = upgradeProgressData(detail);
-  const meterPercent = `${progress.percent / 2}%`;
   return `
     <div class="task-overview-card ${summary.tone}">
       <div class="task-overview-head">
@@ -1860,81 +1975,79 @@ function renderDetailHero(detail) {
       <div class="task-overview-body">
         <section class="task-overview-info">
           <dl>
-            <dt>${icon("log")}任务名称</dt><dd>${detail.name}</dd>
-            <dt>${icon("clock")}任务时间</dt><dd>${detail.startAt} ~ ${detail.endAt}</dd>
-            <dt>${icon("layer")}目标版本</dt><dd>${detail.targetVersion}</dd>
-            <dt>${icon("map")}任务大区</dt><dd>${detail.region}</dd>
-            <dt>${icon("users")}创建人</dt><dd>${detail.creator}</dd>
-            <dt>${icon("shield")}升级配置</dt><dd>${overviewConfigSummary(detail)}</dd>
+            ${taskOverviewFields(detail).map(renderTaskOverviewField).join("")}
           </dl>
         </section>
-        <aside class="task-overview-progress">
-          <div class="flow-progress-meter" style="--meter-percent:${meterPercent}">
-            <b>${progress.label}<small>${progress.unit}</small></b>
-          </div>
-          <div>
-            <span>升级进度：</span><strong>${progress.title}</strong>
-            <p>${progress.text}</p>
-          </div>
-        </aside>
       </div>
     </div>
   `;
 }
 
-function overviewConfigSummary(detail) {
-  const condition = detail.condition ? "指定地区" : "无额外条件";
-  if (state.detailMetricMode === "imported") return `文件/手动导入 · ${detail.packageType} · ${Number(detail.total).toLocaleString()} 台 · ${condition}`;
-  if (state.detailMetricMode === "versionBatch") return `${detail.method} · ${detail.packageType} · 计划 ${Number(plannedBatchTotal()).toLocaleString()} 台 · ${condition}`;
-  return `${detail.method} · ${detail.packageType} · 全量 · ${condition}`;
+function taskOverviewFields(detail) {
+  const fields = [
+    { label: "任务名称", icon: "log", value: detail.name, span: "wide" },
+    { label: "目标版本", icon: "layer", value: detail.targetVersion },
+    { label: "任务时间", icon: "clock", value: `${detail.startAt} ~ ${detail.endAt}`, span: "wide" },
+    { label: "任务大区", icon: "map", value: detail.region },
+    { label: "创建人", icon: "users", value: detail.creator },
+    { label: "升级方式", icon: "shield", value: detail.method },
+    { label: "升级包", icon: "layer", value: detail.packageType },
+  ];
+
+  if (isVersionFullDetailMode() || isVersionBatchDetailMode()) {
+    fields.push(
+      {
+        label: "升级设备数",
+        icon: "users",
+        value: isVersionBatchDetailMode() ? `${Number(plannedBatchTotal()).toLocaleString()} 台` : "全量",
+      },
+      {
+        label: "下发方式",
+        icon: "refresh",
+        value: isVersionBatchDetailMode() ? "批量下发，按计划成功下发数量控制" : "动态匹配，执行期间持续匹配符合条件设备",
+        span: "wide",
+      },
+      {
+        label: "指定源版本",
+        icon: "layer",
+        value: renderTaskSourceVersions(detail),
+        span: "wide",
+      },
+      {
+        label: "匹配条件",
+        icon: "map",
+        value: `${detail.condition || "无额外条件"}；设备当前版本命中任一指定源版本后纳入匹配。`,
+        span: "full",
+      },
+    );
+  } else {
+    fields.push(
+      { label: "升级设备数", icon: "users", value: `${Number(detail.total).toLocaleString()} 台` },
+      { label: "设备来源", icon: "log", value: detail.sourceScope, span: "wide" },
+      { label: "匹配条件", icon: "map", value: detail.condition || "无额外条件", span: "wide" },
+    );
+  }
+
+  fields.push({ label: "任务说明", icon: "info", value: detail.desc, span: "full" });
+  return fields;
 }
 
-function upgradeProgressData(detail) {
-  const executionStatuses = ["升级中", "已完成", "已结束"];
-  if (!executionStatuses.includes(detail.status)) {
-    return {
-      percent: 0,
-      label: "-",
-      unit: "",
-      title: "未开始升级",
-      text: state.detailMetricMode === "imported"
-        ? "设备清单已确定，等待进入 OTA 下发阶段"
-        : detail.status === "待执行"
-          ? "尚未开始动态匹配设备，等待任务开始时间"
-          : "任务尚未进入 OTA 下发阶段",
-    };
-  }
-  const stats = metricStats(detail);
-  if (state.detailMetricMode === "versionFull") {
-    const visualPercent = detail.status === "已完成" ? 100 : detail.status === "已结束" ? 72 : 48;
-    return {
-      percent: visualPercent,
-      label: Number(stats.stocked).toLocaleString(),
-      unit: "台",
-      title: `已匹配数 ${Number(stats.stocked).toLocaleString()} 台`,
-      text: detail.status === "已完成"
-        ? `升级成功 ${Number(stats.upgradeSuccess).toLocaleString()} 台，失败 ${Number(stats.upgradeFailed).toLocaleString()} 台`
-        : detail.status === "已结束"
-          ? `任务已提前结束，升级成功 ${Number(stats.upgradeSuccess).toLocaleString()} 台，失败 ${Number(stats.upgradeFailed).toLocaleString()} 台`
-          : `设备持续动态匹配中，已成功 ${Number(stats.upgradeSuccess).toLocaleString()} 台，失败 ${Number(stats.upgradeFailed).toLocaleString()} 台`,
-    };
-  }
-  const denominator = state.detailMetricMode === "versionBatch" ? plannedBatchTotal() : detail.total;
-  const processed = Math.min(stats.stocked, denominator);
-  const percent = denominator ? Number(((processed / denominator) * 100).toFixed(1)) : 0;
-  return {
-    percent,
-    label: String(percent),
-    unit: "%",
-    title: `${Number(processed).toLocaleString()} / ${Number(denominator).toLocaleString()} 台`,
-    text: state.detailMetricMode === "versionBatch"
-      ? `已匹配成功 ${Number(stats.upgradeSuccess).toLocaleString()} 台，失败 ${Number(stats.upgradeFailed).toLocaleString()} 台；系统持续匹配符合条件设备`
-      : detail.status === "已完成"
-        ? "升级任务已完成，可查看失败设备明细"
-        : detail.status === "已结束"
-          ? "任务已提前结束，未处理设备不再继续下发"
-          : "OTA 执行中，设备结果持续回传",
-  };
+function renderTaskOverviewField(field) {
+  return `
+    <div class="task-overview-field ${field.span || ""}">
+      <dt>${icon(field.icon)}${field.label}</dt>
+      <dd>${field.value}</dd>
+    </div>
+  `;
+}
+
+function renderTaskSourceVersions(detail) {
+  if (!detail.sourceVersions?.length) return "未指定源版本";
+  return `
+    <div class="task-source-version-list">
+      ${detail.sourceVersions.map(version => `<span>${version}</span>`).join("")}
+    </div>
+  `;
 }
 
 function plannedBatchTotal() {
@@ -1942,19 +2055,20 @@ function plannedBatchTotal() {
 }
 
 function metricStats(detail) {
-  const dispatchedFailed = state.detailMetricMode === "imported" ? 0 : detail.status === "升级中" ? 12 : detail.status === "已结束" ? 18 : 0;
   const stocked = Math.max(detail.success + detail.failed, 0);
+  const total = Number(detail.total) || 0;
+  const pending = isVersionFullDetailMode()
+    ? 0
+    : Math.max(total - stocked - Number(detail.running || 0), 0);
   return {
     stocked,
-    dispatchedFailed,
     upgradeSuccess: detail.success,
     upgradeFailed: detail.failed,
-    pending: Math.max(detail.total - stocked, 0),
+    pending,
   };
 }
 
 function taskFlowSummary(detail) {
-  const processed = detail.success + detail.failed;
   const map = {
     "待审批": {
       node: "等待审批",
@@ -1976,19 +2090,19 @@ function taskFlowSummary(detail) {
     },
     "待执行": {
       node: "等待执行",
-      text: "任务已审批通过，等待到达任务开始时间后自动下发。",
+      text: requiresApprovalForDetail() ? "任务已审批通过，等待到达任务开始时间后自动下发。" : "任务已发布，等待到达任务开始时间后自动下发。",
       extra: `计划开始时间：${detail.startAt}`,
       tone: "gray",
     },
     "升级中": {
       node: "执行中",
       text: "任务已进入 OTA 下发阶段，设备正在回传升级结果。",
-      extra: `执行进度：已处理 ${processed} / ${detail.total} 台`,
+      extra: "执行结果持续回传中",
       tone: "blue",
     },
     "已完成": {
       node: "任务完成",
-      text: "所有纳入升级范围的设备均已产生最终升级结果。",
+      text: isVersionFullDetailMode() ? "动态匹配已结束，已匹配设备均已产生最终升级结果。" : "所有纳入升级范围的设备均已产生最终升级结果。",
       extra: "完成时间：2026-06-12 18:30:22",
       tone: "green",
     },
@@ -2002,181 +2116,57 @@ function taskFlowSummary(detail) {
   return map[detail.status] || map["升级中"];
 }
 
-function renderTaskFlow(detail) {
+function detailExecutionSummary(detail) {
+  const stats = metricStats(detail);
+  if (isVersionFullDetailMode()) {
+    if (detail.status === "已完成") return `已匹配 ${Number(stats.stocked).toLocaleString()} 台，匹配已结束`;
+    if (detail.status === "已结束") return `已匹配 ${Number(stats.stocked).toLocaleString()} 台，已停止继续匹配`;
+    return `已匹配 ${Number(stats.stocked).toLocaleString()} 台，持续动态匹配符合条件设备`;
+  }
+  if (isVersionBatchDetailMode()) {
+    const plan = plannedBatchTotal();
+    if (detail.status === "已结束") return `已匹配 ${Number(stats.stocked).toLocaleString()} / 计划 ${Number(plan).toLocaleString()} 台，剩余名额不再继续匹配`;
+    return `已匹配 ${Number(stats.stocked).toLocaleString()} / 计划 ${Number(plan).toLocaleString()} 台`;
+  }
+  if (detail.status === "已结束") {
+    return `执行进度：已处理 ${Number(stats.stocked).toLocaleString()} / ${Number(detail.total).toLocaleString()} 台，未处理设备不再继续下发`;
+  }
+  return `执行进度：已处理 ${Number(stats.stocked).toLocaleString()} / ${Number(detail.total).toLocaleString()} 台`;
+}
+
+function renderTaskFlowOverview(detail) {
   const summary = taskFlowSummary(detail);
-  const metaItems = flowMetaItems(detail, summary);
+  const tabs = [
+    ["progress", "任务进度"],
+    ["records", "流转明细"],
+  ];
   return `
-    <section class="task-flow-card ${summary.tone}">
-      <div class="task-flow-overview">
-        <div class="task-flow-summary">
-          <i>${icon(flowIcon(detail.status))}</i>
-          <div>
-            <h3>任务流转</h3>
-            <strong>当前状态：${detail.status}</strong>
-            <p>${summary.text}</p>
-            <em>${summary.extra}</em>
-          </div>
-        </div>
-        <div class="task-flow-meta">
-          ${metaItems.map(([label, value]) => `<span>${label} <b>${value}</b></span>`).join("")}
+    <section class="task-flow-overview-card ${summary.tone}">
+      <div class="task-flow-tabs">
+        <div>
+          ${tabs.map(([key, label]) => `
+            <button class="${state.flowTab === key ? "active" : ""}" type="button" data-action="set-flow-tab" data-tab="${key}">${label}</button>
+          `).join("")}
         </div>
       </div>
-      <div class="task-progress-panel">
-        <div class="task-progress-tabs">
-          <div>
-            ${["progress", "records"].map(key => `
-              <button class="${state.flowTab === key ? "active" : ""}" type="button" data-action="set-flow-tab" data-tab="${key}">
-                ${key === "progress" ? "任务进度" : "流转明细"}
-              </button>
-            `).join("")}
-          </div>
-        </div>
-        ${state.flowTab === "records" ? renderFlowRecordsPanel(detail) : renderFlowProgressPanel(detail)}
-      </div>
+      ${state.flowTab === "records" ? renderTaskFlowRecords(detail) : renderTaskFlowProgress(detail, summary)}
     </section>
   `;
 }
 
-function renderFlowProgressPanel(detail) {
+function renderTaskFlowProgress(detail, summary) {
+  const nodes = taskFlowNodes(detail);
   return `
-    ${renderFlowStages(detail)}
-  `;
-}
-
-function renderFlowRecordsPanel(detail) {
-  return `
-    <div class="task-flow-records">
-      <h4>流转明细</h4>
-      ${renderApprovalTimeline(detail)}
-    </div>
-  `;
-}
-
-function renderFlowProgressSummary(detail) {
-  const percent = flowProgressPercent(detail);
-  const meterPercent = `${percent / 2}%`;
-  const textMap = {
-    "待审批": "审批处理中，审批通过后进入等待执行阶段",
-    "已驳回": "审批未通过，任务不会继续下发",
-    "已失效": "审批超时失效，任务不会继续下发",
-    "待执行": "审批已通过，等待任务开始时间自动下发",
-    "升级中": "OTA 正在下发执行，预计在任务窗口内完成",
-    "已完成": "任务已完成，所有纳入设备已有最终结果",
-    "已结束": "任务已提前结束，未处理设备不再继续下发",
-  };
-  return `
-    <div class="flow-progress-summary">
-      <div>
-        <span>任务进度</span>
-        <strong>${percent}%</strong>
+    <div class="task-flow-progress-panel">
+      <div class="task-flow-stage-line" style="--flow-progress:${taskFlowProgressPercent(nodes)}%">
+        ${nodes.map(node => `<span class="${node.type}">${node.type === "done" ? icon("check") : node.type === "error" ? icon("close") : icon(node.icon)}</span>`).join("")}
       </div>
-      <div class="flow-progress-meter" style="--meter-percent:${meterPercent}">
-        <b>${percent}<small>%</small></b>
-      </div>
-      <p>${textMap[detail.status] || "任务状态更新中"}</p>
-    </div>
-  `;
-}
-
-function flowProgressPercent(detail) {
-  const map = {
-    "待审批": 38,
-    "已驳回": 38,
-    "已失效": 38,
-    "待执行": 62,
-    "升级中": 84,
-    "已完成": 100,
-    "已结束": 86,
-  };
-  return map[detail.status] || 0;
-}
-
-function flowMetaItems(detail, summary) {
-  const actionMap = {
-    "待审批": "等待产线负责人审批",
-    "已驳回": "支持复制重建后重新发布",
-    "已失效": "支持复制重建后重新发布",
-    "待执行": `等待 ${detail.startAt} 自动下发`,
-    "升级中": "持续接收设备升级结果",
-    "已完成": "任务已产生最终结果",
-    "已结束": "未处理设备不再继续下发",
-  };
-  return [
-    ["提交人", detail.creator],
-    ["审批人", detail.approver],
-    ["当前节点", summary.node],
-    ["提交时间", detail.submittedAt],
-    ["审批时间", approvalTimeText(detail)],
-    ["下一步/结果", actionMap[detail.status] || "-"],
-  ];
-}
-
-function approvalTimeText(detail) {
-  if (["待审批"].includes(detail.status)) return "-";
-  if (detail.status === "已失效") return "2026-06-04 09:00:00";
-  return detail.approvedAt || "-";
-}
-
-function flowIcon(status) {
-  return {
-    "待审批": "clock",
-    "已驳回": "alert",
-    "已失效": "clock",
-    "待执行": "clock",
-    "升级中": "refresh",
-    "已完成": "check",
-    "已结束": "close",
-  }[status] || "info";
-}
-
-function renderApprovalTimeline(detail) {
-  const items = [
-    ["创建任务", detail.creator, detail.createdAt, "创建 OTA 升级任务", "done"],
-    ["提交审批", detail.creator, detail.submittedAt, "提交至产线负责人审批", "done"],
-  ];
-  if (detail.status === "待审批") items.push(["等待审批", detail.approver, "-", "产线负责人处理中", "active"]);
-  if (detail.status === "已驳回") items.push(["审批驳回", detail.approver, detail.approvedAt, detail.rejectReason, "error"]);
-  if (detail.status === "已失效") items.push(["审批失效", "系统", "2026-06-04 09:00:00", detail.invalidReason, "error"]);
-  if (["待执行", "升级中", "已完成", "已结束"].includes(detail.status)) items.push(["审批通过", detail.approver, detail.approvedAt, "审批通过，任务进入执行队列", "done"]);
-  if (detail.status === "待执行") items.push(["等待执行", "系统", detail.startAt, "未到任务下发时间，等待自动执行", "active"]);
-  if (["升级中", "已完成", "已结束"].includes(detail.status)) items.push(["开始下发", "系统", detail.startAt, "到达任务开始时间，开始下发 OTA 指令", "done"]);
-  if (detail.status === "升级中") items.push(["执行中", "系统", "-", `已处理 ${detail.success + detail.failed} / ${detail.total} 台`, "active"]);
-  if (detail.status === "已完成") items.push(["任务完成", "系统", "2026-06-12 18:30:22", "所有纳入设备已有最终结果", "done"]);
-  if (detail.status === "已结束") items.push(["手动结束", detail.creator, detail.endedAt, detail.endReason, "error"]);
-  return `
-    <div class="approval-timeline">
-      ${items.map(([title, actor, time, desc, type]) => `
-        <div class="timeline-item ${type}">
-          <span></span>
-          <div>
-            <strong>${title}</strong>
-            <p>${actor} · ${time}</p>
-            <em>${desc}</em>
-          </div>
-        </div>
-      `).join("")}
-    </div>
-  `;
-}
-
-function renderFlowStages(detail) {
-  const stages = flowStageData(detail);
-  const percent = flowProgressPercent(detail);
-  return `
-    <div class="flow-stage-board" aria-label="任务阶段进度">
-      <div class="flow-stage-track" style="--percent:${percent}%">
-        ${stages.map((stage, index) => `
-          <div class="flow-stage-dot ${stage.type}">
-            <i>${stage.type === "done" ? icon("check") : stage.type === "error" ? icon("close") : icon(stage.icon)}</i>
-          </div>
-        `).join("")}
-      </div>
-      <div class="flow-stage-cards">
-        ${stages.map(stage => `
-          <article class="flow-stage-card ${stage.type}">
-            <span>${stage.date}</span>
-            <strong>${stage.title}</strong>
-            <p>${stage.body}</p>
+      <div class="task-flow-stage-cards">
+        ${taskFlowProgressNodes(detail, summary).map(node => `
+          <article class="task-flow-stage-card ${node.type}">
+            <span>${node.date}</span>
+            <strong>${node.title}</strong>
+            <p>${node.desc}</p>
           </article>
         `).join("")}
       </div>
@@ -2184,98 +2174,212 @@ function renderFlowStages(detail) {
   `;
 }
 
-function flowStageData(detail) {
-  const approvalDone = ["待执行", "升级中", "已完成", "已结束"].includes(detail.status);
-  const executionStarted = ["升级中", "已完成", "已结束"].includes(detail.status);
-  const stages = [
-    { title: "创建任务", date: "06月03日", body: "创建 OTA 升级任务，完成基础信息与升级策略配置。", type: "done", icon: "log" },
-    { title: "提交审批", date: "06月03日", body: "任务提交至产线负责人审批，等待审批结果。", type: "done", icon: "users" },
-    { title: "审批结果", date: "06月03日", body: "等待产线负责人确认发布风险与升级范围。", type: "pending", icon: "shield" },
-    { title: "等待执行", date: "06月10日", body: "审批通过后进入执行队列，等待到达任务开始时间。", type: "pending", icon: "clock" },
-    { title: "OTA 下发", date: "06月10日-06月17日", body: "系统按策略下发 OTA 指令，并接收设备升级结果。", type: "pending", icon: "refresh" },
-    { title: "任务结束", date: "06月17日", body: "任务窗口结束后汇总成功、失败与异常设备结果。", type: "pending", icon: "check" },
-  ];
-
-  if (detail.status === "待审批") {
-    stages[2] = { ...stages[2], body: "当前等待产线负责人审批，审批通过后进入待执行状态。", type: "active" };
-  } else if (detail.status === "已驳回") {
-    stages[2] = { ...stages[2], body: `审批未通过：${detail.rejectReason}`, type: "error" };
-  } else if (detail.status === "已失效") {
-    stages[2] = { ...stages[2], body: `审批已失效：${detail.invalidReason}`, type: "error" };
-  } else if (approvalDone) {
-    stages[2] = { ...stages[2], body: "审批通过，任务进入待执行队列。", type: "done" };
-  }
-
-  if (detail.status === "待执行") {
-    stages[3] = { ...stages[3], body: `计划 ${detail.startAt} 自动开始下发。`, type: "active" };
-  } else if (executionStarted) {
-    stages[3] = { ...stages[3], body: "已到达任务开始时间，系统已开始下发。", type: "done" };
-  }
-
-  if (detail.status === "升级中") {
-    stages[4] = { ...stages[4], body: `执行中，已处理 ${detail.success + detail.failed} / ${detail.total} 台设备。`, type: "active" };
-  } else if (detail.status === "已完成") {
-    stages[4] = { ...stages[4], type: "done" };
-    stages[5] = { ...stages[5], body: "所有纳入设备已有最终升级结果。", type: "done" };
-  } else if (detail.status === "已结束") {
-    stages[4] = { ...stages[4], body: "执行过程中被用户提前结束。", type: "error" };
-    stages[5] = { ...stages[5], body: detail.endReason, type: "error" };
-  }
-
-  return stages;
+function taskFlowProgressPercent(nodes) {
+  const currentIndex = nodes.findIndex(node => ["active", "error", "ended"].includes(node.type));
+  const lastDoneIndex = nodes.reduce((lastIndex, node, index) => node.type === "done" ? index : lastIndex, 0);
+  const index = currentIndex >= 0 ? currentIndex : lastDoneIndex;
+  return nodes.length > 1 ? Math.round((index / (nodes.length - 1)) * 100) : 0;
 }
 
-function renderFlowExecutionProgress(detail) {
-  if (!["升级中", "已完成", "已结束"].includes(detail.status)) return "";
-  const processed = detail.success + detail.failed;
-  const remaining = Math.max(detail.total - processed, 0);
-  const successRate = detail.total ? (detail.success / detail.total) * 100 : 0;
-  const failedRate = detail.total ? (detail.failed / detail.total) * 100 : 0;
-  const pendingRate = Math.max(100 - successRate - failedRate, 0);
+function taskFlowProgressNodes(detail, summary) {
+  const nodes = taskFlowNodes(detail);
+  const base = [
+    { ...nodes[0], date: "06月03日", desc: "创建 OTA 升级任务，完成基础信息与升级策略配置。" },
+    { ...nodes[1], date: requiresApprovalForDetail() ? "06月03日" : "06月03日", desc: requiresApprovalForDetail() ? "任务提交至产线负责人审批，等待审批结果。" : "任务发布后进入执行队列。" },
+    { ...nodes[2], date: "06月03日", title: requiresApprovalForDetail() ? "审批结果" : "执行队列", desc: requiresApprovalForDetail() ? approvalStageProgressText(detail) : "无需审批，任务进入待执行队列。" },
+    { ...nodes[3], date: "06月10日", title: "等待执行", desc: waitingExecutionProgressText(detail) },
+    { ...nodes[4], date: "06月10日-06月17日", title: "OTA 下发", desc: otaDispatchProgressText(detail) },
+    { ...nodes[5], date: "06月17日", title: "任务结束", desc: taskFinishProgressText(detail) },
+  ];
+  if (detail.status === "已驳回" || detail.status === "已失效") {
+    base[3] = { ...base[3], type: "pending", desc: "任务未生效，不进入执行队列。" };
+    base[4] = { ...base[4], type: "pending", desc: "任务未下发。" };
+    base[5] = { ...base[5], type: "pending", desc: summary.extra };
+  }
+  return base;
+}
+
+function approvalStageProgressText(detail) {
+  if (detail.status === "待审批") return "审批处理中，任务尚未进入执行队列。";
+  if (detail.status === "已驳回") return `审批驳回：${detail.rejectReason}`;
+  if (detail.status === "已失效") return `审批失效：${detail.invalidReason}`;
+  return "审批通过，任务进入待执行队列。";
+}
+
+function waitingExecutionProgressText(detail) {
+  if (detail.status === "待执行") return `等待到达计划开始时间 ${detail.startAt} 后自动下发。`;
+  if (["升级中", "已完成", "已结束"].includes(detail.status)) return "已到达任务开始时间，系统已进入下发链路。";
+  return `计划 ${detail.startAt} 自动开始下发。`;
+}
+
+function otaDispatchProgressText(detail) {
+  if (!["升级中", "已完成", "已结束"].includes(detail.status)) return "尚未到达下发阶段。";
+  if (detail.status === "已完成") return "OTA 下发已结束，设备结果已归档。";
+  if (detail.status === "已结束") return "执行过程中被提前结束，未处理设备不再继续下发。";
+  if (isVersionFullDetailMode()) {
+    const stats = metricStats(detail);
+    return `执行中，已匹配 ${Number(stats.stocked).toLocaleString()} 台设备。`;
+  }
+  const stats = metricStats(detail);
+  const denominator = isVersionBatchDetailMode() ? plannedBatchTotal() : detail.total;
+  return `执行中，已处理 ${Number(stats.stocked).toLocaleString()} / ${Number(denominator).toLocaleString()} 台设备。`;
+}
+
+function taskFinishProgressText(detail) {
+  if (detail.status === "已完成") return "任务窗口结束后汇总成功、失败与异常设备结果。";
+  if (detail.status === "已结束") return detail.endReason;
+  if (["已驳回", "已失效"].includes(detail.status)) return "任务未进入 OTA 下发。";
+  return "任务窗口结束后汇总成功、失败与异常设备结果。";
+}
+
+function renderTaskFlowRecords(detail) {
   return `
-    <div class="flow-execution-progress">
-      <div class="flow-progress-head">
-        <strong>执行进度</strong>
-        <span>已处理 ${Number(processed).toLocaleString()} / ${Number(detail.total).toLocaleString()} 台，剩余 ${Number(remaining).toLocaleString()} 台</span>
-      </div>
-      <div class="flow-progress-bar" aria-label="执行进度">
-        <span class="success" style="width:${successRate}%"></span>
-        <span class="failed" style="width:${failedRate}%"></span>
-        <span class="pending" style="width:${pendingRate}%"></span>
-      </div>
-      <div class="flow-progress-legend">
-        <span><i class="success"></i>成功 ${Number(detail.success).toLocaleString()} 台</span>
-        <span><i class="failed"></i>失败 ${Number(detail.failed).toLocaleString()} 台</span>
-        <span><i class="pending"></i>未完成 ${Number(remaining).toLocaleString()} 台</span>
+    <div class="task-flow-records-panel">
+      <h4>流转明细</h4>
+      <div class="task-flow-record-list">
+        ${taskFlowRecords(detail).map(record => `
+          <div class="task-flow-record ${record.type}">
+            <span></span>
+            <div>
+              <strong>${record.title}</strong>
+              <p>${record.operator} · ${record.time}</p>
+              <em>${record.desc}</em>
+            </div>
+          </div>
+        `).join("")}
       </div>
     </div>
   `;
 }
 
+function taskFlowRecords(detail) {
+  const records = [
+    { title: "创建任务", operator: detail.creator, time: detail.createdAt, desc: "创建 OTA 升级任务", type: "done" },
+  ];
+  if (requiresApprovalForDetail()) {
+    records.push({ title: "提交审批", operator: detail.creator, time: detail.submittedAt, desc: "提交至产线负责人审批", type: "done" });
+    if (detail.status === "待审批") {
+      records.push({ title: "等待审批", operator: detail.approver, time: "-", desc: "等待产线负责人处理", type: "active" });
+      return records;
+    }
+    if (detail.status === "已驳回") {
+      records.push({ title: "审批驳回", operator: detail.approver, time: detail.approvedAt, desc: detail.rejectReason, type: "error" });
+      return records;
+    }
+    if (detail.status === "已失效") {
+      records.push({ title: "审批失效", operator: "系统", time: "2026-06-04 09:00:00", desc: detail.invalidReason, type: "error" });
+      return records;
+    }
+    records.push({ title: "审批通过", operator: detail.approver, time: detail.approvedAt, desc: "审批通过，任务进入执行队列", type: "done" });
+  } else {
+    records.push({ title: "发布任务", operator: detail.creator, time: detail.submittedAt, desc: "无需审批，任务进入待执行队列", type: "done" });
+  }
+  if (detail.status === "待执行") {
+    records.push({ title: "等待执行", operator: "系统", time: detail.startAt, desc: "等待到达计划开始时间后自动下发 OTA 指令", type: "active" });
+  } else if (["升级中", "已完成", "已结束"].includes(detail.status)) {
+    records.push({ title: "开始下发", operator: "系统", time: detail.startAt, desc: "到达任务开始时间，开始下发 OTA 指令", type: "done" });
+  }
+  if (["升级中", "已完成", "已结束"].includes(detail.status)) {
+    records.push({ title: detail.status === "升级中" ? "执行中" : detail.status === "已完成" ? "任务完成" : "任务结束", operator: detail.status === "已结束" ? detail.creator : "系统", time: detail.status === "已结束" ? detail.endedAt : detail.status === "已完成" ? "2026-06-12 18:30:22" : "-", desc: detail.status === "已结束" ? detail.endReason : detail.status === "已完成" ? "任务完成，设备结果已归档" : executionRecordText(detail), type: detail.status === "已结束" ? "ended" : detail.status === "已完成" ? "done" : "active" });
+  }
+  return records;
+}
+
+function executionRecordText(detail) {
+  const stats = metricStats(detail);
+  if (isVersionFullDetailMode()) return `已匹配 ${Number(stats.stocked).toLocaleString()} 台`;
+  const denominator = isVersionBatchDetailMode() ? plannedBatchTotal() : detail.total;
+  return `已处理 ${Number(stats.stocked).toLocaleString()} / ${Number(denominator).toLocaleString()} 台`;
+}
+
+function taskFlowNodes(detail) {
+  const approvalDone = ["待执行", "升级中", "已完成", "已结束"].includes(detail.status);
+  const executionStarted = ["升级中", "已完成", "已结束"].includes(detail.status);
+  const needsApproval = requiresApprovalForDetail();
+  const nodes = [
+    { title: "创建任务", desc: "完成任务信息与升级策略配置", type: "done", icon: "log" },
+    { title: needsApproval ? "提交审批" : "发布任务", desc: needsApproval ? "提交至产线负责人审批" : "无需审批，发布后进入待执行", type: "done", icon: "users" },
+    { title: needsApproval ? "审批结果" : "执行队列", desc: needsApproval ? "等待审批结果" : "进入执行队列", type: needsApproval ? "pending" : "done", icon: needsApproval ? "shield" : "clock" },
+    { title: "等待执行", desc: `计划 ${detail.startAt} 自动开始下发`, type: "pending", icon: "clock" },
+    { title: "OTA 下发", desc: "系统按策略下发 OTA 指令", type: "pending", icon: "refresh" },
+    { title: "任务结束", desc: "汇总最终升级结果", type: "pending", icon: "check" },
+  ];
+
+  if (needsApproval) {
+    if (detail.status === "待审批") nodes[2] = { ...nodes[2], desc: "等待产线负责人审批", type: "active" };
+    if (detail.status === "已驳回") nodes[2] = { ...nodes[2], desc: detail.rejectReason, type: "error" };
+    if (detail.status === "已失效") nodes[2] = { ...nodes[2], desc: detail.invalidReason, type: "error" };
+    if (approvalDone) nodes[2] = { ...nodes[2], desc: "审批通过，进入待执行", type: "done" };
+  }
+
+  if (detail.status === "待执行") {
+    nodes[3] = { ...nodes[3], type: "active" };
+  } else if (executionStarted) {
+    nodes[3] = { ...nodes[3], desc: "已到达任务开始时间", type: "done" };
+  }
+
+  if (detail.status === "升级中") {
+    nodes[4] = { ...nodes[4], desc: "执行结果持续回传中", type: "active" };
+  } else if (detail.status === "已完成") {
+    nodes[4] = { ...nodes[4], desc: "OTA 下发已结束", type: "done" };
+    nodes[5] = { ...nodes[5], desc: isVersionFullDetailMode() ? "动态匹配已结束，已匹配设备已有最终结果" : "所有纳入设备已有最终结果", type: "done" };
+  } else if (detail.status === "已结束") {
+    nodes[4] = { ...nodes[4], desc: "执行过程中被提前结束", type: "ended", icon: "close" };
+    nodes[5] = { ...nodes[5], desc: detail.endReason, type: "ended", icon: "close" };
+  }
+
+  return nodes;
+}
+
 function renderExecutionOverview(detail) {
   const stats = metricStats(detail);
-  if (!["升级中", "已完成", "已结束"].includes(detail.status)) {
-    const label = state.detailMetricMode === "versionFull" ? "升级规模" : state.detailMetricMode === "versionBatch" ? "计划成功下发数量" : "升级设备总数";
-    const value = state.detailMetricMode === "versionFull" ? "全量" : state.detailMetricMode === "versionBatch" ? `${Number(plannedBatchTotal()).toLocaleString()} 台` : `${Number(detail.total).toLocaleString()} 台`;
-    return `<div class="detail-metrics single"><div class="detail-metric blue"><span>${label}</span><strong>${value}</strong></div></div>`;
+  if (!isDetailExecutionStatus(detail)) {
+    const label = isVersionFullDetailMode() ? "升级规模" : isVersionBatchDetailMode() ? "计划成功下发数量" : "升级设备总数";
+    const value = isVersionFullDetailMode() ? "全量" : isVersionBatchDetailMode() ? `${Number(plannedBatchTotal()).toLocaleString()} 台` : `${Number(detail.total).toLocaleString()} 台`;
+    const waitingLabel = requiresApprovalForDetail() ? "当前节点" : "发布状态";
+    const waitingValue = requiresApprovalForDetail() ? "等待审批" : "已发布待执行";
+    const reasonCard = detail.status === "已驳回"
+      ? `<div class="detail-metric red"><span>驳回原因</span><strong>${detail.rejectReason}</strong></div>`
+      : detail.status === "已失效"
+        ? `<div class="detail-metric red"><span>失效原因</span><strong>${detail.invalidReason}</strong></div>`
+        : detail.status === "待执行"
+          ? `<div class="detail-metric gray"><span>计划开始时间</span><strong>${detail.startAt}</strong></div>`
+          : `<div class="detail-metric orange"><span>${waitingLabel}</span><strong>${waitingValue}</strong></div>`;
+    return `<div class="detail-metrics single"><div class="detail-metric blue"><span>${label}</span><strong>${value}</strong></div>${reasonCard}</div>`;
   }
   const cards = executionMetricCards(detail, stats);
-  const denominator = state.detailMetricMode === "versionBatch" ? plannedBatchTotal() : state.detailMetricMode === "versionFull" ? Math.max(stats.stocked + stats.dispatchedFailed, 1) : detail.total;
-  const successRate = denominator ? ((stats.upgradeSuccess / denominator) * 100).toFixed(1) : "0.0";
-  const failedRate = denominator ? ((stats.upgradeFailed / denominator) * 100).toFixed(1) : "0.0";
   return `
     <div class="detail-metrics">
       ${cards.map(([label, value, tone]) => `<div class="detail-metric ${tone}"><span>${label}</span><strong>${value}</strong></div>`).join("")}
-      <div class="detail-result-bar">
-        <span style="width:${successRate}%"></span>
-        <em style="width:${failedRate}%"></em>
+    </div>
+    ${renderExecutionProgressInline(detail, stats)}
+  `;
+}
+
+function renderExecutionProgressInline(detail, stats) {
+  const description = isVersionFullDetailMode()
+    ? detailExecutionSummary(detail)
+    : isVersionBatchDetailMode()
+      ? `已处理 ${Number(stats.stocked).toLocaleString()} / 计划 ${Number(plannedBatchTotal()).toLocaleString()} 台`
+      : `已处理 ${Number(stats.stocked).toLocaleString()} / ${Number(detail.total).toLocaleString()} 台`;
+  const resultText = detail.status === "已结束"
+    ? "任务已提前结束，未处理设备不再继续下发"
+    : detail.status === "已完成"
+      ? "任务已完成，设备结果已归档"
+      : "执行中，设备结果持续回传";
+  return `
+    <div class="execution-progress-panel">
+      <div>
+        <span>执行状态</span>
+        <strong>${description}</strong>
       </div>
+      <p>${resultText}</p>
     </div>
   `;
 }
 
 function executionMetricCards(detail, stats) {
-  if (state.detailMetricMode === "versionFull") {
+  if (isVersionFullDetailMode()) {
     return [
       ["已匹配数", `${Number(stats.stocked).toLocaleString()} 台`, "blue"],
       ["升级成功", `${Number(stats.upgradeSuccess).toLocaleString()} 台`, "green"],
@@ -2283,27 +2387,28 @@ function executionMetricCards(detail, stats) {
       [detail.status === "已结束" ? "停止继续匹配" : "匹配状态", detail.status === "已完成" ? "匹配完成" : "动态匹配中", "gray"],
     ];
   }
-  if (state.detailMetricMode === "versionBatch") {
+  if (isVersionBatchDetailMode()) {
     const plan = plannedBatchTotal();
-    const rate = plan ? ((stats.stocked / plan) * 100).toFixed(1) : "0.0";
+    const remaining = Math.max(plan - stats.stocked, 0);
     return [
       ["计划成功下发数量", `${Number(plan).toLocaleString()} 台`, "blue"],
-      ["已匹配数", `${Number(stats.stocked).toLocaleString()} (${rate}%)`, "green"],
+      ["已匹配数", `${Number(stats.stocked).toLocaleString()} 台`, "green"],
       ["升级失败", `${Number(stats.upgradeFailed).toLocaleString()} 台`, "red"],
-      ["待匹配名额", `${Number(Math.max(plan - stats.stocked, 0)).toLocaleString()} 台`, "gray"],
+      [detail.status === "已结束" ? "未继续匹配名额" : "待匹配名额", `${Number(remaining).toLocaleString()} 台`, "gray"],
     ];
   }
-  const successRate = detail.total ? ((stats.upgradeSuccess / detail.total) * 100).toFixed(1) : "0.0";
-  const failedRate = detail.total ? ((stats.upgradeFailed / detail.total) * 100).toFixed(1) : "0.0";
   return [
-    ["升级设备总数", Number(detail.total).toLocaleString(), "blue"],
-    ["升级成功", `${Number(stats.upgradeSuccess).toLocaleString()} (${successRate}%)`, "green"],
-    ["升级失败", `${Number(stats.upgradeFailed).toLocaleString()} (${failedRate}%)`, "red"],
-    ["进行中/未处理", `${Number(detail.running + detail.pending).toLocaleString()} 台`, "gray"],
+    ["升级设备总数", `${Number(detail.total).toLocaleString()} 台`, "blue"],
+    ["升级成功", `${Number(stats.upgradeSuccess).toLocaleString()} 台`, "green"],
+    ["升级失败", `${Number(stats.upgradeFailed).toLocaleString()} 台`, "red"],
+    [detail.status === "已结束" ? "已终止/未处理" : "进行中/未处理", `${Number(detail.running + stats.pending).toLocaleString()} 台`, "gray"],
   ];
 }
 
 function renderExceptionSummary(detail) {
+  if (!detail.failed) {
+    return "";
+  }
   return `
     <h3 class="section-title">${icon("alert")}异常分类</h3>
     <div class="exception-list">
@@ -2315,45 +2420,93 @@ function renderExceptionSummary(detail) {
 }
 
 function renderDeviceDetailTable(detail) {
+  const keyword = state.detailDeviceKeyword.trim().toLowerCase();
+  const rowModels = deviceDetailRows(detail);
+  const filteredRows = keyword
+    ? rowModels.filter(row => row.id.toLowerCase().includes(keyword))
+    : rowModels;
+  const rows = filteredRows.length
+    ? filteredRows.map(renderDeviceDetailRow).join("")
+    : `<tr class="empty-row"><td colspan="9">暂无符合条件的设备</td></tr>`;
   return `
     <h3 class="section-title">${icon("layer")}设备明细</h3>
+    ${renderDeviceDetailNote(detail)}
     <div class="toolbar">
-      <label class="field-control search">${icon("search")}<input placeholder="请输入设备ID,按Enter搜索" aria-label="设备ID搜索" /></label>
+      <label class="field-control search">${icon("search")}<input type="search" value="${escapeHtml(state.detailDeviceKeyword)}" placeholder="请输入设备ID" aria-label="设备ID搜索" data-detail-device-search /></label>
     </div>
     <div class="table-wrap">
       <table>
         <thead><tr><th>设备ID</th><th>源版本</th><th>目标版本</th><th>所属大区</th><th>下发状态</th><th>升级状态</th><th>完成时间</th><th>失败原因</th><th>最近上报时间</th></tr></thead>
-        <tbody>${deviceRows.map((id, index) => {
-          const failed = index < Math.min(detail.failed, 3);
-          const success = index < Math.max(detail.success, 4) && !failed;
-          return `<tr><td>${id}</td><td>23.110.105.${index % 2 ? "46" : "43"}</td><td>${detail.targetVersion}</td><td>${detail.region}</td><td>已下发</td><td>${failed ? statusTag("异常") : statusTag(success ? "已完成" : "升级中")}</td><td>${success || failed ? "2026-06-10 11:32:18" : "-"}</td><td>${failed ? "设备离线，升级状态未回传" : "-"}</td><td>2026-06-10 11:35:22</td></tr>`;
-        }).join("")}</tbody>
+        <tbody>${rows}</tbody>
       </table>
     </div>
   `;
 }
 
-function renderOperationRecords(detail) {
-  const records = [
-    ["创建任务", detail.creator, detail.createdAt, "创建 OTA 升级任务"],
-    ["提交审批", detail.creator, detail.submittedAt, "提交至产线负责人审批"],
-  ];
-  if (detail.status === "待审批") records.push(["等待审批", detail.approver, "-", "产线负责人处理中"]);
-  if (detail.status === "已驳回") records.push(["审批驳回", detail.approver, detail.approvedAt, detail.rejectReason]);
-  if (detail.status === "已失效") records.push(["审批失效", "系统", "2026-06-04 09:00:00", detail.invalidReason]);
-  if (["待执行", "升级中", "已完成", "已结束"].includes(detail.status)) records.push(["审批通过", detail.approver, detail.approvedAt, "审批通过，任务进入执行队列"]);
-  if (["升级中", "已完成", "已结束"].includes(detail.status)) records.push(["开始下发", "系统", detail.startAt, "到达任务开始时间，开始下发 OTA 指令"]);
-  if (detail.status === "已完成") records.push(["任务完成", "系统", "2026-06-12 18:30:22", "所有纳入设备已有最终结果"]);
-  if (detail.status === "已结束") records.push(["手动结束", "汤彦珊", detail.endedAt, detail.endReason]);
-  return `
-    <h3 class="section-title">${icon("log")}操作记录</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>操作动作</th><th>操作人</th><th>操作时间</th><th>说明</th></tr></thead>
-        <tbody>${records.map(row => `<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td title="${row[3]}">${row[3]}</td></tr>`).join("")}</tbody>
-      </table>
-    </div>
-  `;
+function deviceDetailRows(detail) {
+  return deviceRows.slice(0, deviceDetailRowLimit(detail)).map((id, index) => buildDeviceDetailRow(detail, id, index));
+}
+
+function deviceDetailRowLimit(detail) {
+  if (isManualDetailMode()) return Math.min(Number(detail.total) || 2, deviceRows.length);
+  if (isVersionFullDetailMode() && detail.status === "已结束") return Math.min(8, deviceRows.length);
+  return deviceRows.length;
+}
+
+function renderDeviceDetailNote(detail) {
+  const note = isVersionFullDetailMode()
+    ? detail.status === "已结束"
+      ? "指定版本全量任务已停止继续动态匹配；设备明细展示已匹配并进入下发链路的设备，以及提前结束后未继续下发的设备。"
+      : "指定版本全量任务无法提前统计设备总数；设备明细展示已动态匹配并进入下发链路的设备。"
+    : isVersionBatchDetailMode()
+      ? `指定版本批量任务按计划成功下发数量控制名额，当前计划 ${Number(plannedBatchTotal()).toLocaleString()} 台。`
+      : "文件/手动导入任务设备清单固定，设备明细展示已纳入本次升级的设备。";
+  return `<div class="detail-inline-note">${icon("info")}${note}</div>`;
+}
+
+function buildDeviceDetailRow(detail, id, index) {
+  const sample = deviceDetailSampleCounts(detail);
+  const failed = index < sample.failedCount;
+  const success = !failed && index - sample.failedCount < sample.successCount;
+  const terminated = detail.status === "已结束" && !failed && !success;
+  const dispatchStatus = terminated
+    ? "未继续下发"
+    : isVersionFullDetailMode()
+      ? "动态匹配后下发"
+      : "已下发";
+  const upgradeStatus = terminated ? statusTag("已终止") : failed ? statusTag("异常") : statusTag(success ? "已完成" : detail.status === "已完成" ? "已完成" : "升级中");
+  const finishedAt = success || failed ? "2026-06-10 11:32:18" : "-";
+  const reason = terminated ? "任务已提前结束，未进入下发链路" : failed ? "设备离线，升级状态未回传" : "-";
+  const reportedAt = terminated ? "-" : "2026-06-10 11:35:22";
+  return {
+    id,
+    sourceVersion: `23.110.105.${index % 2 ? "46" : "43"}`,
+    targetVersion: detail.targetVersion,
+    region: detail.region,
+    dispatchStatus,
+    upgradeStatus,
+    finishedAt,
+    reason,
+    reportedAt,
+  };
+}
+
+function renderDeviceDetailRow(row) {
+  return `<tr><td>${row.id}</td><td>${row.sourceVersion}</td><td>${row.targetVersion}</td><td>${row.region}</td><td>${row.dispatchStatus}</td><td>${row.upgradeStatus}</td><td>${row.finishedAt}</td><td>${row.reason}</td><td>${row.reportedAt}</td></tr>`;
+}
+
+function deviceDetailSampleCounts(detail) {
+  const totalRows = deviceDetailRowLimit(detail);
+  const failedCount = Math.min(Number(detail.failed) || 0, 3, totalRows);
+  const availableRows = Math.max(totalRows - failedCount, 0);
+  const sampleSuccessCap = isManualDetailMode() ? availableRows : detail.status === "已结束" ? 5 : 4;
+  const reserveOpenRow = ["升级中", "已结束"].includes(detail.status) && Number(detail.running || detail.pending || 0) > 0 ? 1 : 0;
+  const successCount = Math.min(
+    Number(detail.success) || 0,
+    sampleSuccessCap,
+    Math.max(availableRows - reserveOpenRow, 0),
+  );
+  return { failedCount, successCount };
 }
 
 function renderLogPage(title, rows) {
@@ -3036,6 +3189,16 @@ function bindEvents(root) {
     });
   });
 
+  root.querySelectorAll("[data-detail-device-search]").forEach(input => {
+    input.addEventListener("input", () => updateDetailDeviceSearch(input));
+    input.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        updateDetailDeviceSearch(input);
+      }
+    });
+  });
+
   root.querySelectorAll("[data-page-jump]").forEach(input => {
     input.addEventListener("keydown", event => {
       if (event.key === "Enter") {
@@ -3068,6 +3231,14 @@ function updateBatchQuantity(input) {
   state.batchQuantity = Math.max(0, Number(input.value || 0));
   if (state.batchQuantity > 0) delete state.errors.batchQuantity;
   render();
+}
+
+function updateDetailDeviceSearch(input) {
+  state.detailDeviceKeyword = input.value;
+  render({
+    focusSelector: "[data-detail-device-search]",
+    focusSelectionStart: input.selectionStart ?? input.value.length,
+  });
 }
 
 function updateManualDevice(input) {
@@ -3383,6 +3554,10 @@ function handleAction(action, el) {
       break;
     case "set-detail-metric-mode":
       state.detailMetricMode = el.dataset.mode || "versionFull";
+      if (state.detailMetricMode === "manual" && ["待审批", "已驳回", "已失效"].includes(state.detailStatus)) {
+        state.detailStatus = "待执行";
+      }
+      state.flowTab = "progress";
       state.detailTab = "overview";
       render();
       break;
