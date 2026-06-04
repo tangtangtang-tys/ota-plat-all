@@ -66,6 +66,8 @@ const state = {
   detailMetricMode: "versionFull",
   detailTab: "overview",
   detailDeviceKeyword: "",
+  detailSourceExpanded: false,
+  showRequirementNotes: true,
   flowTab: "progress",
   visibleTaskColumns: {
     method: true,
@@ -94,6 +96,8 @@ const navGroups = [
   { key: "logs", title: "日志管理", icon: "log", items: [["operation-log", "操作日志"], ["approval-log", "审批日志"]] },
   { key: "users", title: "用户角色", icon: "users", items: [["user-list", "用户列表"], ["role-list", "角色权限"]] },
 ];
+
+const docNavItems = [["requirements-doc", "需求说明"]];
 
 const taskRows = [
   ["单台升级", "手动导入", "1", "2026-05-19 11:05:00~2026-05-19 12:00:00", "0%", "1", "中国/杭州低功耗", "待执行", "2026-05-19 09:11:24", true],
@@ -303,7 +307,10 @@ const routeMeta = {
   "user-detail": { title: "用户详情", section: "用户角色", parent: "user-list" },
   "role-list": { title: "角色权限", section: "用户角色", parent: null },
   "role-permission": { title: "配置权限", section: "用户角色", parent: "role-list" },
+  "requirements-doc": { title: "需求说明", section: "产品文档", parent: null },
 };
+
+const requirementsMarkdown = "# OTA 升级任务管理优化产品需求文档\n\n## 1. 摘要\n\n### 问题背景\n\n当前 OTA 升级任务创建、任务列表和任务详情中，存在流程步骤割裂、状态操作不统一、设备统计口径混用、详情页信息分散的问题。尤其在“指定版本升级”场景下，设备总数在执行过程中动态匹配，创建任务时无法准确得到最终设备规模，若按固定设备总数展示进度，会误导用户判断任务规模、成功率和失败率。\n\n### 解决方案\n\n围绕“新增任务、任务列表、任务详情、升级明细”进行信息架构和交互优化：新增任务压缩为三步流程，发布结果通过弹窗反馈；任务列表统一字段、筛选、列设置和状态操作；任务详情以“任务概览 / 升级明细”组织信息；升级统计明确区分“指定版本动态匹配”和“文件/手动导入固定清单”两类口径；异常分类采用 ECharts 基础环形图和分类列表联动展示。\n\n### 成功标准\n\n- 新增任务流程按三步完成，最后发布结果不再作为独立步骤跳转。\n- 每一步必填项校验完整，未填写时阻止进入下一步并展示字段级提示。\n- 指定版本全量场景不展示未知总数百分比，只展示已匹配数、成功数、失败数及基于已匹配数的占比。\n- 文件/手动导入场景展示明确设备总数、已处理、成功、失败、未处理。\n- 任务列表字段、状态、操作、分页、列设置符合统一规则。\n- 详情页信息不重复：任务配置在“任务概览”，执行结果、异常分类、设备列表在“升级明细”。\n- 异常分类按 6 个一级分类展示，环形图与右侧列表支持鼠标移入联动。\n\n### 本次需求范围\n\n本次需求范围聚焦 OTA 升级任务管理链路的前端交互、信息架构、展示口径和原型验证，不覆盖真实后端执行能力建设。\n\n范围内：\n\n- **新增任务**：覆盖基础信息、配置升级策略、预览发布三步流程，以及保存草稿、提交审批、发布反馈、必填校验、时间选择、指定版本表格勾选、文件导入、手动导入等交互。\n- **任务列表**：覆盖查询筛选、状态统计卡片、列表字段、列设置、分页、创建时间倒序、状态展示、执行结果展示和不同状态下的操作按钮。\n- **任务详情**：覆盖顶部任务概览卡、任务进度、流转明细、任务概览页签、升级明细页签，以及不同任务状态下的字段展示规则。\n- **升级统计口径**：覆盖文件导入、手动导入、指定版本全量、指定版本批量四类口径，明确固定设备总数和动态匹配设备数的展示差异。\n- **异常分类**：覆盖 6 个一级异常分类、ECharts 基础环形图、分类列表联动、异常明细下载入口和最小可行版本展示方案。\n- **原型验证**：覆盖任务状态模拟、统计口径模拟、预览发布三种场景模拟，用于产品、研发、测试共同核对逻辑闭环。\n\n范围外：\n\n- 不包含真实 OTA 任务下发、设备动态匹配、设备升级执行和结果回传能力。\n- 不包含真实审批流、真实文件解析、真实设备校验和真实异常明细生成。\n- 不包含跨大区聚合查询、复杂报表、异常趋势分析、异常原因多级钻取和权限体系重构。\n\n## 2. 用户体验与功能\n\n### 用户角色\n\n- **运营/实施用户**：创建 OTA 升级任务，跟踪任务状态和升级结果。\n- **产线负责人**：审批任务，关注升级范围、目标版本、策略条件和风险。\n- **产品负责人**：确认创建、审批、执行、结束、复制重建等流程是否闭环。\n- **研发人员**：按清晰口径实现状态、统计字段、异常分类和权限操作。\n- **测试人员**：验证不同状态、升级方式、统计口径下的页面展示是否正确。\n\n### 用户故事\n\n- 作为运营用户，我希望按步骤创建 OTA 升级任务，以避免遗漏必填配置。\n- 作为产线负责人，我希望清晰查看任务配置和策略条件，以便安全审批任务。\n- 作为普通用户，我希望任务流转进度和设备升级结果分开展示，以避免混淆流程状态和执行结果。\n- 作为研发人员，我希望统计口径规则明确，以便一致实现动态匹配和固定清单场景。\n- 作为测试人员，我希望原型提供状态和统计口径模拟控件，以便高效验证不同展示场景。\n\n### 验收标准\n\n- 新增任务流程为：`基础信息 > 配置升级策略 > 预览发布`。\n- 发布成功、提交审批成功、保存草稿成功均通过弹窗或消息反馈，不新增“完成”步骤。\n- 保存草稿后默认返回任务列表，草稿状态为“待发布”，支持二次进入编辑。\n- 指定版本升级不再提供“全部版本升级 / 仅指定版本升级 / 排除指定版本不升级”切换，统一使用源版本表格勾选。\n- 配置升级数量为“全量”时，表格“升级设备数”展示 `全量`；为“批量”时，仅支持统一输入数量，不支持单个源版本分别输入。\n- 任务列表支持筛选、分页、列设置、刷新，默认按创建时间倒序。\n- 详情页主页签为：`任务概览 / 升级明细`。\n- 任务概览只展示任务配置、策略条件和任务流转，不展示设备执行结果。\n- 升级明细展示升级概览、异常分类、设备列表和导出操作。\n- 非执行态任务进入“升级明细”时展示空状态，不展示设备表格。\n- 原型阶段提供状态模拟和统计口径模拟按钮，方便验证展示逻辑；生产环境不展示模拟按钮。\n\n### 非目标\n\n- 不实现真实后端设备检索、动态匹配和下发逻辑。\n- 不实现真实审批流接口。\n- 不实现真实文件解析和设备校验。\n- 不支持跨多个大区查询，仍通过顶部大区切换查看不同大区任务。\n- 不新增人工智能能力。\n- 最小可行版本不做异常原因多级钻取、趋势分析或复杂报表。\n\n## 3. 人工智能能力要求\n\n不适用。本需求不涉及人工智能模型、人工智能工具调用、生成式输出或人工智能评估策略。\n\n## 4. 技术规格\n\n### 架构概览\n\n当前原型以静态网页技术实现，核心模块包括：\n\n- 新增任务向导\n- 任务列表与分页\n- 任务列表列设置\n- 任务详情\n- 状态模拟\n- 统计口径模拟\n- 任务进度与流转明细\n- 升级概览、异常分类与设备列表\n\n前端状态建议维护：\n\n| 状态字段 | 说明 |\n| --- | --- |\n| `createStep` | 当前新增任务步骤，取值 1-3 |\n| `quantityMode` | 全量 / 批量 |\n| `selectedVersions` | 指定版本升级中勾选的源版本 |\n| `selectedRegions` | 任务执行大区或策略地区 |\n| `previewScenario` | 原型预览发布模拟场景 |\n| `taskFilters` | 任务列表查询条件 |\n| `taskPage` | 任务列表当前分页 |\n| `visibleTaskColumns` | 任务列表列设置 |\n| `detailStatus` | 当前详情模拟状态 |\n| `detailMetricMode` | 文件导入 / 手动导入 / 指定版本全量 / 指定版本批量 |\n| `detailTab` | 任务概览 / 升级明细 |\n| `flowTab` | 任务进度 / 流转明细 |\n\n### 接口集成点\n\n后端接口建议包含：\n\n- 创建任务接口\n- 保存草稿接口\n- 提交审批接口\n- 查询任务列表接口\n- 查询任务详情接口\n- 查询升级明细接口\n- 查询设备列表接口\n- 查询流转明细接口\n- 下载异常明细接口\n- 导出设备列表接口\n- 结束任务接口\n- 复制重建接口\n\n建议数据字段：\n\n| 字段 | 说明 |\n| --- | --- |\n| `taskId` | 任务标识 |\n| `taskName` | 任务名称 |\n| `targetVersion` | 目标版本 |\n| `upgradeMethod` | 指定版本 / 文件导入 / 手动导入 |\n| `packageType` | 整包 / 差分包 |\n| `region` | 任务所属大区 |\n| `quantityMode` | 全量 / 批量 |\n| `plannedSuccessCount` | 批量场景计划成功下发数量 |\n| `matchedCount` | 指定版本场景已匹配数 |\n| `totalDeviceCount` | 文件/手动导入场景设备总数 |\n| `processedCount` | 已处理设备数 |\n| `upgradeSuccessCount` | 升级成功数 |\n| `upgradeFailedCount` | 升级失败数 |\n| `pendingCount` | 未处理或待匹配数量 |\n| `sourceVersions` | 指定版本升级的源版本列表 |\n| `sourceScope` | 文件/手动导入的设备来源 |\n| `strategyConditions` | 策略条件，如指定地区 |\n| `taskStatus` | 任务状态 |\n| `createdBy` | 创建人 |\n| `createdAt` | 创建时间 |\n| `updatedAt` | 更新时间，详情页可展示 |\n| `submittedAt` | 提交审批时间 |\n| `approvedAt` | 审批通过时间 |\n| `rejectedAt` | 审批驳回时间 |\n| `startAt` | 任务开始时间 |\n| `endAt` | 任务结束时间 |\n\n### 安全与隐私\n\n- 设备标识、区域信息、固件版本号属于业务敏感数据，需按权限展示。\n- 文件导入/手动导入设备清单需校验权限后展示和导出。\n- 审批、结束任务、删除草稿、复制重建等操作需后端权限校验。\n- 操作审计记录需由后端保留；详情页不单独展示“操作记录”，只展示任务流转明细。\n\n## 5. 功能需求\n\n### 5.1 新增任务流程\n\n新增任务流程固定为三步：\n\n```text\n基础信息 → 配置升级策略 → 预览发布\n```\n\n发布结果不作为第 4 步展示：\n\n- 保存草稿：提示保存成功，返回任务列表，状态为“待发布”。\n- 发布需审批：提示提交审批成功，进入“待审批”状态。\n- 发布无需审批：提示发布成功，按任务起止时间进入“待执行”或后续执行状态。\n\n发布结果弹窗规则：\n\n- 弹窗需展示结果标题、结果说明、任务摘要和后续流程说明，避免用户提交后不知道下一步去向。\n- 发布需审批时，需说明任务已进入“待审批”，审批通过前不会进入执行队列，也不会下发 OTA；审批通过后按任务时间进入待执行或升级中；审批驳回或超时失效时任务不会下发。\n- 发布无需审批时，需说明任务已发布，未到开始时间为“待执行”，到达开始时间后进入“升级中”，升级结果可在任务详情的升级明细中查看。\n- 弹窗底部提供“返回任务列表”和“查看任务详情”两个明确出口。\n- 点击关闭按钮或遮罩关闭时，默认返回任务列表，保证创建流程闭环。\n\n基础信息必填字段：\n\n- 任务名称\n- 任务执行大区\n- 目标固件版本号\n- 任务起止时间\n- 任务升级说明\n\n基础信息字段规则：\n\n| 字段 | 是否必填 | 格式要求 | 异常提示 | 交互要求 |\n| --- | --- | --- | --- | --- |\n| 任务名称 | 必填 | 1-64 个字符；不允许只输入空格；建议包含升级对象、地区或升级目的，便于列表识别 | 未填写时提示：`请输入任务名称`；超过 64 个字符时禁止继续输入或提示：`任务名称最多 64 个字符` | 输入框右侧展示字数计数；用户输入后清除字段错误；保存草稿和进入下一步时均需校验 |\n| 任务执行大区 | 必填 | 至少选择 1 个任务执行大区；支持选择大区及其子集群；可多选 | 未选择时提示：`请选择任务执行大区` | 采用下拉级联多选；输入框内以标签展示已选项；支持删除单个标签、全选、清空；选项过多时输入框高度自适应 |\n| 目标固件版本号 | 必填 | 只能从已上架或已生成升级包的目标版本中选择；不支持手动输入不存在的版本 | 未选择时提示：`请选择目标固件版本`；版本不可用时提示：`当前版本暂不可用于创建升级任务` | 使用下拉选择；切换升级包类型时，目标版本展示对应可用状态；已是目标版本的设备不进入升级范围 |\n| 任务起止时间 | 必填 | 开始时间不得早于当前时间；默认开始时间为当前时间后 5 分钟；结束时间必须晚于开始时间 | 未选择时提示：`请选择任务起止时间`；选择过去时间时提示：`开始时间不可早于当前时间`；结束时间早于开始时间时提示：`结束时间必须晚于开始时间` | 使用日期时间范围选择器；过去日期不可选；支持快捷按钮：未来 7 天、未来 30 天、未来 90 天；点击快捷按钮后自动设置开始与结束时间 |\n| 任务升级说明 | 必填 | 1-500 个有效字符；需说明升级目标、影响范围、灰度或回滚关注点；不允许只输入空格 | 未填写时提示：`请输入任务升级说明`；超过 500 个字符时禁止继续输入或提示：`任务升级说明最多 500 个字符` | 使用多行文本框；支持换行；右下角展示字数统计；用户输入后清除字段错误；保存草稿和进入下一步时均需校验 |\n\n时间选择规则：\n\n- 过去日期不可选。\n- 默认开始时间为当前时间后 5 分钟。\n- 快捷时间按钮为：`未来 7 天`、`未来 30 天`、`未来 90 天`。\n- 点击快捷时间后，默认配置为“当前时间后 5 分钟”至对应未来周期结束。\n\n校验规则：\n\n- 每一步点击下一步或发布前，都必须校验当前步骤必填项。\n- 未填写字段需展示字段级错误提示，并阻止进入下一步。\n- 上传文件、手动导入设备、源版本勾选等策略配置也需在进入预览发布前校验。\n\n### 5.2 配置升级策略\n\n升级包类型：\n\n- 整包\n- 差分包\n\n升级方式：\n\n- 指定版本升级\n- 文件导入升级\n- 手动导入升级\n\n所有支持多选的输入框，交互应采用类似企业后台组件库的下拉多选样式：\n\n- 输入框内展示已选标签。\n- 下拉面板支持勾选。\n- 支持清空或删除单个标签。\n- 控件高度需自适应，不得出现内容溢出。\n\n### 5.3 指定版本升级\n\n交互要求：\n\n- 使用源版本表格勾选作为统一入口。\n- 不再拆分“全部版本升级 / 仅指定版本升级 / 排除指定版本不升级”。\n- 表格支持全选、单选、取消勾选。\n- 表格字段为：`源版本号`、`升级设备数`。\n\n配置升级数量：\n\n- 全量：右侧说明文案为 `按表格勾选范围下发全部可升级版本`；表格“升级设备数”展示 `全量`。\n- 批量：右侧说明文案为 `所有勾选源版本统一按该数量下发`；用户只输入统一数量。\n\n统计口径：\n\n- 全量场景最终设备数不可预估，执行过程中逐步匹配。\n- 批量场景有计划成功下发数量，但下发失败不占用匹配名额，系统需持续补充匹配符合条件设备。\n\n### 5.4 文件导入升级\n\n功能要求：\n\n- 支持表格文件。\n- 提供下载模板按钮。\n- 上传前不展示设备清单预检结果，不默认展示已上传状态。\n- 用户点击上传后，需体现未上传、上传中、上传完成的状态变化。\n- 上传完成后展示文件名、识别设备数量、上传完成状态，支持重新上传。\n- 不向用户展示研发校验规则。\n- 上传区与结果区布局需清晰，不得将上传、说明、表格压缩到同一狭窄区域。\n\n### 5.5 手动导入升级\n\n功能要求：\n\n- 最多 10 台。\n- 支持逐行录入或批量粘贴设备标识。\n- 录入后展示设备列表。\n- 列表字段包括：设备标识、源固件版本号、所属大区、校验状态、异常说明、操作。\n- 支持删除单台设备。\n- 校验状态由系统根据设备标识检索后展示。\n\n### 5.6 预览发布\n\n预览发布需支持三种结果场景：\n\n| 场景 | 展示与操作 |\n| --- | --- |\n| 存在部分可升级 | 提示“检测到部分设备不符合发布条件”，展示基本信息、升级策略、任务预览、异常分类明细，支持下载异常文件明细，可继续发布或提交审批 |\n| 不存在可升级 | 提示“无法发布 OTA 升级任务”，不支持发布 |\n| 全部可升级 | 提示“预检通过”，支持正常发布；指定版本和文件导入方式需走审批流程 |\n\n原型阶段需提供三个模拟按钮，便于切换查看上述场景。\n\n## 6. 任务列表需求\n\n### 6.1 查询区\n\n查询条件顺序：\n\n1. 任务名称\n2. 任务状态\n3. 升级方式\n4. 升级包\n5. 创建人\n6. 创建时间\n\n字段规则：\n\n| 条件 | 默认值 | 交互方式 | 查询规则 |\n| --- | --- | --- | --- |\n| 任务名称 | 空 | 输入框 | 支持任务名称模糊搜索 |\n| 任务状态 | 全部 | 下拉单选 | 支持全部、待发布、待审批、待执行、升级中、已完成、已结束、已驳回、已失效 |\n| 升级方式 | 全部 | 下拉单选 | 支持全部、指定版本、文件导入、手动导入 |\n| 升级包 | 全部 | 下拉单选 | 支持全部、整包、差分包 |\n| 创建人 | 空 | 输入 + 下拉选择 | 支持模糊搜索创建人并选择 |\n| 创建时间 | 空 | 日期选择器 | 选择某日创建的任务，不使用时间区间 |\n\n交互要求：\n\n- 查询条件变更后，列表需真实过滤并重置到第一页。\n- 创建人输入时展示匹配候选项，点击候选项后填入输入框并触发筛选。\n- 不支持跨多个大区查询，任务数据随顶部大区切换。\n\n### 6.2 状态统计卡片\n\n查询区上方展示基础状态统计卡片：\n\n- 当前任务大区\n- 全部任务\n- 待发布\n- 待审批\n- 待执行\n- 升级中\n- 已完成\n- 已结束\n- 已驳回\n- 已失效\n\n统计卡片只表达当前顶部大区下的任务状态数量，不包含跨大区汇总。\n\n### 6.3 列表字段与布局\n\n任务列表字段：\n\n- 名称\n- 升级方式\n- 升级包\n- 目标版本\n- 升级设备数\n- 任务时间\n- 执行结果\n- 任务所属大区\n- 状态\n- 创建人\n- 创建时间\n- 操作\n\n排序规则：\n\n- 默认按创建时间倒序。\n- 列表不展示更新时间。\n\n字段展示规则：\n\n- “升级设备数”统一展示为 `N 台` 或 `全量`，保持一致性。\n- 指定版本全量展示 `全量`。\n- 指定版本批量展示设置的计划数量。\n- 文件导入/手动导入展示固定设备数量。\n- 执行结果需一眼看出成功与失败数量及占比，不按动态文案展示。\n- 非执行态任务执行结果展示 `-`。\n\n列设置：\n\n- 支持用户勾选展示字段。\n- 勾选后即时预览列表列变化。\n- 支持列设置刷新。\n- 操作列固定在右侧。\n- 文案过长时通过横向滚动查看，不设置桌面端精简模式。\n\n分页：\n\n- 分页器需可交互。\n- 支持页码切换。\n- 支持每页条数切换。\n- 查询条件变化后重置到第一页。\n\n### 6.4 状态操作\n\n任务状态定义：\n\n| 状态 | 说明 |\n| --- | --- |\n| 待发布 | 用户创建任务但未提交发布，保存草稿状态 |\n| 待审批 | 任务已提交发布但尚未审批通过 |\n| 待执行 | 审批通过且未到任务下发执行时间 |\n| 升级中 | 任务审批通过并到达任务下发时间周期，开始执行 OTA 升级 |\n| 已完成 | 任务周期内所有符合下发的设备均完成升级任务，包含升级失败设备 |\n| 已结束 | 任务执行中被用户提前手动结束 |\n| 已驳回 | 审批被驳回 |\n| 已失效 | 审批未及时处理，超过审批有效时间 |\n\n状态操作规则：\n\n| 状态 | 操作 |\n| --- | --- |\n| 待发布 | 编辑、删除 |\n| 待审批 | 详情 |\n| 待执行 | 详情 |\n| 升级中 | 详情、结束任务 |\n| 已完成 | 详情 |\n| 已结束 | 详情 |\n| 已驳回 | 详情、复制重建 |\n| 已失效 | 详情、复制重建 |\n\n## 7. 任务详情需求\n\n### 7.1 页面结构\n\n详情页主页签：\n\n```text\n任务概览 / 升级明细\n```\n\n任务概览：\n\n- 顶部任务概览卡\n- 策略条件\n- 任务进度\n- 流转明细\n\n升级明细：\n\n- 升级概览\n- 异常分类\n- 设备列表\n\n顶部操作按钮规则：\n\n- 只放真实任务操作，如结束任务、复制重建。\n- 不在顶部卡片额外放“查看升级明细”按钮，避免与页签导航重复。\n\n### 7.2 顶部任务概览卡\n\n顶部任务概览卡关注升级任务本身，不展示任务流程进度仪表盘，也不展示重复执行概览。\n\n展示规则：\n\n- 任务状态标签放在任务名称旁边。\n- 元信息行展示：任务标识、创建人、更新时间。\n- 任务说明放在元信息行下方。\n- 匹配规则字段与新增任务中的“策略条件”保持一致，不额外加背景框。\n\n核心字段：\n\n- 任务名称\n- 当前状态\n- 任务标识\n- 创建人\n- 更新时间\n- 任务说明\n- 目标版本\n- 任务时间\n- 任务大区\n- 升级设备数\n- 升级方式\n- 升级包\n- 下发方式\n- 审批流程\n- 指定地区\n- 指定源版本或设备来源\n\n### 7.3 任务进度与流转明细\n\n任务进度只表达流程阶段，不展示设备执行百分比、执行结果占比或升级仪表盘。\n\n局部页签：\n\n- 任务进度\n- 流转明细\n\n阶段包括：\n\n- 创建任务\n- 提交审批\n- 审批结果\n- 等待执行\n- OTA 下发\n- 任务结束\n\n图标语义：\n\n| 阶段 | 图标语义 |\n| --- | --- |\n| 创建任务 | 文档 |\n| 提交审批 | 用户 |\n| 审批结果 | 盾牌 |\n| 等待执行 | 时钟 |\n| OTA 下发 | 刷新 |\n| 任务结束 | 完成 |\n\n状态文案规则：\n\n- 待审批：停留在审批结果节点，提示审批处理中，任务尚未进入执行队列。\n- 已驳回：停留在审批结果节点，展示驳回原因，后续执行节点置灰。\n- 已失效：停留在审批结果节点，展示失效原因，后续执行节点置灰。\n- 待执行：停留在等待执行节点，提示等待到达计划开始时间。\n- 升级中：停留在 OTA 下发节点，提示执行结果持续回传中。\n- 已完成：所有流程节点完成。\n- 已结束：展示中性终止态，说明任务提前结束和结束原因。\n\n流转明细：\n\n- 以时间线展示创建、提交审批/发布、审批结果、开始下发、执行中、完成或结束。\n- 待执行不得记录为“已开始下发”。\n- 已驳回、已失效不展示 OTA 下发和任务完成记录。\n- 不再单独展示“操作记录”模块。\n\n### 7.4 升级概览\n\n升级概览只在“升级明细”页签中展示。\n\n非执行态：\n\n- 待发布、待审批、待执行、已驳回、已失效不展示升级概览数据卡，展示空状态或提示任务尚未进入执行阶段。\n\n执行态：\n\n- 升级中\n- 已完成\n- 已结束\n\n文件/手动导入：\n\n- 升级设备总数\n- 已处理\n- 升级成功\n- 升级失败\n- 未处理\n- 支持展示成功、失败、未处理的分段进度条。\n\n指定版本全量：\n\n- 已匹配数\n- 升级成功\n- 升级失败\n- 成功占比：以已匹配数为分母\n- 失败占比：以已匹配数为分母\n- 不展示最终总数，不展示未知总数百分比。\n\n指定版本批量：\n\n- 计划成功下发数量\n- 已匹配数\n- 升级成功\n- 升级失败\n- 待匹配名额\n- 成功/失败占比以已匹配数为分母。\n\n### 7.5 异常分类\n\n展示条件：\n\n- 仅执行态且存在升级失败设备时展示。\n- 失败设备数为 0 时不展示异常分类模块。\n\n最小可行版本分类口径采用一级分类：\n\n- 设备升级过程失败\n- 升级前不满足条件\n- 升级数量限制\n- 任务和链路异常\n- 移动端主动升级相关\n- 设备上报失败信息\n\n图表要求：\n\n- 使用 ECharts 基础环形图，不使用南丁格尔玫瑰图。\n- 不使用圆角环形图强化效果。\n- 中心展示异常总数；鼠标移入图表扇区时展示当前分类名称、数量、占比。\n- 右侧展示分类列表，包含分类名称、数量、占比和横向占比条。\n- 鼠标移入右侧分类列表时，同步高亮环形图扇区并展示提示浮层。\n- 鼠标移入图表扇区时，同步高亮右侧分类项。\n- 支持下载异常明细。\n\n### 7.6 设备列表\n\n设备列表位于“升级明细”页签。\n\n展示规则：\n\n- 待发布、待审批、已驳回、已失效、待执行：展示空状态，不展示设备表格。\n- 升级中、已完成、已结束：展示设备列表。\n- 指定版本全量：只展示已动态匹配并进入下发链路的设备。\n- 指定版本批量：展示已匹配、已下发、升级结果和剩余名额相关状态。\n- 文件/手动导入：展示固定设备清单。\n\n列表上方工具栏：\n\n- 左侧为设备标识搜索。\n- 右侧为“导出设备列表”按钮。\n- 搜索与导出需保持同一行水平展示，空间不足时自然换行。\n- 去掉下方提示说明。\n\n表格字段：\n\n- 设备标识\n- 源版本\n- 目标版本\n- 所属大区\n- 下发状态\n- 升级状态\n- 完成时间\n- 失败原因\n- 最近上报时间\n\n## 8. 统计口径规则\n\n统计口径模拟按钮：\n\n```text\n文件导入 / 手动导入 / 指定版本全量 / 指定版本批量\n```\n\n### 文件导入\n\n- 设备总数已知。\n- 分母为设备清单总数。\n- 展示固定设备总数、已处理、升级成功、升级失败、未处理。\n\n### 手动导入\n\n- 设备总数已知。\n- 分母为手动录入设备总数。\n- 展示固定设备总数、已处理、升级成功、升级失败、未处理。\n\n### 指定版本全量\n\n- 设备执行中动态匹配。\n- 不展示最终总数百分比。\n- 展示已匹配数。\n- 可展示已匹配设备中的成功/失败数量和占比。\n\n示例：\n\n```text\n已匹配数：358 台\n升级成功：346 台，占已匹配 96.6%\n升级失败：12 台，占已匹配 3.4%\n```\n\n### 指定版本批量\n\n- 有计划成功下发数量。\n- 展示已匹配数 / 计划成功下发数量。\n- 展示待匹配名额。\n- 下发失败不占用匹配名额，系统持续匹配符合条件设备。\n\n示例：\n\n```text\n计划成功下发数量：5,000 台\n已匹配数：358 / 计划 5,000 台\n升级成功：346 台，占已匹配 96.6%\n升级失败：12 台，占已匹配 3.4%\n```\n\n## 9. 任务状态流转\n\n### UML 状态流转图\n\n```mermaid\nstateDiagram-v2\n  [*] --> 创建中: 新建任务\n  创建中 --> 待发布: 保存草稿\n  创建中 --> 待审批: 发布任务（需审批）\n  创建中 --> 待执行: 发布任务（无需审批）\n\n  待发布 --> 创建中: 编辑草稿\n  待发布 --> [*]: 删除草稿\n  待发布 --> 待审批: 发布任务（需审批）\n  待发布 --> 待执行: 发布任务（无需审批）\n\n  待审批 --> 待执行: 审批通过\n  待审批 --> 已驳回: 审批驳回\n  待审批 --> 已失效: 超过审批有效期\n\n  已驳回 --> 创建中: 复制重建\n  已失效 --> 创建中: 复制重建\n\n  待执行 --> 升级中: 到达任务开始时间\n  待执行 --> 已结束: 手动结束任务\n\n  升级中 --> 已完成: 执行周期内设备处理完成\n  升级中 --> 已结束: 手动结束任务\n  升级中 --> 已完成: 到达任务结束时间并完成收敛\n\n  已完成 --> [*]\n  已结束 --> [*]\n```\n\n说明：\n\n- `创建中` 为页面编辑态，不作为任务列表状态展示。\n- `待发布` 对应保存草稿后的列表状态。\n- 指定版本全量场景在 `升级中` 阶段持续动态匹配设备，最终设备数以执行结束后的已匹配数为准。\n- 文件/手动导入场景设备清单固定，进入执行阶段后按固定设备总数统计。\n- `已完成` 包含升级成功和升级失败设备，表示任务执行闭环完成，不代表所有设备均升级成功。\n- `已结束` 表示用户提前手动结束任务，不等同于审批驳回或任务失效。\n\n### 草稿路径\n\n```text\n新建任务 → 保存草稿 → 待发布 → 编辑 → 发布\n```\n\n### 审批路径\n\n```text\n发布任务 → 待审批 → 审批通过 → 待执行 → 升级中 → 已完成\n```\n\n### 驳回路径\n\n```text\n发布任务 → 待审批 → 审批驳回 → 已驳回 → 复制重建\n```\n\n### 失效路径\n\n```text\n发布任务 → 待审批 → 超过审批有效期 → 已失效 → 复制重建\n```\n\n### 手动结束路径\n\n```text\n待执行 / 升级中 → 结束任务 → 已结束\n```\n\n## 10. 风险与路线图\n\n### 最小可行版本\n\n- 完成新增任务三步流程。\n- 完成保存草稿、发布、提交审批的结果反馈。\n- 完成任务列表字段、筛选、分页、列设置和状态操作。\n- 完成任务详情“任务概览 / 升级明细”。\n- 完成升级概览、异常分类环形图、设备列表导出入口。\n- 完成状态模拟和统计口径模拟。\n\n### 1.1 版本\n\n- 接入真实任务列表和任务详情接口。\n- 接入审批流状态。\n- 接入升级明细、设备列表与流转明细接口。\n- 接入异常明细和设备列表导出。\n\n### 2.0 版本\n\n- 支持真实动态匹配统计。\n- 支持异常原因二级钻取和失败明细分析。\n- 支持按角色控制详情字段和操作权限。\n- 支持任务复盘、趋势分析和报表能力。\n\n### 技术风险\n\n- 指定版本动态匹配最终设备数不可预估，前后端必须避免展示固定总数。\n- 下发失败和升级失败必须严格区分，否则批量名额统计会错误。\n- 状态流转与审批流若不同步，列表和详情状态可能不一致。\n- 文件/手动导入设备清单涉及敏感设备标识，导出权限需严格控制。\n- ECharts 若采用内容分发网络加载，离线环境无法渲染图表；生产环境建议使用本地依赖或构建产物。\n\n## 11. 测试与验收\n\n核心验收用例：\n\n- 创建任务每一步必填校验生效。\n- 保存草稿后返回任务列表，状态为待发布，并支持编辑。\n- 发布成功不进入第 4 步，结果通过弹窗或消息反馈。\n- 指定版本全量下，详情页不展示未知总数百分比。\n- 指定版本全量升级中，升级概览显示“已匹配数 N 台”。\n- 指定版本全量完成后，展示“升级成功 N 台，失败 N 台”。\n- 指定版本批量下，展示计划成功下发数量、已匹配数、待匹配名额。\n- 文件/手动导入下，展示明确设备总数和成功/失败/未处理结果。\n- 任务列表分页可切换页码和每页条数。\n- 任务列表不同状态下操作按钮符合规则。\n- 详情页主页签为任务概览和升级明细。\n- 顶部任务概览卡不展示重复执行概览。\n- 升级明细中展示升级概览、异常分类、设备列表。\n- 异常分类使用 ECharts 基础环形图，并支持图表与分类列表鼠标悬停联动。\n- 设备列表导出按钮与搜索框位于同一工具栏。\n- 主详情页不展示操作记录，保留流转明细。\n\n## 12. 待确认问题\n\n- 后端是否能明确区分下发失败、升级失败、未处理三个字段。\n- 指定版本批量中的计划成功下发数量是否以“成功匹配”还是“成功下发”作为最终占用名额。\n- 指定版本全量完成后的最终已匹配数是否可作为历史实际设备数固化。\n- 文件导入和手动导入是否统一使用同一设备统计字段。\n- 审批超时失效规则由审批系统还是 OTA 系统计算。\n";
 
 let uploadTimers = [];
 
@@ -444,7 +451,7 @@ function restoreDraftTask() {
     return;
   }
   clearUploadTimers();
-  state.createStep = draft.createStep;
+  state.createStep = Math.min(draft.createStep || 1, 3);
   state.packageType = draft.packageType;
   state.strategy = draft.strategy;
   state.previewScenario = draft.previewScenario;
@@ -554,6 +561,7 @@ function render(options = {}) {
   const focusSelector = options.focusSelector;
   const focusSelectionStart = options.focusSelectionStart;
   const app = document.getElementById("app");
+  disposeExceptionCharts(app);
   app.innerHTML = `
     ${renderTopbar()}
     <div class="layout">
@@ -562,8 +570,10 @@ function render(options = {}) {
         ${renderPage()}
       </main>
     </div>
+    ${renderRequirementDock()}
   `;
   bindEvents(app);
+  initExceptionCharts(app);
   renderPortal();
   window.requestAnimationFrame(() => {
     if (preserveScroll) {
@@ -579,6 +589,219 @@ function render(options = {}) {
       focusTarget.setSelectionRange(focusSelectionStart, focusSelectionStart);
     }
   });
+}
+
+function initExceptionCharts(root) {
+  if (!window.echarts) return;
+  root.querySelectorAll("[data-exception-chart]").forEach(el => {
+    const rows = JSON.parse(el.dataset.exceptionChart || "[]");
+    if (!rows.length) return;
+    const total = rows.reduce((sum, row) => sum + Number(row.count || 0), 0);
+    const chart = window.echarts.init(el);
+    chart.setOption({
+      color: rows.map(row => exceptionToneColor(row.tone)),
+      tooltip: {
+        trigger: "item",
+        confine: true,
+        appendToBody: true,
+        backgroundColor: "#fff",
+        borderColor: "#b9d8f1",
+        borderWidth: 1,
+        padding: [8, 10],
+        textStyle: { color: "#5f6b7d", fontSize: 12 },
+        formatter: params => {
+          const value = Number(params.value || 0).toLocaleString();
+          const percent = Number(params.percent || 0).toFixed(1);
+          return `<div style="font-weight:700;margin-bottom:6px">异常分类</div><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${params.color};margin-right:7px"></span>${params.name} <b>${value} 台</b> <b>${percent}%</b>`;
+        },
+      },
+      series: [{
+        type: "pie",
+        radius: ["60%", "84%"],
+        center: ["50%", "50%"],
+        avoidLabelOverlap: true,
+        itemStyle: {
+          borderColor: "#fff",
+          borderWidth: 2,
+        },
+        label: { show: false },
+        labelLine: { show: false },
+        emphasis: {
+          scale: true,
+          scaleSize: 6,
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetY: 3,
+            shadowColor: "rgba(20, 46, 92, 0.14)",
+          },
+        },
+        data: rows.map(row => ({
+          name: row.label,
+          value: row.count,
+          tone: row.tone,
+        })),
+      }],
+    });
+    chart.on("mouseover", params => focusExceptionByIndex(el, params.dataIndex, rows, total));
+    chart.on("mouseout", () => resetExceptionChartFocus(el));
+    if (window.ResizeObserver) {
+      const resizeObserver = new ResizeObserver(() => chart.resize());
+      resizeObserver.observe(el);
+      el.__resizeObserver = resizeObserver;
+    }
+    el.__chart = chart;
+  });
+}
+
+function disposeExceptionCharts(root) {
+  root.querySelectorAll("[data-exception-chart]").forEach(el => {
+    el.__resizeObserver?.disconnect();
+    el.__chart?.dispose();
+  });
+}
+
+function exceptionToneColor(tone) {
+  return {
+    red: "#e54855",
+    orange: "#ff7a1a",
+    blue: "#1f6bff",
+    purple: "#7c3aed",
+    cyan: "#06b6d4",
+    gray: "#64748b",
+  }[tone] || "#ff7a1a";
+}
+
+function renderRequirementDock() {
+  if (!["task-list", "create-task", "task-detail"].includes(state.route)) return "";
+  return `
+    <div class="requirement-dock-group">
+      <button class="requirement-dock ${state.showRequirementNotes ? "active" : ""}" type="button" data-action="toggle-requirement-notes" aria-pressed="${state.showRequirementNotes}">
+        ${icon("info")}
+        <span>需求标注${state.showRequirementNotes ? "开" : "关"}</span>
+      </button>
+    </div>
+  `;
+}
+
+function renderRequirementsDocPage() {
+  return `
+    <section class="page requirements-page prd-doc-shell">
+      <header class="prd-doc-header">
+        <div>
+          <span>产品需求文档</span>
+          <h1>OTA 升级任务管理优化</h1>
+          <p>本文档与原型页面中的需求打点批注保持同一份内容口径，供产品、研发、测试完整查阅。</p>
+        </div>
+        <button class="btn" type="button" data-route="task-list">返回任务列表</button>
+      </header>
+      <section class="prd-doc-content">
+        ${renderMarkdownHtml(requirementsMarkdown)}
+      </section>
+    </section>
+  `;
+}
+
+function renderMarkdownHtml(markdown) {
+  const lines = markdown.split(/\r?\n/);
+  const html = [];
+  let inCode = false;
+  let codeLines = [];
+  let inList = false;
+  let inTable = false;
+  let tableRows = [];
+
+  const closeList = () => {
+    if (!inList) return;
+    html.push("</ul>");
+    inList = false;
+  };
+  const flushTable = () => {
+    if (!inTable) return;
+    const rows = tableRows.filter(row => !/^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(row));
+    if (rows.length) {
+      html.push("<div class=\"doc-table-wrap\"><table>");
+      rows.forEach((row, index) => {
+        const cells = row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(cell => cell.trim());
+        const tag = index === 0 ? "th" : "td";
+        html.push(`<tr>${cells.map(cell => `<${tag}>${formatInlineMarkdown(cell)}</${tag}>`).join("")}</tr>`);
+      });
+      html.push("</table></div>");
+    }
+    tableRows = [];
+    inTable = false;
+  };
+
+  lines.forEach(line => {
+    if (line.startsWith("```")) {
+      flushTable();
+      closeList();
+      if (inCode) {
+        html.push(`<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
+        codeLines = [];
+        inCode = false;
+      } else {
+        inCode = true;
+      }
+      return;
+    }
+    if (inCode) {
+      codeLines.push(line);
+      return;
+    }
+    if (/^\s*\|.*\|\s*$/.test(line)) {
+      closeList();
+      inTable = true;
+      tableRows.push(line);
+      return;
+    }
+    flushTable();
+    if (!line.trim()) {
+      closeList();
+      return;
+    }
+    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+    if (heading) {
+      closeList();
+      const level = heading[1].length;
+      html.push(`<h${level}>${formatInlineMarkdown(heading[2])}</h${level}>`);
+      return;
+    }
+    const listItem = line.match(/^\s*-\s+(.+)$/);
+    if (listItem) {
+      if (!inList) {
+        html.push("<ul>");
+        inList = true;
+      }
+      html.push(`<li>${formatInlineMarkdown(listItem[1])}</li>`);
+      return;
+    }
+    closeList();
+    html.push(`<p>${formatInlineMarkdown(line)}</p>`);
+  });
+  flushTable();
+  closeList();
+  if (inCode) html.push(`<pre><code>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
+  return html.join("");
+}
+
+function formatInlineMarkdown(value) {
+  return escapeHtml(value)
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+}
+
+function renderRequirementNote(section, title, items) {
+  if (!state.showRequirementNotes) return "";
+  const body = items.map(item => `<li>${escapeHtml(item)}</li>`).join("");
+  return `
+    <span class="requirement-pin" tabindex="0" aria-label="${escapeHtml(section)} ${escapeHtml(title)}">
+      <i>需</i>
+      <span class="requirement-popover" role="note">
+        <span class="requirement-popover-head"><em>${escapeHtml(section)}</em><strong>${escapeHtml(title)}</strong></span>
+        <ul>${body}</ul>
+      </span>
+    </span>
+  `;
 }
 
 function renderTopbar() {
@@ -605,7 +828,16 @@ function renderSidebar() {
   return `
     <aside class="sidebar" aria-label="主菜单">
       <h1 class="sidebar-title">OTA升级系统</h1>
-      ${navGroups.map(group => navSection(group.key, group.title, group.icon, group.items, active)).join("")}
+      <div class="sidebar-main-nav">
+        ${navGroups.map(group => navSection(group.key, group.title, group.icon, group.items, active)).join("")}
+      </div>
+      <div class="sidebar-doc-nav">
+        ${docNavItems.map(([route, label]) => `
+          <button class="nav-item doc-nav-item ${active === route ? "active" : ""}" type="button" data-route="${route}">
+            ${icon("log")}${label}
+          </button>
+        `).join("")}
+      </div>
     </aside>
   `;
 }
@@ -652,6 +884,8 @@ function renderPage() {
       return renderRolePage(false);
     case "role-permission":
       return renderRolePage(true);
+    case "requirements-doc":
+      return renderRequirementsDocPage();
     default:
       return renderTaskList();
   }
@@ -705,26 +939,51 @@ function renderTaskList() {
   const columnCount = visibleTaskColumnCount() + 3;
   return `
     <section class="page">
-      ${renderTaskListHero()}
-      ${renderTaskAreaStats()}
-      ${renderTaskFilters()}
-      ${renderTaskTableToolbar()}
-      <div class="table-wrap">
-        <table class="task-table ${state.taskCompact ? "compact" : ""}">
-          <thead>
-            <tr>
-              <th style="width: 210px">任务名称</th>
-              ${renderTaskColumnHeaders()}
-              <th style="width: 110px">任务状态 ${icon("chevron")}</th>
-              <th class="sticky-action-col" style="width: 150px">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${visibleRows.length
-              ? visibleRows.map(renderTaskListRow).join("")
-              : `<tr class="empty-row"><td colspan="${columnCount}">暂无符合条件的任务</td></tr>`}
-          </tbody>
-        </table>
+      <div class="annotated-block">
+        ${renderTaskListHero()}
+        ${renderRequirementNote("PRD 1 / 6.2", "本次范围与状态统计", [
+          "原型覆盖新增任务、任务列表、任务详情、升级统计口径、异常分类和模拟验证。",
+          "状态统计只统计当前顶部大区，不做跨大区聚合查询。",
+        ])}
+      </div>
+      <div class="annotated-block">
+        ${renderTaskAreaStats()}
+        ${renderRequirementNote("PRD 6.2", "状态统计卡片", [
+          "展示当前任务大区和基础状态数量。",
+          "待发布、待审批、升级中、已完成等状态需与列表筛选口径一致。",
+        ])}
+      </div>
+      <div class="annotated-block">
+        ${renderTaskFilters()}
+        ${renderRequirementNote("PRD 6.1", "列表查询条件", [
+          "查询条件顺序：任务名称、任务状态、升级方式、升级包、创建人、创建时间。",
+          "筛选变更后列表重置到第一页，创建人支持输入和候选选择。",
+        ])}
+      </div>
+      <div class="annotated-block">
+        ${renderTaskTableToolbar()}
+        ${renderRequirementNote("PRD 6.3 / 6.4", "列表字段与状态操作", [
+          "列表默认按创建时间倒序，不展示更新时间。",
+          "升级设备数统一展示 N 台或全量，非执行态执行结果展示 -。",
+          "操作规则：待发布编辑/删除，升级中详情/结束任务，已驳回和已失效详情/复制重建。",
+        ])}
+        <div class="table-wrap">
+          <table class="task-table ${state.taskCompact ? "compact" : ""}">
+            <thead>
+              <tr>
+                <th style="width: 210px">任务名称</th>
+                ${renderTaskColumnHeaders()}
+                <th style="width: 110px">任务状态 ${icon("chevron")}</th>
+                <th class="sticky-action-col" style="width: 150px">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${visibleRows.length
+                ? visibleRows.map(renderTaskListRow).join("")
+                : `<tr class="empty-row"><td colspan="${columnCount}">暂无符合条件的任务</td></tr>`}
+            </tbody>
+          </table>
+        </div>
       </div>
       ${pagination(total, pages, { page: state.taskPage, pageSize: state.taskPageSize, scope: "task" })}
     </section>
@@ -1112,13 +1371,26 @@ function renderCreateTask() {
   return `
     <section class="page form-page">
       ${renderPageHeader("新增任务", { back: "task-list" })}
-      ${renderCreateSteps()}
+      <div class="annotated-block">
+        ${renderCreateSteps()}
+        ${renderRequirementNote("PRD 5.1", "新增任务三步流程", [
+          "流程固定为基础信息、配置升级策略、预览发布。",
+          "发布结果通过弹窗或消息反馈，不再进入独立完成步骤。",
+          "每一步进入下一步前需校验当前步骤必填项。",
+        ])}
+      </div>
       <div class="workbench-shell">
         <div class="workbench-main">
           ${renderCreateStepContent()}
         </div>
       </div>
-      ${renderWizardActions()}
+      <div class="annotated-block sticky-note-host">
+        ${renderWizardActions()}
+        ${renderRequirementNote("PRD 5.1", "草稿与发布反馈", [
+          "保存草稿后返回任务列表，状态为待发布，并支持二次编辑。",
+          "提交审批成功进入待审批；无需审批发布成功后按任务时间进入待执行或后续执行态。",
+        ])}
+      </div>
     </section>
   `;
 }
@@ -1128,7 +1400,6 @@ function renderCreateSteps() {
     ["基础信息", "填写任务信息"],
     ["配置升级策略", "选择升级包和范围"],
     ["预览发布", "查看预检结果"],
-    ["完成", state.createStep === 4 ? strategyMeta[state.strategy].nextStatus : "发布结果"],
   ];
   return `
     <ol class="step-rail" aria-label="新增任务步骤">
@@ -1144,7 +1415,6 @@ function renderCreateSteps() {
 function renderCreateStepContent() {
   if (state.createStep === 2) return renderStrategyStep();
   if (state.createStep === 3) return renderPreviewStep();
-  if (state.createStep === 4) return renderFinishStep();
   return renderBasicInfoStep();
 }
 
@@ -1157,8 +1427,18 @@ function renderBasicInfoStep() {
           <h3>基础信息</h3>
         </div>
       </div>
-      <div class="form-grid element-form">
-        <label class="field-stack ${state.errors.taskName ? "has-error" : ""}">
+      ${renderRequirementNote("PRD 5.1", "基础信息必填规则", [
+        "任务名称、任务执行大区、目标固件版本、任务起止时间、任务升级说明均为必填。",
+        "过去日期不可选；默认开始时间为当前时间后 5 分钟。",
+        "快捷周期固定为未来 7 天、30 天、90 天。",
+      ])}
+      <div class="form-grid element-form basic-info-form">
+        <label class="field-stack basic-name-field ${state.errors.taskName ? "has-error" : ""}">
+          ${renderRequirementNote("PRD 5.1", "任务名称字段要求", [
+            "必填，1-64 个字符，不允许只输入空格。",
+            "建议包含升级对象、地区或升级目的，便于列表识别。",
+            "未填写提示：请输入任务名称；超过 64 个字符时禁止继续输入或提示最多 64 个字符。",
+          ])}
           <span><span class="required">*</span> 任务名称</span>
           <div class="input-with-count">
             <input class="input" value="${state.form.taskName}" aria-label="任务名称" data-field="taskName" maxlength="64" />
@@ -1166,7 +1446,12 @@ function renderBasicInfoStep() {
           </div>
           ${renderFieldError("taskName")}
         </label>
-        <label class="field-stack ${state.errors.selectedRegions ? "has-error" : ""}">
+        <label class="field-stack basic-region-field ${state.errors.selectedRegions ? "has-error" : ""}">
+          ${renderRequirementNote("PRD 5.1", "任务执行大区字段要求", [
+            "必选，至少选择 1 个任务执行大区，支持大区及子集群多选。",
+            "未选择提示：请选择任务执行大区。",
+            "采用下拉级联多选，标签展示已选项，支持删除单个标签、全选、清空和高度自适应。",
+          ])}
           <span><span class="required">*</span> 任务执行大区</span>
           <div class="select-field multi-select-field ${state.regionDropdownOpen ? "open" : ""}" data-action="toggle-region-dropdown">
             <div class="multi-select-values">
@@ -1177,7 +1462,12 @@ function renderBasicInfoStep() {
           </div>
           ${renderFieldError("selectedRegions")}
         </label>
-        <label class="field-stack ${state.errors.targetVersion ? "has-error" : ""}">
+        <label class="field-stack basic-version-field ${state.errors.targetVersion ? "has-error" : ""}">
+          ${renderRequirementNote("PRD 5.1", "目标固件版本字段要求", [
+            "必选，只能从已上架或已生成升级包的目标版本中选择。",
+            "未选择提示：请选择目标固件版本；版本不可用提示当前版本暂不可用。",
+            "切换整包/差分包时需展示对应版本可用状态，已是目标版本的设备不进入升级范围。",
+          ])}
           <span><span class="required">*</span> 目标固件版本</span>
           <select class="select" aria-label="目标固件版本" data-field="targetVersion">
             <option value="23.422.209.17" ${state.form.targetVersion === "23.422.209.17" ? "selected" : ""}>${state.packageType === "diff" ? "23.422.209.17（差分包生成成功）" : "23.422.209.17（已上架）"}</option>
@@ -1187,15 +1477,29 @@ function renderBasicInfoStep() {
           <em class="field-help">已是目标版本的设备不会进入升级范围。</em>
           ${renderFieldError("targetVersion")}
         </label>
-        <label class="field-stack ${state.errors.taskTime ? "has-error" : ""}">
+        <label class="field-stack basic-time-field ${state.errors.taskTime ? "has-error" : ""}">
+          ${renderRequirementNote("PRD 5.1", "任务起止时间字段要求", [
+            "必选，开始时间不得早于当前时间，结束时间必须晚于开始时间。",
+            "默认开始时间为当前时间后 5 分钟，过去日期不可选。",
+            "未选择提示：请选择任务起止时间；支持未来 7 天、30 天、90 天快捷设置。",
+          ])}
           <span><span class="required">*</span> 任务起止时间</span>
           ${renderDateRangePicker()}
           ${renderQuickRangeButtons()}
           ${renderFieldError("taskTime")}
         </label>
-        <label class="field-stack wide-field ${state.errors.upgradeDesc ? "has-error" : ""}">
+        <label class="field-stack wide-field basic-desc-field ${state.errors.upgradeDesc ? "has-error" : ""}">
+          ${renderRequirementNote("PRD 5.1", "任务升级说明字段要求", [
+            "必填，1-500 个有效字符，不允许只输入空格。",
+            "需说明升级目标、影响范围、灰度或回滚关注点。",
+            "未填写提示：请输入任务升级说明；超过 500 个字符提示最多 500 个字符。",
+            "多行文本框右下角展示字数统计，输入后即时更新。",
+          ])}
           <span><span class="required">*</span> 任务升级说明</span>
-          <textarea class="textarea compact-textarea" placeholder="请输入升级目标、影响范围、灰度或回滚关注点。" aria-label="任务升级说明" data-field="upgradeDesc">${state.form.upgradeDesc}</textarea>
+          <div class="textarea-with-count">
+            <textarea class="textarea compact-textarea" placeholder="请输入升级目标、影响范围、灰度或回滚关注点。" aria-label="任务升级说明" data-field="upgradeDesc" maxlength="500">${state.form.upgradeDesc}</textarea>
+            <span class="count textarea-count">${state.form.upgradeDesc.length} / 500</span>
+          </div>
           ${renderFieldError("upgradeDesc")}
         </label>
       </div>
@@ -1369,6 +1673,11 @@ function renderStrategyStep() {
         </div>
         <span class="soft-pill">策略选择后，仅展示相关配置项</span>
       </div>
+      ${renderRequirementNote("PRD 5.2 / 5.3", "策略配置规则", [
+        "升级方式支持指定版本、文件导入、手动导入。",
+        "指定版本不再拆分三个规则切换，统一通过源版本表格勾选。",
+        "全量展示全量；批量只支持统一输入数量，不支持单版本分别输入。",
+      ])}
       <div class="config-section">
         <h4>升级包类型</h4>
         <div class="package-choice-panel" role="radiogroup" aria-label="升级包类型">
@@ -1404,6 +1713,11 @@ function renderPreviewStep() {
         </div>
         ${state.strategy === "version" ? `<span class="soft-pill blue-pill">动态匹配预览</span>` : renderPreviewScenarioSwitch()}
       </div>
+      ${renderRequirementNote("PRD 5.6", "预览发布场景", [
+        "需支持部分可升级、无可升级、全部可升级三种场景模拟。",
+        "无可升级时不允许发布；指定版本和文件导入方式发布需进入审批流程。",
+        "异常场景支持下载异常明细。",
+      ])}
       ${renderPreviewContent(false)}
     </section>
   `;
@@ -1424,34 +1738,6 @@ function renderPreviewScenarioSwitch() {
   `;
 }
 
-function renderFinishStep() {
-  return `
-    <section class="workbench-card step-card">
-      <div class="card-heading">
-        <div>
-          <span class="eyebrow">Step 4</span>
-          <h3>完成</h3>
-        </div>
-        <span class="soft-pill">任务已创建</span>
-      </div>
-      <div class="finish-panel">
-        <div class="finish-check">${icon("check")}</div>
-        <h3>OTA 升级任务创建成功</h3>
-        <p>系统将在设定时间窗口内执行任务，执行状态可在任务列表中查看。</p>
-        <div class="finish-summary">
-          <dl>
-            <dt>任务编号</dt><dd><code>OTA-2026-176660</code></dd>
-            <dt>任务名称</dt><dd>IPC-杭州低功耗_安全补丁升级</dd>
-            <dt>发布策略</dt><dd>${state.packageType === "whole" ? "整包" : "差分包"} · ${strategyMeta[state.strategy].title}</dd>
-            <dt>设备规模</dt><dd>${finishDeviceScaleText()}</dd>
-            <dt>当前状态</dt><dd>${statusTag(strategyMeta[state.strategy].nextStatus)}</dd>
-          </dl>
-        </div>
-      </div>
-    </section>
-  `;
-}
-
 function finishDeviceScaleText() {
   if (state.strategy === "version") {
     if (state.quantityMode === "full") {
@@ -1465,15 +1751,6 @@ function finishDeviceScaleText() {
 }
 
 function renderWizardActions() {
-  if (state.createStep === 4) {
-    return `
-      <div class="sticky-actions">
-        <button class="btn" type="button" data-route="task-list">返回任务列表</button>
-        <button class="btn primary" type="button" data-route="task-detail">查看任务详情</button>
-      </div>
-    `;
-  }
-
   return `
     <div class="sticky-actions">
       <button class="btn" type="button" data-action="${state.createStep === 1 ? "cancel-create" : "prev-create-step"}">${state.createStep === 1 ? "取消" : "上一步"}</button>
@@ -1754,30 +2031,43 @@ function renderTaskDetail() {
     <section class="page">
       ${renderPageHeader("任务详情", {
         back: "task-list",
-        actions: renderDetailHeaderActions(detail),
       })}
       ${renderDetailStatusSwitch()}
-      ${renderDetailHero(detail)}
-      ${renderDetailTabs()}
+      <div class="annotated-block">
+        ${renderDetailHero(detail)}
+        ${renderRequirementNote("PRD 7.2", "顶部任务概览卡", [
+          "顶部卡片关注任务本身，状态标签放在任务名称旁边。",
+          "展示任务标识、创建人、更新时间、任务说明、目标版本、任务时间、任务大区、升级方式、升级包和策略条件。",
+          "不展示重复执行概览，不放查看升级明细按钮，避免与页签导航重复。",
+        ])}
+      </div>
+      <div class="annotated-block compact-note-block">
+        ${renderDetailTabs()}
+        ${renderRequirementNote("PRD 7.1", "详情页信息架构", [
+          "主页签固定为任务概览和升级明细。",
+          "任务概览展示任务配置和流转；升级明细展示升级概览、异常分类和设备列表。",
+        ])}
+      </div>
       ${renderDetailTabContent(detail)}
     </section>
   `;
 }
 
 function renderDetailHeaderActions(detail) {
+  const actions = [];
   if (["待执行", "升级中"].includes(detail.status)) {
-    return `<button class="btn danger" type="button" data-action="end-task">结束任务</button>`;
+    actions.push(`<button class="btn danger" type="button" data-action="end-task">结束任务</button>`);
   }
   if (["已驳回", "已失效"].includes(detail.status)) {
-    return `<button class="btn primary" type="button" data-action="copy-rebuild-task">${icon("copy")}复制重建</button>`;
+    actions.push(`<button class="btn primary" type="button" data-action="copy-rebuild-task">${icon("copy")}复制重建</button>`);
   }
-  return "";
+  return actions.join("");
 }
 
 function renderDetailTabs() {
   const tabs = [
-    ["overview", "概览"],
-    ["devices", "设备明细"],
+    ["overview", "任务概览"],
+    ["devices", "升级明细"],
   ];
   return `
     <div class="detail-tabs">
@@ -1790,14 +2080,44 @@ function renderDetailTabContent(detail) {
   const isExecutionStatus = isDetailExecutionStatus(detail);
   if (state.detailTab === "devices") {
     return isExecutionStatus
-      ? renderDeviceDetailTable(detail)
-      : `<div class="empty-state-panel">${icon("info")} 任务尚未进入执行阶段，暂无设备执行明细。</div>`;
+      ? `
+        <h3 class="section-title">${icon("layer")}升级概览</h3>
+        <div class="annotated-block">
+          ${renderExecutionOverview(detail)}
+          ${renderRequirementNote("PRD 7.4 / 8", "升级概览统计口径", [
+            "文件/手动导入展示固定设备总数、已处理、成功、失败、未处理。",
+            "指定版本全量只展示已匹配数、成功数、失败数，不展示未知总数百分比。",
+            "指定版本批量展示计划成功下发数量、已匹配数和待匹配名额。",
+          ])}
+        </div>
+        <div class="annotated-block">
+          ${renderExceptionSummary(detail)}
+          ${renderRequirementNote("PRD 7.5", "异常分类", [
+            "仅执行态且存在失败设备时展示。",
+            "使用 6 个一级异常分类和 ECharts 基础环形图。",
+            "图表与分类列表支持鼠标悬停联动，并提供下载异常明细入口。",
+          ])}
+        </div>
+        <div class="annotated-block">
+          ${renderDeviceDetailTable(detail)}
+          ${renderRequirementNote("PRD 7.6", "设备列表", [
+            "非执行态展示空状态，不展示设备表格。",
+            "执行态展示进入下发链路的设备；指定版本全量仅展示已动态匹配设备。",
+            "设备标识搜索与导出设备列表按钮需位于同一工具栏。",
+          ])}
+        </div>
+      `
+      : `<div class="empty-state-panel">${icon("info")} 任务尚未进入执行阶段，暂无升级明细。</div>`;
   }
   return `
-    ${renderTaskFlowOverview(detail)}
-    <h3 class="section-title">${icon("layer")}${isExecutionStatus ? "执行概览" : "任务配置摘要"}</h3>
-    ${renderExecutionOverview(detail)}
-    ${isExecutionStatus ? renderExceptionSummary(detail) : ""}
+    <div class="annotated-block">
+      ${renderTaskFlowOverview(detail)}
+      ${renderRequirementNote("PRD 7.3 / 9", "任务进度与流转明细", [
+        "任务进度只表达流程阶段，不展示设备执行百分比或升级仪表盘。",
+        "流转明细按时间线展示创建、审批、下发、完成或结束。",
+        "已完成包含成功和失败设备；已结束表示用户提前手动结束。",
+      ])}
+    </div>
   `;
 }
 
@@ -1846,6 +2166,7 @@ function taskDetailData(status) {
     creator: "汤彦珊",
     approver: "钱江涛",
     createdAt: "2026-06-03 16:40:12",
+    updatedAt: "2026-06-10 09:18:32",
     submittedAt: "2026-06-03 17:20:18",
     approvedAt: "2026-06-03 18:10:42",
     startAt: "2026-06-10 09:00:00",
@@ -1964,23 +2285,178 @@ function renderDetailStatusSwitch() {
 
 function renderDetailHero(detail) {
   const summary = taskFlowSummary(detail);
+  const actions = renderDetailHeaderActions(detail);
   return `
     <div class="task-overview-card ${summary.tone}">
       <div class="task-overview-head">
-        <div>
-          <h2>任务信息</h2>
+        <div class="task-overview-titlemark">${icon("refresh")}</div>
+        <div class="task-overview-title">
+          <div class="task-title-line"><h2>${detail.name}</h2>${statusTag(detail.status)}</div>
+          <p>任务 ID：OTA-20260610-0008 · 创建人：${detail.creator} · 更新时间：${detail.updatedAt}</p>
+          <p class="task-title-desc">${detail.desc}</p>
         </div>
-        ${statusTag(detail.status)}
+        ${actions ? `<div class="task-overview-actions">${actions}</div>` : ""}
       </div>
-      <div class="task-overview-body">
-        <section class="task-overview-info">
-          <dl>
-            ${taskOverviewFields(detail).map(renderTaskOverviewField).join("")}
-          </dl>
-        </section>
-      </div>
+      <section class="task-kpi-grid">
+        ${renderTaskKpi("目标版本", detail.targetVersion, "blue")}
+        ${renderTaskKpi("任务时间", `${detail.startAt}<br />至 ${detail.endAt}`)}
+        ${renderTaskKpi("任务大区", detail.region)}
+        ${renderTaskKpi("升级设备数", overviewDeviceScale(detail))}
+      </section>
+      <section class="task-overview-middle">
+        ${renderTaskStrategyPanel(detail)}
+        ${renderTaskConditionPanel(detail)}
+      </section>
     </div>
   `;
+}
+
+function renderTaskKpi(label, value, tone = "") {
+  return `
+    <article class="task-kpi-card ${tone}">
+      <span>${label}</span>
+      <strong>${value}</strong>
+    </article>
+  `;
+}
+
+function renderTaskStrategyPanel(detail) {
+  const approvalText = requiresApprovalForDetail()
+    ? approvalTextForStatus(detail)
+    : "无需审批，发布后按任务时间执行";
+  return `
+    <section class="task-info-panel strategy-panel-compact">
+      <div class="task-panel-title"><h3>升级策略</h3></div>
+      <div class="task-strategy-grid">
+        <dl><dt>升级方式</dt><dd>${detail.method}</dd></dl>
+        <dl><dt>升级包</dt><dd>${detail.packageType}</dd></dl>
+        <dl><dt>下发方式</dt><dd>${overviewDispatchText(detail)}</dd></dl>
+        <dl><dt>审批流程</dt><dd>${approvalText}</dd></dl>
+      </div>
+    </section>
+  `;
+}
+
+function approvalTextForStatus(detail) {
+  if (!requiresApprovalForDetail()) return "无需审批";
+  if (detail.status === "待审批") return `等待 ${detail.approver} 审批`;
+  if (detail.status === "已驳回") return `审批驳回：${detail.rejectReason}`;
+  if (detail.status === "已失效") return `审批失效：${detail.invalidReason}`;
+  return "审批通过后按任务时间执行";
+}
+
+function renderTaskExecutionPanel(detail) {
+  if (!isDetailExecutionStatus(detail)) {
+    return `
+      <section class="task-info-panel execution-panel-compact">
+        <div class="task-panel-title">
+          <h3>执行概览</h3>
+          <button class="link-btn" type="button" data-action="set-detail-tab" data-tab="overview">查看流程</button>
+        </div>
+        <div class="execution-state-card ${summaryToneClass(detail.status)}">
+          <span>${preExecutionLabel(detail)}</span>
+          <strong>${preExecutionValue(detail)}</strong>
+          <p>${preExecutionDescription(detail)}</p>
+        </div>
+      </section>
+    `;
+  }
+
+  const stats = metricStats(detail);
+  const processed = stats.stocked;
+  const denominator = executionDenominator(detail, stats);
+  const percent = denominator ? Math.min((processed / denominator) * 100, 100) : 0;
+  return `
+    <section class="task-info-panel execution-panel-compact">
+      <div class="task-panel-title">
+        <h3>执行概览</h3>
+        <button class="link-btn" type="button" data-action="set-detail-tab" data-tab="devices">查看明细</button>
+      </div>
+      <div class="execution-mini-grid">
+        <div class="blue"><span>${isVersionFullDetailMode() ? "已匹配" : "已处理"}</span><strong>${Number(processed).toLocaleString()}</strong></div>
+        <div class="green"><span>成功</span><strong>${Number(stats.upgradeSuccess).toLocaleString()}</strong></div>
+        <div class="orange"><span>异常</span><strong>${Number(stats.upgradeFailed).toLocaleString()}</strong></div>
+      </div>
+      <div class="execution-progress-mini">
+        <i style="--progress:${percent}%"></i>
+      </div>
+      <p class="execution-progress-text">${executionProgressText(detail, stats)}</p>
+    </section>
+  `;
+}
+
+function summaryToneClass(status) {
+  if (["已驳回", "已失效"].includes(status)) return "red";
+  if (status === "待审批") return "orange";
+  return "gray";
+}
+
+function preExecutionLabel(detail) {
+  if (detail.status === "待审批") return "当前节点";
+  if (detail.status === "已驳回" || detail.status === "已失效") return "审批结果";
+  return "当前节点";
+}
+
+function preExecutionValue(detail) {
+  if (detail.status === "待审批") return "等待审批";
+  if (detail.status === "已驳回") return "已驳回";
+  if (detail.status === "已失效") return "已失效";
+  return "待执行";
+}
+
+function preExecutionDescription(detail) {
+  if (detail.status === "待审批") return `提交时间：${detail.submittedAt}`;
+  if (detail.status === "已驳回") return detail.rejectReason;
+  if (detail.status === "已失效") return detail.invalidReason;
+  return `计划开始：${detail.startAt}`;
+}
+
+function executionDenominator(detail, stats) {
+  if (isVersionFullDetailMode()) return stats.stocked;
+  if (isVersionBatchDetailMode()) return plannedBatchTotal();
+  return Number(detail.total) || 0;
+}
+
+function executionProgressText(detail, stats) {
+  if (isVersionFullDetailMode()) {
+    const successRate = stats.stocked ? Math.round((stats.upgradeSuccess / stats.stocked) * 1000) / 10 : 0;
+    const failRate = stats.stocked ? Math.round((stats.upgradeFailed / stats.stocked) * 1000) / 10 : 0;
+    return `已匹配 ${Number(stats.stocked).toLocaleString()} 台，成功占比 ${successRate}%，失败占比 ${failRate}%`;
+  }
+  const denominator = executionDenominator(detail, stats);
+  const percent = denominator ? Math.round((stats.stocked / denominator) * 1000) / 10 : 0;
+  return `当前进度：${Number(stats.stocked).toLocaleString()} / ${Number(denominator).toLocaleString()} 台，约 ${percent}%`;
+}
+
+function renderTaskConditionPanel(detail) {
+  const isVersionMode = isVersionFullDetailMode() || isVersionBatchDetailMode();
+  const sourceTitle = isVersionMode ? "指定源版本" : "设备来源";
+  const sourceContent = isVersionMode ? renderTaskSourceVersions(detail, state.detailSourceExpanded ? Infinity : 4) : detail.sourceScope;
+  const hasMore = isVersionMode && (detail.sourceVersions?.length || 0) > 4;
+  return `
+    <section class="task-condition-panel">
+      <div class="task-panel-title">
+        <h3>策略条件</h3>
+        ${hasMore ? `<button class="link-btn" type="button" data-action="toggle-detail-source">${state.detailSourceExpanded ? "收起" : "展开全部"}</button>` : ""}
+      </div>
+      <div class="condition-summary-grid">
+        <dl><dt>指定地区</dt><dd><span class="condition-chip">${detail.region}</span></dd></dl>
+        <dl><dt>${sourceTitle}</dt><dd>${sourceContent}</dd></dl>
+      </div>
+    </section>
+  `;
+}
+
+function overviewDeviceScale(detail) {
+  if (isVersionFullDetailMode()) return "全量";
+  if (isVersionBatchDetailMode()) return `${Number(plannedBatchTotal()).toLocaleString()} 台`;
+  return `${Number(detail.total).toLocaleString()} 台`;
+}
+
+function overviewDispatchText(detail) {
+  if (isVersionFullDetailMode()) return "动态匹配";
+  if (isVersionBatchDetailMode()) return "批量下发";
+  return detail.sourceScope;
 }
 
 function taskOverviewFields(detail) {
@@ -2041,11 +2517,14 @@ function renderTaskOverviewField(field) {
   `;
 }
 
-function renderTaskSourceVersions(detail) {
+function renderTaskSourceVersions(detail, limit = Infinity) {
   if (!detail.sourceVersions?.length) return "未指定源版本";
+  const versions = detail.sourceVersions.slice(0, limit);
+  const rest = detail.sourceVersions.length - versions.length;
   return `
     <div class="task-source-version-list">
-      ${detail.sourceVersions.map(version => `<span>${version}</span>`).join("")}
+      ${versions.map(version => `<span>${version}</span>`).join("")}
+      ${rest > 0 ? `<span>+${rest}</span>` : ""}
     </div>
   `;
 }
@@ -2339,20 +2818,67 @@ function renderExecutionOverview(detail) {
     const waitingLabel = requiresApprovalForDetail() ? "当前节点" : "发布状态";
     const waitingValue = requiresApprovalForDetail() ? "等待审批" : "已发布待执行";
     const reasonCard = detail.status === "已驳回"
-      ? `<div class="detail-metric red"><span>驳回原因</span><strong>${detail.rejectReason}</strong></div>`
+      ? `<div class="detail-metric red">${icon("close")}<span>驳回原因</span><strong>${detail.rejectReason}</strong></div>`
       : detail.status === "已失效"
-        ? `<div class="detail-metric red"><span>失效原因</span><strong>${detail.invalidReason}</strong></div>`
+        ? `<div class="detail-metric red">${icon("alert")}<span>失效原因</span><strong>${detail.invalidReason}</strong></div>`
         : detail.status === "待执行"
-          ? `<div class="detail-metric gray"><span>计划开始时间</span><strong>${detail.startAt}</strong></div>`
-          : `<div class="detail-metric orange"><span>${waitingLabel}</span><strong>${waitingValue}</strong></div>`;
-    return `<div class="detail-metrics single"><div class="detail-metric blue"><span>${label}</span><strong>${value}</strong></div>${reasonCard}</div>`;
+          ? `<div class="detail-metric gray">${icon("clock")}<span>计划开始时间</span><strong>${detail.startAt}</strong></div>`
+          : `<div class="detail-metric orange">${icon("shield")}<span>${waitingLabel}</span><strong>${waitingValue}</strong></div>`;
+    return `<div class="detail-metrics single"><div class="detail-metric blue">${icon("users")}<span>${label}</span><strong>${value}</strong></div>${reasonCard}</div>`;
+  }
+  if (isFixedDeviceDetailMode()) {
+    return renderFixedDeviceExecutionOverview(detail, stats);
   }
   const cards = executionMetricCards(detail, stats);
   return `
     <div class="detail-metrics">
-      ${cards.map(([label, value, tone]) => `<div class="detail-metric ${tone}"><span>${label}</span><strong>${value}</strong></div>`).join("")}
+      ${cards.map(([label, value, tone, iconName]) => `<div class="detail-metric ${tone}">${icon(iconName)}<span>${label}</span><strong>${value}</strong></div>`).join("")}
     </div>
-    ${renderExecutionProgressInline(detail, stats)}
+  `;
+}
+
+function renderFixedDeviceExecutionOverview(detail, stats) {
+  const total = Number(detail.total) || 0;
+  const processed = Math.min(stats.stocked, total);
+  const unresolved = Math.max(total - processed, 0);
+  const percent = total ? Math.min((processed / total) * 100, 100) : 0;
+  const successWidth = total ? (stats.upgradeSuccess / total) * 100 : 0;
+  const failedWidth = total ? (stats.upgradeFailed / total) * 100 : 0;
+  const unresolvedWidth = Math.max(100 - successWidth - failedWidth, 0);
+  const sourceLabel = isManualDetailMode() ? "手动导入" : "文件导入";
+  const sourceText = isManualDetailMode()
+    ? "小批量验证任务，设备总数以手动录入设备为准。"
+    : "固定清单任务，设备总数以导入清单为准。";
+  const cards = [
+    ["升级设备总数", `${Number(total).toLocaleString()} 台`, "blue", "users"],
+    ["已处理", `${Number(processed).toLocaleString()} 台`, "blue", "refresh"],
+    ["升级成功", `${Number(stats.upgradeSuccess).toLocaleString()} 台`, "green", "check"],
+    ["升级失败", `${Number(stats.upgradeFailed).toLocaleString()} 台`, "red", "alert"],
+    ["未处理", `${Number(unresolved).toLocaleString()} 台`, "gray", "clock"],
+  ];
+  return `
+    <div class="detail-metrics fixed">
+      ${cards.map(([label, value, tone, iconName]) => `<div class="detail-metric ${tone}">${icon(iconName)}<span>${label}</span><strong>${value}</strong></div>`).join("")}
+    </div>
+    <section class="fixed-progress-panel">
+      <div class="fixed-progress-head">
+        <div>
+          <span>${sourceLabel}</span>
+          <strong>已处理 ${Number(processed).toLocaleString()} / 总数 ${Number(total).toLocaleString()} 台，完成率 ${percent.toFixed(1)}%</strong>
+        </div>
+        <p>${sourceText}</p>
+      </div>
+      <div class="fixed-progress-bar" aria-label="固定清单升级进度">
+        <i class="success" style="width:${successWidth.toFixed(2)}%"></i>
+        <i class="failed" style="width:${failedWidth.toFixed(2)}%"></i>
+        <i class="pending" style="width:${unresolvedWidth.toFixed(2)}%"></i>
+      </div>
+      <div class="fixed-progress-legend">
+        <span><i class="success"></i>成功 ${Number(stats.upgradeSuccess).toLocaleString()} 台</span>
+        <span><i class="failed"></i>失败 ${Number(stats.upgradeFailed).toLocaleString()} 台</span>
+        <span><i class="pending"></i>未处理 ${Number(unresolved).toLocaleString()} 台</span>
+      </div>
+    </section>
   `;
 }
 
@@ -2381,27 +2907,22 @@ function renderExecutionProgressInline(detail, stats) {
 function executionMetricCards(detail, stats) {
   if (isVersionFullDetailMode()) {
     return [
-      ["已匹配数", `${Number(stats.stocked).toLocaleString()} 台`, "blue"],
-      ["升级成功", `${Number(stats.upgradeSuccess).toLocaleString()} 台`, "green"],
-      ["升级失败", `${Number(stats.upgradeFailed).toLocaleString()} 台`, "red"],
-      [detail.status === "已结束" ? "停止继续匹配" : "匹配状态", detail.status === "已完成" ? "匹配完成" : "动态匹配中", "gray"],
+      ["已匹配数", `${Number(stats.stocked).toLocaleString()} 台`, "blue", "refresh"],
+      ["升级成功", `${Number(stats.upgradeSuccess).toLocaleString()} 台`, "green", "check"],
+      ["升级失败", `${Number(stats.upgradeFailed).toLocaleString()} 台`, "red", "alert"],
     ];
   }
   if (isVersionBatchDetailMode()) {
-    const plan = plannedBatchTotal();
-    const remaining = Math.max(plan - stats.stocked, 0);
     return [
-      ["计划成功下发数量", `${Number(plan).toLocaleString()} 台`, "blue"],
-      ["已匹配数", `${Number(stats.stocked).toLocaleString()} 台`, "green"],
-      ["升级失败", `${Number(stats.upgradeFailed).toLocaleString()} 台`, "red"],
-      [detail.status === "已结束" ? "未继续匹配名额" : "待匹配名额", `${Number(remaining).toLocaleString()} 台`, "gray"],
+      ["已匹配数", `${Number(stats.stocked).toLocaleString()} 台`, "blue", "refresh"],
+      ["升级成功", `${Number(stats.upgradeSuccess).toLocaleString()} 台`, "green", "check"],
+      ["升级失败", `${Number(stats.upgradeFailed).toLocaleString()} 台`, "red", "alert"],
     ];
   }
   return [
-    ["升级设备总数", `${Number(detail.total).toLocaleString()} 台`, "blue"],
-    ["升级成功", `${Number(stats.upgradeSuccess).toLocaleString()} 台`, "green"],
-    ["升级失败", `${Number(stats.upgradeFailed).toLocaleString()} 台`, "red"],
-    [detail.status === "已结束" ? "已终止/未处理" : "进行中/未处理", `${Number(detail.running + stats.pending).toLocaleString()} 台`, "gray"],
+    ["已处理数", `${Number(stats.stocked).toLocaleString()} 台`, "blue", "refresh"],
+    ["升级成功", `${Number(stats.upgradeSuccess).toLocaleString()} 台`, "green", "check"],
+    ["升级失败", `${Number(stats.upgradeFailed).toLocaleString()} 台`, "red", "alert"],
   ];
 }
 
@@ -2409,13 +2930,65 @@ function renderExceptionSummary(detail) {
   if (!detail.failed) {
     return "";
   }
+  const rows = exceptionCategoryRows(detail);
+  const total = rows.reduce((sum, row) => sum + row.count, 0);
   return `
-    <h3 class="section-title">${icon("alert")}异常分类</h3>
-    <div class="exception-list">
-      <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>设备离线或长时间未上报</span><span class="mini-tag">${Math.max(detail.failed - 5, 0)}台</span></div>
-      <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>升级超时或设备主动失败</span><span class="mini-tag">${Math.min(detail.failed, 5)}台</span></div>
+    <div class="section-title-row exception-title-row">
+      <h3 class="section-title">${icon("alert")}异常分类</h3>
+      <button class="btn" type="button" data-action="download-exception">${icon("download")}下载异常明细</button>
     </div>
-    <button class="btn" type="button" data-action="download-exception" style="margin-top: 12px">${icon("download")}下载异常明细</button>
+    <section class="exception-chart-card">
+      <div class="exception-donut-wrap">
+        <div class="exception-echart">
+          <div class="exception-echart-canvas" data-exception-chart="${escapeHtml(JSON.stringify(rows))}" aria-label="异常分类圆角环形图"></div>
+          <div class="exception-donut-center">
+            <span data-exception-center-label data-default="异常总数">异常总数</span>
+            <strong data-exception-center-value data-default="${Number(total).toLocaleString()} 台">${Number(total).toLocaleString()} 台</strong>
+            <em data-exception-center-percent data-default="全部异常">全部异常</em>
+          </div>
+        </div>
+      </div>
+      <div class="exception-rank-list">
+        ${rows.map((row, index) => renderExceptionRankItem(row, total, index)).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function exceptionCategoryRows(detail) {
+  const total = Number(detail.failed) || 0;
+  if (!total) return [];
+  const ratios = [
+    { label: "设备升级过程失败", ratio: 0.36, tone: "red" },
+    { label: "升级前不满足条件", ratio: 0.22, tone: "orange" },
+    { label: "升级数量限制", ratio: 0.1, tone: "blue" },
+    { label: "任务和链路异常", ratio: 0.16, tone: "purple" },
+    { label: "App 主动升级相关", ratio: 0.06, tone: "gray" },
+    { label: "设备上报失败信息", ratio: 0.1, tone: "cyan" },
+  ];
+  let remaining = total;
+  const rows = ratios.map((item, index) => {
+    const count = index === ratios.length - 1
+      ? remaining
+      : Math.min(Math.max(Math.round(total * item.ratio), total >= ratios.length ? 1 : 0), remaining);
+    remaining -= count;
+    return { ...item, count };
+  });
+  return rows.filter(row => row.count > 0);
+}
+
+function renderExceptionRankItem(row, total, index) {
+  const percent = total ? (row.count / total) * 100 : 0;
+  const percentText = `${percent.toFixed(1)}%`;
+  return `
+    <div class="exception-rank-item ${row.tone}" tabindex="0" data-exception-index="${index}" data-label="${escapeHtml(row.label)}" data-count="${Number(row.count).toLocaleString()} 台" data-percent="${percentText}">
+      <div class="exception-rank-head">
+        <span>${row.label}</span>
+        <strong>${Number(row.count).toLocaleString()} 台</strong>
+        <em>${percentText}</em>
+      </div>
+      <div class="exception-rank-bar"><b style="width:${percent.toFixed(2)}%"></b></div>
+    </div>
   `;
 }
 
@@ -2429,10 +3002,12 @@ function renderDeviceDetailTable(detail) {
     ? filteredRows.map(renderDeviceDetailRow).join("")
     : `<tr class="empty-row"><td colspan="9">暂无符合条件的设备</td></tr>`;
   return `
-    <h3 class="section-title">${icon("layer")}设备明细</h3>
-    ${renderDeviceDetailNote(detail)}
-    <div class="toolbar">
+    <div class="section-title-row">
+      <h3 class="section-title">${icon("layer")}设备列表</h3>
+    </div>
+    <div class="toolbar device-list-toolbar">
       <label class="field-control search">${icon("search")}<input type="search" value="${escapeHtml(state.detailDeviceKeyword)}" placeholder="请输入设备ID" aria-label="设备ID搜索" data-detail-device-search /></label>
+      <button class="btn" type="button" data-action="export-device-list">${icon("download")}导出设备列表</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -2456,11 +3031,11 @@ function deviceDetailRowLimit(detail) {
 function renderDeviceDetailNote(detail) {
   const note = isVersionFullDetailMode()
     ? detail.status === "已结束"
-      ? "指定版本全量任务已停止继续动态匹配；设备明细展示已匹配并进入下发链路的设备，以及提前结束后未继续下发的设备。"
-      : "指定版本全量任务无法提前统计设备总数；设备明细展示已动态匹配并进入下发链路的设备。"
+      ? "指定版本全量任务已停止继续动态匹配；升级明细展示已匹配并进入下发链路的设备，以及提前结束后未继续下发的设备。"
+      : "指定版本全量任务无法提前统计设备总数；升级明细展示已动态匹配并进入下发链路的设备。"
     : isVersionBatchDetailMode()
       ? `指定版本批量任务按计划成功下发数量控制名额，当前计划 ${Number(plannedBatchTotal()).toLocaleString()} 台。`
-      : "文件/手动导入任务设备清单固定，设备明细展示已纳入本次升级的设备。";
+      : "文件/手动导入任务设备清单固定，升级明细展示已纳入本次升级的设备。";
   return `<div class="detail-inline-note">${icon("info")}${note}</div>`;
 }
 
@@ -2781,6 +3356,7 @@ function renderPortal() {
 
 function renderModal(modal) {
   if (modal.type === "preview") return renderPreviewModal();
+  if (modal.type === "publishResult") return renderPublishResultModal();
   if (modal.type === "region") return renderRegionModal();
   if (modal.type === "status") return renderStatusModal();
   if (modal.type === "roleCreate") return renderRoleCreateModal();
@@ -2808,6 +3384,80 @@ function renderPreviewModal() {
       </section>
     </div>
   `;
+}
+
+function renderPublishResultModal() {
+  const meta = strategyMeta[state.strategy];
+  const isManual = state.strategy === "manual";
+  const taskStatus = isManual ? manualPublishStatus() : meta.nextStatus;
+  const title = isManual ? "任务发布成功" : "任务已提交审批";
+  const desc = isManual
+    ? "OTA 升级任务已创建，系统将在任务时间窗口内执行。"
+    : "OTA 升级任务已创建并提交审批，审批通过后将在任务时间窗口内执行。";
+  const flowNotes = isManual
+    ? [
+      ["当前状态", taskStatus === "升级中" ? "任务已到达开始时间，进入升级中。" : "任务已进入待执行，未到开始时间前不会下发。", "clock"],
+      ["执行规则", "到达任务开始时间后系统自动下发 OTA；执行结果可在任务详情的升级明细中查看。", "refresh"],
+      ["后续操作", "关闭弹窗或返回任务列表后，可通过任务详情持续查看任务流转与设备升级结果。", "info"],
+    ]
+    : [
+      ["当前状态", "任务已进入待审批，审批通过前不会进入执行队列，也不会下发 OTA。", "shield"],
+      ["审批结果", "审批通过后按任务时间进入待执行或升级中；若审批驳回或超时失效，任务不会下发。", "clock"],
+      ["后续操作", "关闭弹窗或返回任务列表后，可在待审批任务中查看详情，等待产线负责人处理。", "info"],
+    ];
+
+  return `
+    <div class="modal-backdrop" data-action="publish-result-list">
+      <section class="modal medium publish-result-modal" role="dialog" aria-modal="true" aria-labelledby="publishResultTitle" data-stop>
+        <header class="modal-header">
+          <span id="publishResultTitle">${title}</span>
+          <button class="modal-close" data-action="publish-result-list" aria-label="关闭并返回任务列表">${icon("close")}</button>
+        </header>
+        <div class="modal-body">
+          <div class="publish-result-head">
+            <div class="publish-result-icon">${icon("check")}</div>
+            <div>
+              <h3>${title}</h3>
+              <p>${desc}</p>
+            </div>
+          </div>
+          <dl class="publish-result-grid">
+            <dt>任务编号</dt><dd><code>OTA-2026-176660</code></dd>
+            <dt>任务名称</dt><dd>${escapeHtml(state.form.taskName || "未命名任务")}</dd>
+            <dt>升级方式</dt><dd>${meta.short}</dd>
+            <dt>升级包</dt><dd>${state.packageType === "whole" ? "整包" : "差分包"}</dd>
+            <dt>目标版本</dt><dd>${escapeHtml(state.form.targetVersion)}</dd>
+            <dt>任务时间</dt><dd>${escapeHtml(state.taskStartAt)} ~ ${escapeHtml(state.taskEndAt)}</dd>
+            <dt>设备规模</dt><dd>${finishDeviceScaleText()}</dd>
+            <dt>当前状态</dt><dd>${statusTag(taskStatus)}</dd>
+          </dl>
+          <div class="publish-flow-note" aria-label="后续流程说明">
+            <h4>后续流程说明</h4>
+            <div class="publish-flow-list">
+              ${flowNotes.map(([label, text, iconName]) => `
+                <div class="publish-flow-item">
+                  <span class="publish-flow-icon">${icon(iconName)}</span>
+                  <div>
+                    <strong>${label}</strong>
+                    <p>${text}</p>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        </div>
+        <footer class="modal-footer">
+          <button class="btn" type="button" data-action="publish-result-list">返回任务列表</button>
+          <button class="btn primary" type="button" data-action="publish-result-detail">查看任务详情</button>
+        </footer>
+      </section>
+    </div>
+  `;
+}
+
+function manualPublishStatus() {
+  const start = parseDateTime(state.taskStartAt);
+  return start <= new Date() ? "升级中" : "待执行";
 }
 
 function previewData() {
@@ -3199,6 +3849,13 @@ function bindEvents(root) {
     });
   });
 
+  root.querySelectorAll("[data-exception-index]").forEach(el => {
+    el.addEventListener("mouseenter", event => focusExceptionItem(el, event));
+    el.addEventListener("focus", event => focusExceptionItem(el, event));
+    el.addEventListener("mouseleave", () => resetExceptionFocus(el));
+    el.addEventListener("blur", () => resetExceptionFocus(el));
+  });
+
   root.querySelectorAll("[data-page-jump]").forEach(input => {
     input.addEventListener("keydown", event => {
       if (event.key === "Enter") {
@@ -3207,6 +3864,57 @@ function bindEvents(root) {
       }
     });
     input.addEventListener("change", () => jumpPage(input));
+  });
+}
+
+function focusExceptionItem(item, event) {
+  const card = item.closest(".exception-chart-card");
+  if (!card) return;
+  const chartEl = card.querySelector("[data-exception-chart]");
+  const rows = JSON.parse(chartEl?.dataset.exceptionChart || "[]");
+  const total = rows.reduce((sum, row) => sum + Number(row.count || 0), 0);
+  const index = Number(item.dataset.exceptionIndex);
+  focusExceptionByIndex(chartEl, index, rows, total);
+  chartEl?.__chart?.dispatchAction({ type: "downplay", seriesIndex: 0 });
+  chartEl?.__chart?.dispatchAction({ type: "highlight", seriesIndex: 0, dataIndex: index });
+  chartEl?.__chart?.dispatchAction({ type: "showTip", seriesIndex: 0, dataIndex: index });
+}
+
+function resetExceptionFocus(item) {
+  const card = item.closest(".exception-chart-card");
+  if (!card) return;
+  const chartEl = card.querySelector("[data-exception-chart]");
+  chartEl?.__chart?.dispatchAction({ type: "downplay", seriesIndex: 0 });
+  chartEl?.__chart?.dispatchAction({ type: "hideTip" });
+  resetExceptionChartFocus(chartEl);
+}
+
+function focusExceptionByIndex(chartEl, index, rows, total) {
+  const card = chartEl?.closest(".exception-chart-card");
+  const row = rows[index];
+  if (!card || !row) return;
+  card.classList.add("is-focusing");
+  const percent = total ? ((row.count / total) * 100).toFixed(1) : "0.0";
+  card.querySelectorAll("[data-exception-index]").forEach(item => {
+    const isActive = Number(item.dataset.exceptionIndex) === index;
+    item.classList.toggle("active", isActive);
+    item.classList.toggle("muted", !isActive);
+  });
+  card.querySelector("[data-exception-center-label]").textContent = row.label;
+  card.querySelector("[data-exception-center-value]").textContent = `${Number(row.count).toLocaleString()} 台`;
+  card.querySelector("[data-exception-center-percent]").textContent = `${percent}%`;
+}
+
+function resetExceptionChartFocus(chartEl) {
+  const card = chartEl?.closest(".exception-chart-card");
+  if (!card) return;
+  card.classList.remove("is-focusing");
+  card.querySelectorAll("[data-exception-index]").forEach(item => {
+    item.classList.remove("active", "muted");
+  });
+  ["label", "value", "percent"].forEach(key => {
+    const el = card.querySelector(`[data-exception-center-${key}]`);
+    if (el) el.textContent = el.dataset.default || "";
   });
 }
 
@@ -3219,9 +3927,9 @@ function updateFormField(input, shouldRender = false) {
   field?.classList.remove("has-error");
   field?.querySelector(".field-error")?.remove();
 
-  if (key === "taskName") {
+  if (key === "taskName" || key === "upgradeDesc") {
     const counter = field?.querySelector(".count");
-    if (counter) counter.textContent = `${input.value.length} / ${input.maxLength || 64}`;
+    if (counter) counter.textContent = `${input.value.length} / ${input.maxLength || (key === "upgradeDesc" ? 500 : 64)}`;
   }
 
   if (shouldRender) render();
@@ -3400,6 +4108,10 @@ function handleAction(action, el) {
       state.navCollapsed.users = state.navCollapsed.ota;
       render();
       break;
+    case "toggle-requirement-notes":
+      state.showRequirementNotes = !state.showRequirementNotes;
+      render();
+      break;
     case "open-region":
       openModal("region");
       break;
@@ -3550,6 +4262,7 @@ function handleAction(action, el) {
     case "set-detail-status":
       state.detailStatus = el.dataset.status || "升级中";
       state.detailTab = "overview";
+      state.detailSourceExpanded = false;
       render();
       break;
     case "set-detail-metric-mode":
@@ -3559,6 +4272,11 @@ function handleAction(action, el) {
       }
       state.flowTab = "progress";
       state.detailTab = "overview";
+      state.detailSourceExpanded = false;
+      render();
+      break;
+    case "toggle-detail-source":
+      state.detailSourceExpanded = !state.detailSourceExpanded;
       render();
       break;
     case "set-detail-tab":
@@ -3636,16 +4354,27 @@ function handleAction(action, el) {
     case "publish-task":
       if (!ensureStepValid(1) || !ensureStepValid(2)) break;
       closeModal();
-      state.createStep = 4;
-      showToast(state.strategy === "manual" ? "发布成功，任务已进入待执行" : "任务已提交，等待产线负责人审批");
-      render({ preserveScroll: false });
+      state.regionDropdownOpen = false;
+      state.conditionRegionDropdownOpen = false;
+      state.regionOperatorOpen = false;
+      state.datePickerOpen = false;
+      openModal("publishResult");
+      render();
+      break;
+    case "publish-result-list":
+      closeModal();
+      setRoute("task-list");
+      break;
+    case "publish-result-detail":
+      closeModal();
+      setRoute("task-detail");
       break;
     case "next-create-step":
       if (!ensureStepValid(state.createStep)) break;
       state.regionDropdownOpen = false;
       state.conditionRegionDropdownOpen = false;
       state.regionOperatorOpen = false;
-      state.createStep = Math.min(state.createStep + 1, 4);
+      state.createStep = Math.min(state.createStep + 1, 3);
       render({ preserveScroll: false });
       break;
     case "prev-create-step":
@@ -3692,6 +4421,9 @@ function handleAction(action, el) {
     }
     case "download-exception":
       showToast("异常明细已生成");
+      break;
+    case "export-device-list":
+      showToast(state.detailDeviceKeyword.trim() ? "已导出当前筛选后的设备列表" : "设备列表已导出");
       break;
     case "open-role-create":
       openModal("roleCreate");
