@@ -783,7 +783,7 @@ a {
 }
 
 .prd-doc-shell {
-  width: min(1180px, 100%);
+  width: min(1320px, 100%);
   margin: 0;
   padding: 0 0 64px;
 }
@@ -821,45 +821,147 @@ a {
   line-height: 1.6;
 }
 
-.prd-doc-content {
+.prd-deck-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.prd-slide-index {
+  position: sticky;
+  top: 86px;
+  max-height: calc(100vh - 112px);
+  overflow-y: auto;
   border: 1px solid #dbe7f5;
   border-radius: 8px;
-  padding: 28px 34px;
+  padding: 10px;
   background: #fff;
   box-shadow: 0 10px 24px rgba(20, 46, 92, 0.05);
 }
 
-.prd-doc-content h1,
-.prd-doc-content h2,
-.prd-doc-content h3 {
+.prd-slide-index a {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  border-radius: 7px;
+  padding: 8px 10px;
+  color: #344256;
+  text-decoration: none;
+}
+
+.prd-slide-index a:hover {
+  background: #f3f7ff;
+}
+
+.prd-slide-index em {
+  color: var(--blue);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.prd-slide-index span {
+  min-width: 0;
+  overflow: hidden;
+  color: #344256;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prd-slide-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.prd-slide-card {
+  min-height: 520px;
+  border: 1px solid #dbe7f5;
+  border-radius: 10px;
+  padding: 34px 38px;
+  background:
+    linear-gradient(135deg, rgba(47, 111, 237, 0.05), rgba(255, 255, 255, 0) 36%),
+    #fff;
+  box-shadow: 0 14px 34px rgba(20, 46, 92, 0.07);
+  scroll-margin-top: 84px;
+}
+
+.prd-slide-kicker {
+  width: fit-content;
+  margin-bottom: 14px;
+  border: 1px solid #d6e4ff;
+  border-radius: 999px;
+  padding: 4px 10px;
+  color: var(--blue);
+  background: #f3f7ff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.prd-slide-card > h2 {
+  margin: 0 0 22px;
+  color: #101828;
+  font-size: 30px;
+  line-height: 1.22;
+}
+
+.prd-slide-body h1,
+.prd-slide-body h2,
+.prd-slide-body h3 {
   color: #172033;
   line-height: 1.35;
 }
 
-.prd-doc-content h1 {
+.prd-slide-body h1 {
   margin-top: 0;
   font-size: 28px;
 }
 
-.prd-doc-content h2 {
-  margin-top: 34px;
-  border-bottom: 1px solid #e5edf6;
-  padding-bottom: 10px;
-  font-size: 22px;
+.prd-slide-body h2 {
+  margin-top: 24px;
+  font-size: 21px;
 }
 
-.prd-doc-content h3 {
-  margin-top: 24px;
+.prd-slide-body h3 {
+  margin: 24px 0 10px;
+  color: #243b5a;
   font-size: 17px;
 }
 
-.prd-doc-content p,
-.prd-doc-content li {
+.prd-slide-body p,
+.prd-slide-body li {
   color: #344256;
-  line-height: 1.78;
+  font-size: 15px;
+  line-height: 1.75;
 }
 
-.prd-doc-content table {
+.prd-slide-body blockquote {
+  margin: 0 0 18px;
+  border-left: 4px solid var(--blue);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 16px;
+  background: #f5f8ff;
+}
+
+.prd-slide-body blockquote p {
+  margin: 0;
+  color: #243b5a;
+  font-weight: 700;
+}
+
+.prd-slide-body ul {
+  display: grid;
+  gap: 8px;
+  padding-left: 20px;
+}
+
+.prd-slide-body table {
   width: 100%;
   min-width: 760px;
   margin: 14px 0 22px;
@@ -870,12 +972,12 @@ a {
   overflow-x: auto;
 }
 
-.prd-doc-content th,
-.prd-doc-content td {
+.prd-slide-body th,
+.prd-slide-body td {
   vertical-align: top;
 }
 
-.prd-doc-content pre {
+.prd-slide-body pre {
   overflow-x: auto;
   border-radius: 8px;
   padding: 14px 16px;
@@ -883,7 +985,7 @@ a {
   background: #172033;
 }
 
-.prd-doc-content .prd-doc-plain {
+.prd-slide-body .prd-doc-plain {
   margin: 0;
   color: #243b5a;
   background: #fff;
@@ -892,7 +994,7 @@ a {
   line-height: 1.78;
 }
 
-.prd-doc-content code {
+.prd-slide-body code {
   border-radius: 4px;
   padding: 1px 5px;
   color: #1f4f9c;
@@ -900,7 +1002,7 @@ a {
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
 }
 
-.prd-doc-content pre code {
+.prd-slide-body pre code {
   padding: 0;
   color: inherit;
   background: transparent;
@@ -6195,16 +6297,34 @@ tbody tr:hover .sticky-action-col {
     padding: 18px;
   }
 
-  .prd-doc-content {
-    padding: 20px 16px;
+  .prd-deck-layout {
+    grid-template-columns: 1fr;
   }
 
-  .prd-doc-content h1 {
-    font-size: 23px;
+  .prd-slide-index {
+    position: static;
+    max-height: none;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px;
   }
 
-  .prd-doc-content h2 {
-    font-size: 19px;
+  .prd-slide-index a {
+    min-width: 148px;
+  }
+
+  .prd-slide-card {
+    min-height: auto;
+    padding: 24px 18px;
+  }
+
+  .prd-slide-card > h2 {
+    font-size: 24px;
+  }
+
+  .prd-slide-body table {
+    min-width: 680px;
   }
 
   .split-shell {
