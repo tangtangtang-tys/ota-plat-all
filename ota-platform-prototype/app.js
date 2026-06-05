@@ -21,10 +21,13 @@ function escapeHtml(value) {
 
 const state = {
   route: "task-list",
+  topRegion: "中国",
   packageType: "whole",
   strategy: "version",
   previewScenario: "mixed",
   quantityMode: "full",
+  taskScope: "current",
+  syncRegions: ["中国", "香港"],
   batchQuantity: 0,
   createStep: 1,
   regionDropdownOpen: false,
@@ -43,6 +46,7 @@ const state = {
   },
   errors: {},
   selectedRegions: ["中国 / 杭州低功耗", "中国 / 杭州"],
+  conditionRegions: ["中国 / 杭州低功耗"],
   selectedVersions: ["23.422.208.91", "23.110.105.46", "23.110.105.43", "10.176.42"],
   manualDevices: [
     { id: 1, deviceId: "IPC-HZ-LP-000128", version: "23.110.105.46", region: "杭州低功耗", status: "可升级", error: "" },
@@ -99,25 +103,14 @@ const navGroups = [
 
 const docNavItems = [["requirements-doc", "需求说明"]];
 
-const taskRows = [
-  ["单台升级", "手动导入", "1", "2026-05-19 11:05:00~2026-05-19 12:00:00", "0%", "1", "中国/杭州低功耗", "待执行", "2026-05-19 09:11:24", true],
-  ["kg111", "手动导入", "1", "2026-05-19 09:13:00~2026-05-19 10:00:00", "0%", "1", "中国/杭州低功耗", "升级中", "2026-05-19 09:03:18", true],
-  ["4.17-5.7测试记录(中视讯-沃视佳)", "文件导入", "664", "2026-05-13 18:59:01~2026-08-13 18:59:01", "52%", "0", "中国/杭州低功耗", "已完成", "2026-05-13 18:02:14", true],
-  ["Allid综合导入", "文件导入", "6505", "2026-05-13 11:25:20~2026-08-13 11:25:20", "6%", "0", "中国/杭州低功耗", "升级中", "2026-05-13 11:22:42", true],
-  ["Allid综合导入", "文件导入", "1196", "2026-05-13 11:22:52~2026-08-13 11:22:52", "9%", "0", "中国/杭州低功耗", "升级中", "2026-05-13 11:21:18", true],
-  ["kg1111", "手动导入", "1", "2026-05-12 11:24:00~2026-05-12 12:00:00", "100%", "0", "中国/杭州低功耗", "已完成", "2026-05-12 11:22:33", false],
-  ["KG124", "手动导入", "1", "2026-05-11 19:11:00~2026-05-11 20:00:00", "100%", "0", "中国/杭州低功耗", "已完成", "2026-05-11 19:07:32", false],
-  ["测试数据（华拓20260507）异常明细", "文件导入", "327", "2026-05-09 16:51:20~2026-08-09 16:51:20", "0%", "0", "中国/杭州低功耗", "升级中", "2026-05-09 16:49:28", true],
-  ["VSTC_0420_欧亚非(威视达康0509)", "文件导入", "852", "2026-05-09 16:41:08~2026-08-09 16:41:08", "5%", "0", "中国/杭州低功耗", "升级中", "2026-05-09 16:39:16", true],
-  ["VSTC_0420_欧亚非(威视达康测试)", "文件导入", "1851", "2026-05-09 16:40:34~2026-08-09 16:40:34", "22%", "0", "中国/杭州低功耗", "升级中", "2026-05-09 16:37:40", true],
-  ["测试数据（华拓20260507）", "文件导入", "2310", "2026-05-09 16:23:44~2026-08-09 16:23:44", "0%", "0", "中国/杭州低功耗", "升级中", "2026-05-09 16:22:11", true],
-];
+const syncRegionOptions = ["中国", "香港", "法兰福克", "硅谷"];
+const topRegionOptions = ["中国", "香港", "法兰福克", "硅谷"];
 
 const taskStatusMeta = {
-  "待执行": { color: "gray", actions: ["detail", "end"] },
+  "待执行": { color: "gray", actions: ["detail"] },
   "升级中": { color: "blue", actions: ["detail", "end"] },
-  "已完成": { color: "green", actions: ["detail"] },
-  "已结束": { color: "gray", actions: ["detail"] },
+  "已完成": { color: "green", actions: ["detail", "copyRebuild"] },
+  "已结束": { color: "gray", actions: ["detail", "copyRebuild"] },
   "待发布": { color: "orange", actions: ["editDraft", "deleteDraft"] },
   "待审批": { color: "orange", actions: ["detail"] },
   "已驳回": { color: "red", actions: ["detail", "copyRebuild"] },
@@ -125,13 +118,14 @@ const taskStatusMeta = {
 };
 
 const taskListRows = [
-  { id: "OTA202606030001", name: "IPC-杭州低功耗_安全补丁升级", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-06-10 09:00:00~2026-06-17 09:00:00", result: null, region: "中国/杭州低功耗", status: "待审批", creator: "汤彦珊", createdAt: "2026-06-03 17:20:18" },
+  { id: "OTA202606030001", name: "IPC-多大区安全补丁同步升级", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-06-10 09:00:00~2026-06-17 09:00:00", result: null, region: "中国", status: "待审批", creator: "汤彦珊", createdAt: "2026-06-03 17:20:18", syncBatchId: "SYNC-20260603-0001", syncRegions: ["中国", "香港", "法兰福克", "硅谷"] },
   { id: "OTA202606030002", name: "杭州低功耗灰度定时升级", method: "指定版本", quantityMode: "batch", planned: 5000, packageType: "差分包", targetVersion: "23.422.209.17", total: null, time: "2026-06-04 10:00:00~2026-06-11 10:00:00", result: null, region: "中国/杭州低功耗", status: "待执行", creator: "江锐", createdAt: "2026-06-03 16:42:05" },
-  { id: "OTA202606010001", name: "文件导入_欧亚非补丁升级", method: "文件导入", packageType: "整包", targetVersion: "23.422.209.17", total: "664", time: "2026-06-01 18:59:01~2026-06-30 18:59:01", result: { success: 346, failed: 0, total: 664 }, region: "欧亚非", status: "升级中", creator: "钱江涛", createdAt: "2026-06-01 18:02:14" },
+  { id: "OTA202606010001", name: "文件导入_法兰福克补丁升级", method: "文件导入", packageType: "整包", targetVersion: "23.422.209.17", total: "664", time: "2026-06-01 18:59:01~2026-06-30 18:59:01", result: { success: 346, failed: 0, total: 664 }, region: "法兰福克", status: "升级中", creator: "钱江涛", createdAt: "2026-06-01 18:02:14" },
   { id: "OTA202605130001", name: "低功耗设备夜间唤醒修复", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-05-13 11:25:20~2026-06-02 11:25:20", result: { matched: 6505, success: 6488, failed: 17 }, region: "中国/杭州低功耗", status: "已完成", creator: "江锐", createdAt: "2026-05-13 11:22:42" },
   { id: "OTA202605190001", name: "黑光升级双光测试", method: "文件导入", packageType: "差分包", targetVersion: "23.110.105.46", total: "1196", time: "2026-05-19 16:33:42~2026-06-19 16:33:42", result: { success: 730, failed: 8, total: 1196 }, region: "中国/杭州", status: "已结束", creator: "钱江涛", createdAt: "2026-05-19 16:31:18" },
   { id: "OTA202605090002", name: "华拓测试数据异常明细", method: "文件导入", packageType: "整包", targetVersion: "23.422.209.17", total: "327", time: "2026-05-09 16:51:20~2026-08-09 16:51:20", result: null, region: "中国/杭州低功耗", status: "已驳回", creator: "江锐", createdAt: "2026-05-09 16:49:28" },
-  { id: "OTA202605090001", name: "审批超时_安全补丁升级", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-05-09 16:40:34~2026-06-09 16:40:34", result: null, region: "欧亚非", status: "已失效", creator: "汤彦珊", createdAt: "2026-05-09 16:37:40" },
+  { id: "OTA202605090001", name: "审批超时_香港安全补丁升级", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-05-09 16:40:34~2026-06-09 16:40:34", result: null, region: "香港", status: "已失效", creator: "汤彦珊", createdAt: "2026-05-09 16:37:40" },
+  { id: "OTA202605080001", name: "硅谷摄像机批量灰度", method: "指定版本", quantityMode: "batch", planned: 800, packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-05-08 10:00:00~2026-05-18 10:00:00", result: { matched: 640, success: 620, failed: 20 }, region: "硅谷", status: "升级中", creator: "江锐", createdAt: "2026-05-08 09:42:16" },
 ];
 
 const taskStatusOptions = ["全部", "待发布", "待审批", "待执行", "升级中", "已完成", "已结束", "已驳回", "已失效"];
@@ -209,44 +203,19 @@ const firmwareVersions = [
   { version: "10.176.42", count: 664, diffReady: false, note: "整包可跨版本升级" },
 ];
 
-const regionOptions = [
-  "中国 / 杭州低功耗",
-  "中国 / 杭州",
-  "中国 / 深圳",
-  "中国 / 成都",
-  "中国 / 上海",
-  "中非 / 丹麦 / Kyiv",
-  "中非 / 乌克兰 / Odesa",
-];
-
-const regionTree = [
-  { label: "中国", children: [
-    { label: "杭州低功耗" },
-    { label: "杭州" },
-    { label: "深圳" },
-    { label: "成都" },
-    { label: "上海" },
-  ] },
-  { label: "中非", children: [
-    { label: "丹麦", children: [{ label: "Kyiv" }, { label: "Kyiv City" }, { label: "Odesa" }, { label: "Rivne" }] },
-    { label: "乌克兰", children: [{ label: "Chernihivtsi" }, { label: "Dnipropetrovsk" }, { label: "Kyiv" }, { label: "Kyiv City" }, { label: "Odesa" }] },
-    { label: "乌兹别克斯坦", children: [{ label: "Barishivka" }, { label: "Bohuslav" }, { label: "Bucha" }, { label: "Danylivka" }, { label: "Dymer" }] },
-  ] },
-  { label: "丹麦", children: [
-    { label: "Kyiv" },
-    { label: "Kyiv City" },
-    { label: "Odesa" },
-  ] },
-  { label: "乌克兰", children: [
-    { label: "Kyiv" },
-    { label: "Kyiv City" },
-    { label: "Odesa" },
-  ] },
-  { label: "班基", children: [
-    { label: "Bucha" },
-    { label: "Danylivka" },
-  ] },
-];
+const regionScopeOptionsByTopRegion = {
+  中国: [
+    "中国全部",
+    "中国 / 杭州",
+    "中国 / 杭州低功耗",
+    "中国 / 深圳",
+    "中国 / 成都",
+    "中国 / 上海（宠物）",
+  ],
+  香港: ["香港全部"],
+  法兰福克: ["法兰福克全部"],
+  硅谷: ["硅谷全部"],
+};
 
 const strategyMeta = {
   version: {
@@ -310,7 +279,7 @@ const routeMeta = {
   "requirements-doc": { title: "需求说明", section: "产品文档", parent: null },
 };
 
-const requirementsMarkdown = "# OTA 升级任务管理优化方案宣讲稿\n\n## 01. 封面\n\n**主题：OTA 升级任务管理优化方案**\n\n**聚焦范围：**\n\n- 新增任务流程\n- 任务列表管理\n- 任务详情查看\n- 升级统计口径\n- 异常分类展示\n- 需求说明内置\n\n**宣讲目标：**\n\n让产品、研发、测试对本次 OTA 升级任务管理优化的目标、范围、交互闭环和统计口径形成统一理解。\n\n## 02. 为什么要做\n\n> 核心问题：当前页面能完成基础操作，但用户很难快速判断任务当前处于什么阶段、下一步应该做什么、升级结果应该怎么看。\n\n| 问题 | 当前表现 | 影响 |\n| --- | --- | --- |\n| 创建流程不够闭环 | 任务提交后反馈不明确，用户不知道去列表还是详情继续查看 | 创建完成后的去向不清晰 |\n| 状态与操作不统一 | 不同状态下字段、按钮、执行结果展示口径不一致 | 用户容易误判任务当前阶段 |\n| 统计口径容易误导 | 指定版本升级无法提前知道真实设备总数 | 如果展示固定总数或百分比，会造成错误理解 |\n| 详情信息较分散 | 任务配置、流程、执行结果混在一起 | 用户不知道应该优先看哪里 |\n\n**本次优化不是重做后端能力，而是先把前端交互、状态流转和统计展示口径统一起来。**\n\n## 03. 本次优化目标\n\n> 核心目标：让 OTA 任务从创建、审批、执行到结果查看形成清晰闭环。\n\n- **创建任务更顺**：三步完成配置，每一步都有必填校验。\n- **发布反馈更明确**：保存草稿、提交审批、发布成功都通过弹窗说明后续流程。\n- **列表判断更快**：用户一眼看清任务名称、状态、目标版本、设备规模和执行结果。\n- **详情分层更清楚**：任务概览看配置和流程，升级明细看执行结果。\n- **统计口径更准确**：区分动态匹配和固定设备清单，避免展示虚假总数。\n- **原型验证更方便**：保留状态模拟和统计口径模拟，便于研发、测试核对场景。\n\n## 04. 本次需求范围\n\n> 本次重点是 OTA 升级任务管理链路的前端交互、信息架构和展示口径优化。\n\n| 模块 | 本次覆盖内容 |\n| --- | --- |\n| 新增任务 | 基础信息、配置升级策略、预览发布三步流程 |\n| 发布反馈 | 保存草稿、提交审批、发布成功后的弹窗闭环 |\n| 升级方式 | 指定版本、文件导入、手动导入三种方式 |\n| 任务列表 | 查询、状态、字段、分页、列设置、操作按钮 |\n| 任务详情 | 任务概览、任务进度、流转明细、升级明细 |\n| 升级统计 | 动态匹配和固定清单两类统计口径 |\n| 异常分类 | 一级异常分类、环形图、分类列表、异常明细下载 |\n| 需求说明 | PRD 内容内置到原型，方便研发直接查看 |\n\n## 05. 整体方案总览\n\n> 方案主线：创建更清晰，列表更可读，详情更聚焦，统计更准确。\n\n| 页面能力 | 优化前痛点 | 优化后方案 |\n| --- | --- | --- |\n| 新增任务 | 步骤割裂，提交后去向不清晰 | 三步创建，结果弹窗闭环 |\n| 任务列表 | 字段和操作口径不统一 | 统一字段、状态、操作和分页 |\n| 任务详情 | 配置、流程、结果混杂 | 拆分任务概览和升级明细 |\n| 升级统计 | 动态设备数被当成固定总数展示 | 区分动态匹配和固定清单 |\n| 异常分类 | 文本信息不够直观 | 用环形图和列表联动呈现 |\n\n## 06. 新增任务流程\n\n> 创建任务固定为三步，不再保留独立“完成”步骤。\n\n```text\n基础信息 → 配置升级策略 → 预览发布\n```\n\n### 第一步：基础信息\n\n用户必须填写：\n\n- 任务名称\n- 任务执行大区\n- 目标固件版本\n- 任务起止时间\n- 任务升级说明\n\n关键规则：\n\n- 每个必填项未填写时展示字段级错误。\n- 任务起止时间默认从当前时间后 5 分钟开始。\n- 快捷周期为未来 7 天、未来 30 天、未来 90 天。\n- 任务升级说明至少 1 个有效字符，最多 500 字符，并展示字数统计。\n\n### 第二步：配置升级策略\n\n用户需要选择：\n\n- 升级包类型：整包 / 差分包\n- 升级方式：指定版本 / 文件导入 / 手动导入\n\n指定版本升级统一使用源版本表格勾选，不再拆分“全部版本升级、仅指定版本升级、排除指定版本不升级”。\n\n### 第三步：预览发布\n\n预览发布用于让用户发布前确认任务是否可下发：\n\n| 预检场景 | 页面反馈 | 发布动作 |\n| --- | --- | --- |\n| 全部可升级 | 提示预检通过 | 支持发布 |\n| 部分可升级 | 提示部分设备不符合条件，支持下载异常明细 | 支持继续发布可升级范围 |\n| 不存在可升级 | 提示无法发布 OTA 升级任务 | 不允许发布 |\n\n## 07. 升级方式交互\n\n> 三种升级方式各自服务不同业务场景，需要保持入口清晰、反馈明确。\n\n| 升级方式 | 适用场景 | 核心交互 |\n| --- | --- | --- |\n| 指定版本 | 正式发版、安全补丁、灰度覆盖某些源版本 | 通过源版本表格勾选范围 |\n| 文件导入 | 批量定向升级指定设备 | 上传设备清单，上传后展示文件状态和识别数量 |\n| 手动导入 | 小批量灰度或单台处理 | 最多 10 台，支持逐行录入或批量粘贴 |\n\n指定版本升级数量规则：\n\n- 选择“全量”：表格设备数展示“全量”。\n- 选择“批量”：只允许统一输入数量，不支持每个源版本单独输入。\n\n文件导入升级规则：\n\n- 上传前不默认展示预检结果。\n- 上传后展示文件名、识别设备数量和上传完成状态。\n- 支持重新上传。\n\n手动导入升级规则：\n\n- 最多 10 台设备。\n- 展示设备 ID、源版本、所属大区、校验状态、异常说明和操作。\n\n## 08. 发布结果闭环\n\n> 用户完成发布动作后，必须清楚知道当前状态和下一步去向。\n\n| 操作结果 | 进入状态 | 弹窗需要说明 |\n| --- | --- | --- |\n| 保存草稿 | 待发布 | 草稿已保存，可回到列表再次编辑 |\n| 提交审批 | 待审批 | 审批通过前不会进入执行队列，也不会下发 OTA |\n| 无需审批发布 | 待执行 / 升级中 | 未到开始时间为待执行，到达时间后进入升级中 |\n\n弹窗底部提供两个明确出口：\n\n- 返回任务列表\n- 查看任务详情\n\n关闭按钮或点击遮罩时，默认返回任务列表，避免用户停留在已完成提交的创建页。\n\n## 09. 任务列表优化\n\n> 任务列表要回答五个问题：任务是什么、当前什么状态、升级多少设备、结果如何、还能做什么。\n\n### 查询条件\n\n建议保留：\n\n- 任务名称\n- 任务状态\n- 升级方式\n- 升级包\n- 创建人\n- 创建时间\n\n任务所属大区仍通过顶部大区切换查看。\n\n### 列表字段\n\n建议展示：\n\n- 名称\n- 升级方式\n- 升级包\n- 目标版本\n- 升级设备数\n- 任务时间\n- 执行结果\n- 任务所属大区\n- 状态\n- 创建人\n- 创建时间\n- 操作\n\n列表默认按创建时间倒序。\n\n### 列设置\n\n- 支持勾选展示字段。\n- 勾选后即时预览。\n- 操作列固定在右侧。\n- 字段较多时允许横向滚动。\n\n## 10. 任务状态与操作\n\n> 每个状态都必须有明确含义和明确操作。\n\n| 状态 | 状态含义 | 操作 |\n| --- | --- | --- |\n| 待发布 | 保存草稿，尚未发布 | 编辑、删除 |\n| 待审批 | 已提交审批，尚未通过 | 详情 |\n| 待执行 | 已通过审批或已发布，未到开始时间 | 详情 |\n| 升级中 | 已到任务时间，正在执行 OTA | 详情、结束任务 |\n| 已完成 | 任务周期内设备处理完成，包含失败设备 | 详情 |\n| 已结束 | 用户提前手动结束任务 | 详情 |\n| 已驳回 | 审批被驳回 | 详情、复制重建 |\n| 已失效 | 审批超时未处理 | 详情、复制重建 |\n\n关键说明：\n\n- “已完成”不代表所有设备都升级成功，只代表任务执行闭环完成。\n- “已结束”表示用户主动提前结束，不等同于审批驳回或任务失效。\n\n## 11. 任务详情优化\n\n> 详情页要分清楚“任务本身”和“升级结果”。\n\n详情页主结构：\n\n```text\n任务概览 / 升级明细\n```\n\n### 任务概览\n\n任务概览关注任务配置和流程，不展示设备执行结果。\n\n建议展示：\n\n- 任务名称和状态标签\n- 任务 ID、创建人、更新时间\n- 任务说明\n- 目标版本\n- 任务时间\n- 任务大区\n- 升级方式\n- 升级包\n- 升级设备数\n- 策略条件\n- 任务进度\n- 流转明细\n\n### 升级明细\n\n升级明细关注设备升级结果。\n\n建议展示：\n\n- 升级概览\n- 异常分类\n- 设备列表\n- 导出设备列表\n\n非执行态任务进入升级明细时展示空状态，不展示设备表格。\n\n## 12. 升级统计口径\n\n> 这是本次需求的关键点：不能把动态匹配设备数当成固定设备总数。\n\n| 场景 | 设备总数是否已知 | 展示口径 |\n| --- | --- | --- |\n| 文件导入 | 已知 | 设备总数、已处理、成功、失败、未处理 |\n| 手动导入 | 已知 | 设备总数、已处理、成功、失败、未处理 |\n| 指定版本全量 | 未知，执行中动态匹配 | 已匹配数、成功数、失败数 |\n| 指定版本批量 | 有计划数量，但设备仍动态匹配 | 计划数量、已匹配数、成功数、失败数、待匹配名额 |\n\n指定版本全量：\n\n- 不展示最终设备总数。\n- 不展示未知总数百分比。\n- 成功占比和失败占比以已匹配数为分母。\n\n指定版本批量：\n\n- 下发失败不占用匹配名额。\n- 系统需要继续匹配符合条件设备。\n- 成功和失败占比仍以已匹配数为分母。\n\n## 13. 异常分类展示\n\n> MVP 阶段只做一级异常分类，先保证用户能看懂失败主要集中在哪里。\n\n一级分类：\n\n- 设备升级过程失败\n- 升级前不满足条件\n- 升级数量限制\n- 任务和链路异常\n- 移动端主动升级相关\n- 设备上报失败信息\n\n展示方式：\n\n- 使用 ECharts 基础环形图。\n- 中心展示异常总数。\n- 鼠标移入图表扇区时展示分类、数量和占比。\n- 右侧列表展示分类名称、数量、占比和占比条。\n- 图表和右侧列表支持悬停联动。\n- 支持下载异常明细。\n\n## 14. 任务状态流转\n\n> 状态流转要保证从创建、审批、执行到结束都有闭环。\n\n```mermaid\nstateDiagram-v2\n  [*] --> 创建中: 新建任务\n  创建中 --> 待发布: 保存草稿\n  创建中 --> 待审批: 发布任务（需审批）\n  创建中 --> 待执行: 发布任务（无需审批）\n\n  待发布 --> 创建中: 编辑草稿\n  待发布 --> [*]: 删除草稿\n  待发布 --> 待审批: 发布任务（需审批）\n  待发布 --> 待执行: 发布任务（无需审批）\n\n  待审批 --> 待执行: 审批通过\n  待审批 --> 已驳回: 审批驳回\n  待审批 --> 已失效: 超过审批有效期\n\n  已驳回 --> 创建中: 复制重建\n  已失效 --> 创建中: 复制重建\n\n  待执行 --> 升级中: 到达任务开始时间\n  待执行 --> 已结束: 手动结束任务\n\n  升级中 --> 已完成: 设备处理完成\n  升级中 --> 已结束: 手动结束任务\n  升级中 --> 已完成: 到达任务结束时间并完成收敛\n\n  已完成 --> [*]\n  已结束 --> [*]\n```\n\n说明：\n\n- “创建中”是页面编辑态，不作为任务列表状态展示。\n- “待发布”对应保存草稿后的列表状态。\n- “已完成”包含升级成功和升级失败设备。\n- “已结束”表示用户提前手动结束任务。\n\n## 15. 研发关注点\n\n> 研发实现时重点保证状态、字段和统计口径一致。\n\n- 状态流转和操作按钮必须与状态规则一致。\n- 指定版本动态匹配不要返回或展示虚假的最终设备总数。\n- 下发失败、升级失败、未处理需要区分清楚。\n- 文件导入和手动导入按固定设备清单统计。\n- 设备列表导出和异常明细下载需要做权限控制。\n- 原型中的状态模拟和统计口径模拟仅用于验证，生产环境不展示。\n\n## 16. 测试关注点\n\n> 测试重点验证流程闭环、状态展示和统计口径。\n\n- 每一步必填校验是否生效。\n- 保存草稿是否回到任务列表，且状态为待发布。\n- 发布结果弹窗是否说明清楚后续流程。\n- 不同任务状态下列表操作是否正确。\n- 详情页任务概览和升级明细是否存在重复信息。\n- 指定版本全量是否不展示未知总数百分比。\n- 文件导入和手动导入是否展示固定设备总数。\n- 异常分类图表和列表悬停联动是否正常。\n\n## 17. 验收标准\n\n> 验收时只看关键闭环和关键口径，不纠结非核心展示细节。\n\n- 新增任务按三步完成，不再出现独立完成步骤。\n- 每一步必填项未填写时阻止进入下一步，并展示字段级提示。\n- 保存草稿后返回任务列表，状态为待发布，支持二次编辑。\n- 提交审批和发布成功后通过弹窗反馈，并提供返回列表和查看详情入口。\n- 任务列表字段、筛选、分页、列设置可正常使用。\n- 不同任务状态下操作按钮符合状态规则。\n- 详情页主入口为任务概览和升级明细。\n- 任务概览只展示任务配置和流转，不展示设备执行结果。\n- 升级明细展示升级概览、异常分类、设备列表和导出入口。\n- 指定版本全量不展示未知总数百分比。\n- 文件导入和手动导入展示明确设备总数。\n- 异常分类使用基础环形图，并支持悬停联动。\n\n## 18. MVP 交付边界\n\n> MVP 先完成可验证的前端原型和明确需求口径。\n\n| 阶段 | 交付重点 |\n| --- | --- |\n| MVP | 新增任务、任务列表、任务详情、统计口径、异常分类、PRD 内置说明 |\n| 后续版本 | 接入真实接口、真实审批流、真实设备结果和异常明细数据 |\n\nMVP 验证通过后，再进入真实接口联调和后端能力建设。\n";
+const requirementsMarkdown = "# OTA 升级任务管理优化 PRD\n\n## 01. 本次需求范围\n\n本次需求聚焦 OTA 升级任务从创建到执行复盘的完整业务链路闭环。\n\n| 范围 | 内容 |\n| --- | --- |\n| 新增任务 | 选择升级方式、配置任务内容、预览发布、保存草稿、提交发布 |\n| 升级方式 | 指定版本、文件导入、手动导入 |\n| 跨大区能力 | 当前版本仅指定版本支持跨大区同步下发 |\n| 任务列表 | 状态展示、字段展示、筛选、列设置、分页、状态操作 |\n| 任务详情 | 任务概览、升级明细、异常分类、设备列表、流转明细 |\n| 中国区详情 | 展示中国大区下子节点升级统计 |\n\n## 02. 方案结论\n\n新增任务采用“策略前置”的三步向导：\n\n```text\n选择升级方式 -> 配置任务内容 -> 预览发布\n```\n\n原因是升级方式会决定后续字段、跨大区能力、审批流转、设备数口径和详情展示方式。\n\n| 能力 | 当前版本方案 | 设计原因 |\n| --- | --- | --- |\n| 指定版本 | 支持当前大区，也支持跨大区同步 | 适合正式发版、安全补丁、多大区同策略发布 |\n| 文件导入 | 仅支持当前顶部大区 | 文件清单跨大区拆分和多中心校验复杂，MVP 不做 |\n| 手动导入 | 仅支持当前顶部大区，最多 10 台 | 适合灰度测试和单台处理，跨大区收益低 |\n| 审批 | 指定版本、文件导入需审批；手动导入无需审批 | 在效率和风险控制之间保持 MVP 边界 |\n| 跨大区详情 | 不做多大区汇总详情 | 当前架构按顶部大区查询，不支持跨中心统一汇总 |\n| 中国区详情 | 展示中国子节点统计 | 中国大区包含多个子节点，需要更细颗粒度定位问题 |\n\n关键业务前提：\n\n- 各大区升级包保持一致，不存在跨大区升级包不可用的常规场景。\n- 跨大区同步正常情况下会成功生成各大区本地任务。\n- 系统异常仅作为后台日志和兜底提示，不在 MVP 原型中展开复杂重试流程。\n\n## 03. 创建任务设计\n\n### 3.1 三步向导\n\n| 步骤 | 页面目标 | 关键展示 |\n| --- | --- | --- |\n| 选择升级方式 | 先确定策略分支 | 指定版本 / 文件导入 / 手动导入卡片，展示跨大区、审批、设备数口径 |\n| 配置任务内容 | 按策略动态展示字段 | 基础信息中的任务下发范围 + 当前策略配置项 |\n| 预览发布 | 确认预检与流转 | 任务摘要、预检结果、异常处理、审批规则、下一状态 |\n\n### 3.2 公共字段\n\n| 字段 | 要求 |\n| --- | --- |\n| 任务名称 | 必填，1-64 个字符，不允许只输入空格 |\n| 任务下发范围 | 必选；指定版本可选择当前大区任务或跨大区同步任务；文件导入和手动导入只读展示当前顶部大区 |\n| 目标固件版本 | 必选，只能选择已上架或已生成升级包版本 |\n| 升级包 | 整包 / 差分包 |\n| 任务时间 | 必填，开始时间不得早于当前时间，默认当前时间后 5 分钟 |\n| 任务升级说明 | 必填，1-500 个有效字符，展示字数统计 |\n\n### 3.3 大区选择口径\n\n| 概念 | 用途 | 规则 |\n| --- | --- | --- |\n| 顶部大区 | 系统查询上下文 | 任务列表和任务详情只展示当前顶部大区结果 |\n| 任务范围 | 指定版本的下发类型 | 在基础信息中选择当前大区任务或跨大区同步任务；文件导入和手动导入固定为当前大区任务 |\n| 当前大区执行范围 | 当前大区任务的实际覆盖范围 | 只能在当前顶部大区内选择；中国区可选择全部中国或杭州、杭州低功耗、深圳、成都、上海（宠物）等子节点 |\n| 同步目标大区 | 指定版本跨大区同步的目标范围 | 只选择父级大区：中国 / 香港 / 法兰福克 / 硅谷；选择“中国”代表覆盖全部中国子节点 |\n| 策略条件地区 | 对当前大区执行范围的进一步过滤 | 只能从当前大区执行范围内选择，不能扩大到执行范围之外；当前大区执行范围为“中国全部”时，可继续选择中国子节点作为过滤条件 |\n\n关键规则：\n\n- 顶部大区决定列表、详情和当前大区任务的查询上下文。\n- 任务下发范围放在基础信息中统一决策，升级配置不再二次选择当前大区或跨大区。\n- 指定版本选择当前大区任务时，继续选择当前大区执行范围；不能选择其他顶部大区的数据范围。\n- 指定版本选择跨大区同步任务时，选择同步目标父级大区，并在页面、预览、列表和详情展示“跨大区同步”标签。\n- 文件导入和手动导入仅支持当前顶部大区，任务下发范围展示为只读当前顶部大区。\n- 跨大区同步创建时不选择中国子节点；中国子节点只用于中国当前大区任务范围和详情复盘。\n- 当前大区执行范围选择父级“全部”时，策略条件地区可在该父级大区下继续收窄；若当前大区执行范围已选择具体子节点，策略条件地区只能从这些子节点内选择。\n\n### 3.4 草稿规则\n\n- 选择升级方式后允许保存草稿。\n- 草稿进入列表状态为“待发布”。\n- 待发布任务支持编辑和删除。\n- 草稿再次编辑时回到对应升级方式的配置链路。\n- 切换升级方式时，仅保留公共任务信息，策略私有配置按新方式重新配置。\n\n## 04. 任务状态定义\n\n| 状态 | 触发条件 | 用户关注点 | 操作 |\n| --- | --- | --- | --- |\n| 待发布 | 保存草稿，未提交发布 | 配置是否完整，是否继续编辑 | 编辑、删除 |\n| 待审批 | 指定版本或文件导入提交发布后 | 审批是否通过 | 详情 |\n| 待执行 | 审批通过或手动导入发布成功，未到开始时间 | 执行窗口、目标版本、下发范围 | 详情 |\n| 升级中 | 到达执行时间，任务开始匹配并下发 | 已匹配、成功、失败、异常占比 | 详情、结束任务 |\n| 已完成 | 执行周期结束，或纳入范围设备均已处理 | 最终成功数、失败数、异常原因 | 详情、复制重建 |\n| 已结束 | 用户提前结束任务 | 结束前已处理结果、结束人、结束时间 | 详情、复制重建 |\n| 已驳回 | 审批被驳回 | 驳回原因、审批人 | 详情、复制重建 |\n| 已失效 | 审批超时或任务过了可执行窗口 | 失效原因、失效时间 | 详情、复制重建 |\n\n## 05. 完整生命周期 UML 时序图\n\n```mermaid\nsequenceDiagram\n  participant U as 创建人\n  participant C as 新增任务页\n  participant S as OTA任务服务\n  participant A as 审批系统\n  participant R as 大区中心/边缘\n  participant L as 任务列表\n  participant D as 任务详情\n\n  U->>C: 点击新增任务\n  C-->>U: 展示升级方式选择\n  U->>C: 选择指定版本/文件导入/手动导入\n  C-->>U: 按升级方式展示任务内容配置\n  U->>C: 填写公共字段和策略字段\n\n  alt 保存草稿\n    C->>S: 保存草稿\n    S-->>L: 生成待发布任务\n  else 提交发布\n    C->>C: 校验公共字段和策略字段\n    alt 校验不通过\n      C-->>U: 字段级错误提示\n    else 校验通过\n      C->>S: 发起预检\n      S->>R: 查询版本、设备归属、可升级条件\n      R-->>S: 返回预检结果\n      alt 无可升级对象\n        S-->>C: 返回不可发布\n        C-->>U: 提示无法发布 OTA 升级任务\n      else 存在可升级对象\n        S-->>C: 返回预览发布数据\n        C-->>U: 展示任务摘要、预检结果和下一状态\n        alt 手动导入\n          U->>C: 确认发布\n          C->>S: 创建当前大区任务\n          S-->>L: 任务进入待执行或升级中\n        else 指定版本或文件导入\n          U->>C: 提交审批\n          C->>S: 创建发布单\n          S->>A: 提交审批\n          S-->>L: 任务进入待审批\n        end\n      end\n    end\n  end\n\n  alt 审批驳回\n    A-->>S: 审批驳回\n    S-->>L: 任务更新为已驳回\n  else 审批超时\n    A-->>S: 审批超时\n    S-->>L: 任务更新为已失效\n  else 审批通过\n    A-->>S: 审批通过\n    S-->>L: 任务更新为待执行\n    S->>R: 到达执行时间后下发\n    R-->>S: 任务进入升级中\n    D->>S: 查询升级概览、异常分类、设备列表\n    S->>R: 拉取当前顶部大区执行数据\n    R-->>D: 返回当前大区升级结果\n  end\n\n  alt 用户手动结束\n    U->>D: 点击结束任务\n    D->>S: 二次确认后结束任务\n    S->>R: 停止继续匹配和下发\n    S-->>L: 任务更新为已结束\n  else 周期结束或设备处理完成\n    R-->>S: 返回任务结束结果\n    S-->>L: 任务更新为已完成\n  end\n```\n\n## 06. 指定版本流程\n\n### 6.1 当前大区\n\n```text\n选择指定版本\n -> 配置公共字段\n -> 选择当前大区任务\n -> 选择当前大区执行范围\n -> 选择目标版本和升级包\n -> 勾选源版本表格\n -> 配置全量或批量\n -> 预览发布\n -> 提交审批\n -> 审批通过后按时间窗口执行\n -> 详情展示已匹配、成功、失败和异常分类\n```\n\n关键规则：\n\n- 创建阶段不展示真实设备总数。\n- 全量展示“全量”。\n- 批量展示统一配置的 `N 台`。\n- 执行中展示已匹配数，成功和失败占比按已匹配设备计算。\n\n### 6.2 跨大区同步\n\n```text\n选择指定版本\n -> 在基础信息中选择跨大区同步任务\n -> 勾选同步目标父级大区：中国 / 香港 / 法兰福克 / 硅谷\n -> 配置统一任务信息、目标版本、升级包、源版本范围和数量规则\n -> 统一预览\n -> 提交统一审批\n -> 审批通过后生成各大区本地任务\n -> 用户切换顶部大区查看对应大区任务\n```\n\n关键规则：\n\n- 当前版本仅指定版本支持跨大区同步。\n- 跨大区同步是指定版本的任务下发范围选项，和当前大区任务在基础信息中二选一。\n- 跨大区只选择父级大区，不选择中国子节点。\n- 跨大区同步任务需展示“跨大区同步”标签；列表展示同步批次标识，详情展示同步批次 ID、同步目标大区和当前本地任务大区。\n- 升级包各大区一致，不做大区升级包差异展示。\n- 跨大区批量数量按“每个目标大区各自执行该数量”理解，不做跨大区总量汇总。\n- 任务列表和详情仍按顶部大区查看，不做跨大区统一汇总。\n- 中国区详情展示杭州、杭州低功耗、深圳、成都、上海（宠物）节点统计。\n\n## 07. 文件导入流程\n\n```text\n选择文件导入\n -> 配置公共字段\n -> 上传设备清单\n -> 系统清洗、去重、校验设备\n -> 非当前大区设备进入异常\n -> 版本前三位不一致进入异常\n -> 已是目标版本进入异常\n -> 存在可升级设备时允许预览发布\n -> 提交审批\n -> 审批通过后在当前大区执行\n```\n\n关键规则：\n\n- 文件导入当前不支持跨大区同步。\n- 非当前大区设备进入异常明细，不拆分到其他大区。\n- 文件导入有明确设备清单，因此升级概览展示设备总数、成功数、失败数和未完成数。\n- 支持下载异常明细和导出设备列表。\n\n## 08. 手动导入流程\n\n```text\n选择手动导入\n -> 配置公共字段\n -> 输入设备 ID，最多 10 台\n -> 系统查询设备归属和源版本\n -> 非当前大区设备进入异常\n -> 版本不匹配或已是目标版本进入异常\n -> 存在可升级设备时允许发布\n -> 发布后进入待执行或升级中\n```\n\n关键规则：\n\n- 手动导入当前不支持跨大区同步。\n- 最多 10 台，适合灰度测试或单台处理。\n- 手动导入无需审批。\n- 非当前大区设备提示切换到设备所属大区创建。\n\n## 09. 中国区详情颗粒度流程\n\n```text\n切换顶部大区为中国\n -> 进入任务详情\n -> 查看中国整体升级概览\n -> 查看中国子节点统计\n -> 选择杭州 / 杭州低功耗 / 深圳 / 成都 / 上海（宠物）\n -> 按子节点查看升级概览、异常分类和设备列表\n```\n\n关键规则：\n\n- 跨大区创建时选择“中国”即覆盖全部中国子节点。\n- 当前版本不支持在跨大区任务中细选中国子节点。\n- 子节点用于详情查看和问题定位，不作为跨大区创建范围。\n\n## 10. 列表页承接规则\n\n任务列表只展示当前顶部大区下的任务。来自跨大区同步的任务，在对应大区列表中展示为本地任务，并带同步批次标识。\n\n| 字段 | 展示规则 |\n| --- | --- |\n| 名称 | 展示任务名称 |\n| 任务大区 | 展示当前任务所属大区 |\n| 升级方式 | 指定版本 / 文件导入 / 手动导入 |\n| 升级包 | 整包 / 差分包 |\n| 目标版本 | 展示目标固件版本号 |\n| 升级设备总数 | 指定版本全量展示“全量”；批量、文件导入、手动导入展示 `N 台` |\n| 执行结果 | 展示成功数、失败数和占比 |\n| 任务状态 | 展示状态标签 |\n| 创建人 | 单独一列展示 |\n| 创建时间 | 按最新创建时间倒序排序 |\n| 操作 | 按状态展示可用操作 |\n\n## 11. 详情页承接规则\n\n详情页按“当前顶部大区”展示数据，不展示跨大区统一汇总。\n\n| 模块 | 展示内容 |\n| --- | --- |\n| 顶部任务概览 | 任务名称、状态、任务 ID、创建人、创建时间、目标版本、升级方式、升级包、任务说明 |\n| 当前链路节点 | 当前状态、下一步、流转规则 |\n| 升级明细 | 升级概览、异常分类图表、设备列表、导出设备列表 |\n| 流转明细 | 创建、提交、审批、执行、结束/完成时间线 |\n\n不同策略数据口径：\n\n| 策略 | 详情口径 |\n| --- | --- |\n| 指定版本全量 | 展示已匹配、成功、失败，不展示未知总数百分比 |\n| 指定版本批量 | 展示计划数量、已匹配、成功、失败、剩余匹配名额 |\n| 文件导入 | 展示设备总数、成功、失败、未完成 |\n| 手动导入 | 展示设备总数、成功、失败、未完成 |\n\n## 12. 异常与边界场景\n\n| 场景 | 处理规则 |\n| --- | --- |\n| 未选择升级方式保存草稿 | 不允许保存，提示先选择升级方式 |\n| 保存草稿但必填项未完整 | 允许保存为待发布，提交发布时必须校验完整 |\n| 切换升级方式 | 保留公共任务信息，策略私有配置重新配置 |\n| 提交发布必填项缺失 | 停留当前步骤，展示字段级错误提示 |\n| 过去时间 | 不可选择，默认选中当前时间后 5 分钟 |\n| 任务下发范围 | 指定版本可在基础信息中选择当前大区任务或跨大区同步任务；文件/手动导入只读当前顶部大区 |\n| 当前大区任务选择执行范围 | 只能选择当前顶部大区及子节点，不允许选择其他父级大区 |\n| 跨大区同步选择目标大区 | 只展示父级大区，不展示中国子节点，并展示“跨大区同步”标签 |\n| 策略条件地区 | 只能在当前大区执行范围内进一步收窄，不能扩大执行范围；执行范围为父级全部时可选择其子节点 |\n| 指定版本全量 | 创建阶段不查询真实设备总数，执行中逐步展示已匹配数 |\n| 指定版本批量 | 只支持统一数量；跨大区时每个目标大区各自按该数量执行 |\n| 文件中存在非当前大区设备 | 进入异常明细，不拆分到其他大区 |\n| 手动导入非当前大区设备 | 进入异常，并提示切换设备所属大区创建 |\n| 跨大区系统异常 | 作为系统异常兜底提示和日志记录，不作为产品主流程 |\n| 中国区查看详情 | 展示中国整体和子节点统计 |\n\n## 13. 用户故事\n\n### US-01 创建任务草稿\n\n- **作为** OTA 任务创建人\n- **我希望** 先选择升级方式并保存草稿\n- **以便** 后续从任务列表继续编辑对应策略任务。\n\n验收标准：\n\n- **Given** 用户进入新增任务页\n- **When** 用户选择升级方式并点击保存草稿\n- **Then** 系统生成待发布任务并返回任务列表\n- **And** 待发布任务支持编辑和删除\n\n### US-02 指定版本跨大区同步\n\n- **作为** OTA 任务创建人\n- **我希望** 对多个父级大区使用同一版本策略发起同步任务\n- **以便** 减少重复创建并保证配置一致。\n\n验收标准：\n\n- **Given** 用户选择指定版本\n- **When** 用户选择跨大区同步并勾选目标大区\n- **Then** 系统提交统一审批\n- **And** 审批通过后分别生成各大区本地任务\n- **And** 列表和详情仅展示当前顶部大区结果\n\n### US-03 文件导入发布\n\n- **作为** OTA 任务创建人\n- **我希望** 上传设备清单进行定向升级\n- **以便** 对明确设备集合下发升级任务。\n\n验收标准：\n\n- **Given** 用户选择文件导入\n- **When** 用户上传设备清单\n- **Then** 系统展示导入总数、可升级数和异常数\n- **And** 非当前大区设备进入异常明细\n- **And** 存在可升级设备时允许提交审批\n\n### US-04 手动导入发布\n\n- **作为** OTA 任务创建人\n- **我希望** 手动输入少量设备 ID 并实时校验\n- **以便** 快速完成灰度测试或单台处理。\n\n验收标准：\n\n- **Given** 用户选择手动导入\n- **When** 用户输入设备 ID\n- **Then** 系统展示设备 ID、源版本、所属大区、校验状态和异常说明\n- **And** 设备数量最多 10 台\n- **And** 存在可升级设备时允许发布且无需审批\n\n### US-05 任务详情复盘\n\n- **作为** OTA 任务使用者、产品或研发\n- **我希望** 在详情页集中查看状态、流转、升级结果和异常分类\n- **以便** 判断升级效果并定位异常原因。\n\n验收标准：\n\n- **Given** 用户从列表进入任务详情\n- **When** 用户查看任务概览、升级明细和流转明细\n- **Then** 页面按当前顶部大区展示任务数据\n- **And** 跨大区同步任务展示同步批次提示和中国区子节点统计\n\n## 14. 测试验收标准\n\n### 14.1 新增任务验收\n\n| 验收点 | 标准 |\n| --- | --- |\n| 步骤流程 | 新增任务按选择升级方式、配置任务内容、预览发布三步完成 |\n| 策略前置 | 第一步展示三种升级方式及跨大区、审批、设备数口径差异 |\n| 任务下发范围 | 基础信息中统一展示范围决策；指定版本可选当前大区任务或跨大区同步任务，文件/手动导入只读当前顶部大区 |\n| 大区口径 | 当前大区任务选择当前顶部大区内执行范围；跨大区同步只选择父级目标大区；文件/手动导入执行范围只读当前顶部大区 |\n| 策略条件地区 | 只能基于当前大区执行范围收窄；选择父级全部时可继续选择其子节点，选择具体子节点时不得超出已选子节点 |\n| 必填校验 | 提交发布时校验任务名称、任务下发范围、目标版本、任务时间、任务说明、升级包和策略字段 |\n| 草稿 | 选择升级方式后允许保存草稿，状态为待发布 |\n| 发布结果 | 提交发布后通过弹窗说明当前状态和后续流程 |\n\n### 14.2 策略配置验收\n\n| 升级方式 | 验收点 | 标准 |\n| --- | --- | --- |\n| 指定版本 | 跨大区 | 仅指定版本支持跨大区同步 |\n| 指定版本 | 源版本选择 | 使用表格勾选源版本 |\n| 指定版本 | 全量 | 展示“全量” |\n| 指定版本 | 批量 | 仅支持统一输入数量 |\n| 文件导入 | 上传后 | 展示文件名、上传完成状态、导入总数、可升级数、异常数 |\n| 文件导入 | 异常 | 非当前大区设备进入异常明细 |\n| 手动导入 | 数量 | 最多 10 台 |\n| 手动导入 | 审批 | 无需审批，发布后进入待执行或升级中 |\n\n### 14.3 详情页验收\n\n| 验收点 | 标准 |\n| --- | --- |\n| 当前链路节点 | 展示当前状态、下一步和流转规则 |\n| 顶部任务概览 | 展示任务名称、状态、任务 ID、创建人、时间、目标版本、方式、升级包、说明 |\n| 升级明细 | 展示升级概览、异常分类图表、设备列表 |\n| 跨大区提示 | 提示当前仅展示顶部大区结果 |\n| 中国区详情 | 展示中国整体和子节点统计 |\n\n## 15. 原型自测清单\n\n| 自测类型 | 检查内容 |\n| --- | --- |\n| 代码可用性 | `app.js` 无语法错误，页面入口可加载 |\n| 文案覆盖 | 原型包含关键状态、升级方式、字段名称和异常提示 |\n| 交互覆盖 | 新增任务、保存草稿、发布弹窗、列表筛选、详情切换、导出、结束任务均有交互 |\n| 状态覆盖 | 待发布、待审批、待执行、升级中、已完成、已结束、已驳回、已失效均可展示 |\n| 策略覆盖 | 指定版本、文件导入、手动导入均可切换查看 |\n| 跨大区覆盖 | 指定版本可体现跨大区同步；文件/手动不支持跨大区 |\n| 响应式覆盖 | 大屏、中屏、小屏下表单、列表、详情无明显溢出 |\n";
 
 let uploadTimers = [];
 
@@ -382,8 +351,11 @@ function setRoute(route) {
 function resetCreateTaskState() {
   clearUploadTimers();
   const start = addMinutes(new Date(), 5);
+  state.topRegion = "中国";
   state.packageType = "whole";
   state.strategy = "version";
+  state.taskScope = "current";
+  state.syncRegions = ["中国", "香港"];
   state.previewScenario = "mixed";
   state.quantityMode = "full";
   state.batchQuantity = 0;
@@ -400,6 +372,7 @@ function resetCreateTaskState() {
   };
   state.errors = {};
   state.selectedRegions = ["中国 / 杭州低功耗", "中国 / 杭州"];
+  state.conditionRegions = ["中国 / 杭州低功耗"];
   state.selectedVersions = ["23.422.208.91", "23.110.105.46", "23.110.105.43", "10.176.42"];
   state.manualDevices = [
     { id: 1, deviceId: "IPC-HZ-LP-000128", version: "23.110.105.46", region: "杭州低功耗", status: "可升级", error: "" },
@@ -421,8 +394,11 @@ function snapshotDraftTask() {
   return {
     savedAt: formatDateTime(new Date()),
     createStep: state.createStep,
+    topRegion: state.topRegion,
     packageType: state.packageType,
     strategy: state.strategy,
+    taskScope: state.taskScope,
+    syncRegions: [...state.syncRegions],
     previewScenario: state.previewScenario,
     quantityMode: state.quantityMode,
     batchQuantity: state.batchQuantity,
@@ -433,6 +409,7 @@ function snapshotDraftTask() {
     taskEndAt: state.taskEndAt,
     form: { ...state.form },
     selectedRegions: [...state.selectedRegions],
+    conditionRegions: [...state.conditionRegions],
     selectedVersions: [...state.selectedVersions],
     manualDevices: state.manualDevices.map(device => ({ ...device })),
     manualNextId: state.manualNextId,
@@ -452,8 +429,11 @@ function restoreDraftTask() {
   }
   clearUploadTimers();
   state.createStep = Math.min(draft.createStep || 1, 3);
+  state.topRegion = draft.topRegion || "中国";
   state.packageType = draft.packageType;
   state.strategy = draft.strategy;
+  state.taskScope = draft.taskScope || "current";
+  state.syncRegions = draft.syncRegions?.length ? [...draft.syncRegions] : ["中国", "香港"];
   state.previewScenario = draft.previewScenario;
   state.quantityMode = draft.quantityMode;
   state.batchQuantity = draft.batchQuantity;
@@ -464,6 +444,7 @@ function restoreDraftTask() {
   state.taskEndAt = draft.taskEndAt;
   state.form = { ...draft.form };
   state.selectedRegions = [...draft.selectedRegions];
+  state.conditionRegions = draft.conditionRegions?.length ? [...draft.conditionRegions] : [...state.selectedRegions];
   state.selectedVersions = [...draft.selectedVersions];
   state.manualDevices = draft.manualDevices.map(device => ({ ...device }));
   state.manualNextId = draft.manualNextId;
@@ -477,6 +458,7 @@ function restoreDraftTask() {
   state.conditionRegionDropdownOpen = false;
   state.regionOperatorOpen = false;
   state.datePickerOpen = false;
+  sanitizeRegionState();
   state.editingDraft = true;
   setRoute("create-task");
 }
@@ -484,6 +466,84 @@ function restoreDraftTask() {
 function clearUploadTimers() {
   uploadTimers.forEach(timer => window.clearTimeout(timer));
   uploadTimers = [];
+}
+
+function currentRegionScopeOptions() {
+  return regionScopeOptionsByTopRegion[state.topRegion] || [`${state.topRegion}全部`];
+}
+
+function topRegionAllScope() {
+  return currentRegionScopeOptions()[0];
+}
+
+function isAllRegionScope(region) {
+  return String(region || "").endsWith("全部");
+}
+
+function selectableExecutionRegions() {
+  const options = currentRegionScopeOptions();
+  const childOptions = options.filter(region => !isAllRegionScope(region));
+  return childOptions.length ? childOptions : options;
+}
+
+function isSyncCreateTask() {
+  return state.strategy === "version" && state.taskScope === "sync";
+}
+
+function isFixedCurrentRegionStrategy() {
+  return state.strategy === "file" || state.strategy === "manual";
+}
+
+function availableConditionRegions() {
+  if (isSyncCreateTask()) return [];
+  const scopeOptions = currentRegionScopeOptions();
+  const childOptions = scopeOptions.filter(region => !isAllRegionScope(region));
+  if (isFixedCurrentRegionStrategy()) {
+    return childOptions.length ? childOptions : scopeOptions;
+  }
+  const selectedSet = new Set(state.selectedRegions);
+  if (selectedSet.has(topRegionAllScope())) {
+    return childOptions.length ? childOptions : [topRegionAllScope()];
+  }
+  return scopeOptions.filter(region => selectedSet.has(region) && (!isAllRegionScope(region) || !childOptions.length));
+}
+
+function sanitizeRegionState(options = {}) {
+  const preserveEmpty = Boolean(options.preserveEmpty);
+  const scopeOptions = currentRegionScopeOptions();
+  state.selectedRegions = state.selectedRegions.filter(region => scopeOptions.includes(region));
+  if (!state.selectedRegions.length && !preserveEmpty) state.selectedRegions = [scopeOptions[0]];
+  const conditionOptions = availableConditionRegions();
+  state.conditionRegions = (state.conditionRegions || []).filter(region => conditionOptions.includes(region));
+  if (state.conditionRegionEnabled && !state.conditionRegions.length && conditionOptions.length) {
+    state.conditionRegions = [conditionOptions[0]];
+  }
+}
+
+function currentExecutionRegions() {
+  if (isSyncCreateTask()) return state.syncRegions;
+  if (isFixedCurrentRegionStrategy()) return [state.topRegion];
+  return state.selectedRegions;
+}
+
+function regionTopName(region) {
+  const normalized = String(region || "").replace(/\s+/g, "");
+  if (normalized.startsWith("中国")) return "中国";
+  if (normalized.startsWith("香港")) return "香港";
+  if (normalized.startsWith("法兰福克")) return "法兰福克";
+  if (normalized.startsWith("硅谷")) return "硅谷";
+  return "";
+}
+
+function taskBelongsToTopRegion(task) {
+  if (task.syncRegions?.length) return task.syncRegions.includes(state.topRegion);
+  return (task.topRegion || regionTopName(task.region)) === state.topRegion;
+}
+
+function renderMiniRegionTags(regions) {
+  return regions.length
+    ? regions.map(region => `<span class="mini-tag blue">${escapeHtml(region)}</span>`).join("")
+    : "-";
 }
 
 function simulateFileUpload() {
@@ -689,9 +749,9 @@ function renderRequirementsDocPage() {
     <section class="page requirements-page prd-doc-shell">
       <header class="prd-doc-header">
         <div>
-          <span>产品需求宣讲稿</span>
+          <span>产品需求文档</span>
           <h1>OTA 升级任务管理优化方案</h1>
-          <p>按 PPT 式页面组织核心观点，便于产品评审、研发理解和测试验收。</p>
+          <p>按业务链路、用户故事和验收标准组织内容，便于产品评审、研发理解和测试自测。</p>
         </div>
         <button class="btn" type="button" data-route="task-list">返回任务列表</button>
       </header>
@@ -868,7 +928,7 @@ function renderTopbar() {
       <div class="topbar-spacer"></div>
       <span class="region-label">当前大区：</span>
       <button class="region-picker menu-button" type="button" data-action="open-region">
-        <span>中国 / 杭州低功耗</span>${icon("chevron")}
+        <span>${state.topRegion}</span>${icon("chevron")}
       </button>
       <span class="system-link">${icon("layer")}系统管理</span>
       <span class="avatar-name"><span class="avatar" aria-hidden="true"></span><span>汤彦珊</span></span>
@@ -994,28 +1054,28 @@ function renderTaskList() {
     <section class="page">
       <div class="annotated-block">
         ${renderTaskListHero()}
-        ${renderRequirementNote("PRD 1 / 6.2", "本次范围与状态统计", [
+        ${renderRequirementNote("PRD 01 / 10", "本次范围与状态统计", [
           "原型覆盖新增任务、任务列表、任务详情、升级统计口径、异常分类和模拟验证。",
           "状态统计只统计当前顶部大区，不做跨大区聚合查询。",
         ])}
       </div>
       <div class="annotated-block">
         ${renderTaskAreaStats()}
-        ${renderRequirementNote("PRD 6.2", "状态统计卡片", [
+        ${renderRequirementNote("PRD 10", "状态统计卡片", [
           "展示当前任务大区和基础状态数量。",
           "待发布、待审批、升级中、已完成等状态需与列表筛选口径一致。",
         ])}
       </div>
       <div class="annotated-block">
         ${renderTaskFilters()}
-        ${renderRequirementNote("PRD 6.1", "列表查询条件", [
+        ${renderRequirementNote("PRD 10", "列表查询条件", [
           "查询条件顺序：任务名称、任务状态、升级方式、升级包、创建人、创建时间。",
           "筛选变更后列表重置到第一页，创建人支持输入和候选选择。",
         ])}
       </div>
       <div class="annotated-block">
         ${renderTaskTableToolbar()}
-        ${renderRequirementNote("PRD 6.3 / 6.4", "列表字段与状态操作", [
+        ${renderRequirementNote("PRD 10", "列表字段与状态操作", [
           "列表默认按创建时间倒序，不展示更新时间。",
           "升级设备数统一展示 N 台或全量，非执行态执行结果展示 -。",
           "操作规则：待发布编辑/删除，升级中详情/结束任务，已驳回和已失效详情/复制重建。",
@@ -1065,9 +1125,9 @@ function renderTaskAreaStats() {
   const count = status => rows.filter(row => row.status === status).length;
   const total = rows.filter(row => row.status !== "待发布").length;
   const stats = [
-    ["当前大区", "中国中心", "home"],
+    ["当前大区", state.topRegion, "home"],
     ["任务总数", total, "layer"],
-    ["待发布", state.draftTask ? 1 : 0, "log"],
+    ["待发布", count("待发布"), "log"],
     ["待审批", count("待审批"), "clock"],
     ["升级中", count("升级中"), "refresh"],
     ["已完成", count("已完成"), "check"],
@@ -1088,8 +1148,8 @@ function renderTaskAreaStats() {
 }
 
 function taskRowsForStats() {
-  const draft = state.draftTask ? [{ status: "待发布" }] : [];
-  return [...draft, ...taskListRows];
+  const draft = state.draftTask && taskBelongsToTopRegion(draftTaskAsRow()) ? [{ status: "待发布" }] : [];
+  return [...draft, ...taskListRows.filter(taskBelongsToTopRegion)];
 }
 
 function renderTaskFilters() {
@@ -1230,6 +1290,7 @@ function visibleTaskColumnCount() {
 
 function sortedTaskListRows() {
   return taskRowsWithDraft()
+    .filter(taskBelongsToTopRegion)
     .filter(taskMatchesFilters)
     .sort((a, b) => parseDateTime(b.createdAt) - parseDateTime(a.createdAt));
 }
@@ -1243,7 +1304,12 @@ function taskRowsWithDraft() {
 function draftTaskAsRow() {
   const draft = state.draftTask;
   const packageLabel = draft.packageType === "whole" ? "整包" : "差分包";
-  const regions = draft.selectedRegions.length ? draft.selectedRegions.join("、") : "-";
+  const isSync = draft.strategy === "version" && draft.taskScope === "sync";
+  const regions = isSync
+    ? `同步目标：${draft.syncRegions?.length ? draft.syncRegions.join("、") : "-"}`
+    : ["file", "manual"].includes(draft.strategy)
+      ? (draft.topRegion || state.topRegion)
+      : (draft.selectedRegions?.length ? draft.selectedRegions.join("、") : "-");
   const taskTime = draft.taskStartAt && draft.taskEndAt ? `${draft.taskStartAt}~${draft.taskEndAt}` : "-";
   return {
     id: draft.id || "DRAFT",
@@ -1258,6 +1324,8 @@ function draftTaskAsRow() {
     status: "待发布",
     creator: "汤彦珊",
     createdAt: draft.savedAt,
+    topRegion: draft.topRegion || state.topRegion,
+    syncRegions: isSync ? [...(draft.syncRegions || [])] : null,
     isDraft: true,
   };
 }
@@ -1282,7 +1350,7 @@ function normalizeText(value) {
 }
 
 function taskCreatorOptions() {
-  return [...new Set(taskRowsWithDraft().map(task => task.creator).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-Hans-CN"));
+  return [...new Set(taskRowsWithDraft().filter(taskBelongsToTopRegion).map(task => task.creator).filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-Hans-CN"));
 }
 
 function strategyMethodLabel(strategy) {
@@ -1300,7 +1368,12 @@ function renderTaskListRow(task) {
 function renderTaskTableRow(task) {
   return `
     <tr>
-      <td title="${task.name}">${task.name}</td>
+      <td title="${task.name}">
+        <div class="task-name-cell">
+          <strong>${task.name}</strong>
+          ${task.syncBatchId ? `<span class="mini-tag blue">跨大区同步</span>` : ""}
+        </div>
+      </td>
       ${renderTaskDataCells(task)}
       <td>${renderTaskStatus(task.status)}</td>
       <td class="sticky-action-col">${renderTaskActions(task.status)}</td>
@@ -1391,6 +1464,7 @@ function renderDraftTaskRow(draftRow) {
         <div class="task-name-cell">
           <strong>${draftRow.name}</strong>
           <span class="mini-tag orange">草稿</span>
+          ${draftRow.syncRegions?.length ? `<span class="mini-tag blue">跨大区同步</span>` : ""}
         </div>
       </td>
       ${renderTaskDataCells(draftRow)}
@@ -1426,10 +1500,10 @@ function renderCreateTask() {
       ${renderPageHeader("新增任务", { back: "task-list" })}
       <div class="annotated-block">
         ${renderCreateSteps()}
-        ${renderRequirementNote("PRD 5.1", "新增任务三步流程", [
-          "流程固定为基础信息、配置升级策略、预览发布。",
-          "发布结果通过弹窗或消息反馈，不再进入独立完成步骤。",
-          "每一步进入下一步前需校验当前步骤必填项。",
+        ${renderRequirementNote("PRD 03", "新增任务三步流程", [
+          "流程调整为选择升级方式、配置任务内容、预览发布。",
+          "升级方式前置决定跨大区、审批、设备数口径和后续配置项。",
+          "发布结果通过弹窗说明当前状态、下一步流转和查看入口。",
         ])}
       </div>
       <div class="workbench-shell">
@@ -1439,7 +1513,7 @@ function renderCreateTask() {
       </div>
       <div class="annotated-block sticky-note-host">
         ${renderWizardActions()}
-        ${renderRequirementNote("PRD 5.1", "草稿与发布反馈", [
+        ${renderRequirementNote("PRD 03 / 04", "草稿与发布反馈", [
           "保存草稿后返回任务列表，状态为待发布，并支持二次编辑。",
           "提交审批成功进入待审批；无需审批发布成功后按任务时间进入待执行或后续执行态。",
         ])}
@@ -1450,9 +1524,9 @@ function renderCreateTask() {
 
 function renderCreateSteps() {
   const steps = [
-    ["基础信息", "填写任务信息"],
-    ["配置升级策略", "选择升级包和范围"],
-    ["预览发布", "查看预检结果"],
+    ["选择升级方式", "先确定策略分支"],
+    ["配置任务内容", "按策略填写字段"],
+    ["预览发布", "确认预检与流转"],
   ];
   return `
     <ol class="step-rail" aria-label="新增任务步骤">
@@ -1466,9 +1540,63 @@ function renderCreateSteps() {
 }
 
 function renderCreateStepContent() {
-  if (state.createStep === 2) return renderStrategyStep();
+  if (state.createStep === 1) return renderStrategySelectionStep();
+  if (state.createStep === 2) return renderTaskContentStep();
   if (state.createStep === 3) return renderPreviewStep();
-  return renderBasicInfoStep();
+  return renderStrategySelectionStep();
+}
+
+function renderStrategySelectionStep() {
+  return `
+    <section class="workbench-card step-card">
+      <div class="card-heading">
+        <div>
+          <span class="eyebrow">Step 1</span>
+          <h3>选择升级方式</h3>
+        </div>
+        <span class="soft-pill blue-pill">策略决定后续链路</span>
+      </div>
+      ${renderRequirementNote("PRD 03", "升级方式前置", [
+        "先选择指定版本、文件导入或手动导入，再进入任务内容配置。",
+        "指定版本支持当前大区和跨大区同步；文件/手动仅支持当前大区。",
+        "指定版本/文件导入需审批，手动导入无需审批。",
+      ])}
+      <div class="strategy-grid strategy-entry-grid">
+        ${strategyCard("version", "指定版本号升级", "动态匹配符合源版本和区域条件的设备，适合正式发版、安全补丁和多大区同步。", ["可跨大区", "需审批", "动态匹配"])}
+        ${strategyCard("file", "文件导入升级", "上传明确设备清单，适合运营定向升级和名单制发布。", ["仅当前大区", "需审批", "固定清单"])}
+        ${strategyCard("manual", "手动导入升级", "最多 10 台，适合灰度测试、单台验证或临时处理。", ["仅当前大区", "无需审批", "≤10台"])}
+      </div>
+      ${renderStrategyDecisionPanel()}
+    </section>
+  `;
+}
+
+function renderStrategyDecisionPanel() {
+  const meta = strategyMeta[state.strategy];
+  const rows = [
+    ["跨大区能力", state.strategy === "version" ? "支持当前大区 / 跨大区同步" : "仅支持当前顶部大区"],
+    ["审批规则", meta.approval],
+    ["设备数口径", state.strategy === "version" ? "创建阶段不展示真实设备总数，执行期动态匹配" : "基于明确设备清单展示总数、可升级数和异常数"],
+    ["详情查看", state.strategy === "version" && state.taskScope === "sync" ? "各大区切换顶部大区分别查看，中国区展示子节点统计" : "按当前顶部大区查看升级概览和设备列表"],
+  ];
+  return `
+    <div class="strategy-decision-panel">
+      <div>
+        <strong>${meta.title}</strong>
+        <p>${meta.desc}</p>
+      </div>
+      <dl>
+        ${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join("")}
+      </dl>
+    </div>
+  `;
+}
+
+function renderTaskContentStep() {
+  return `
+    ${renderBasicInfoStep()}
+    ${renderStrategyStep()}
+  `;
 }
 
 function renderBasicInfoStep() {
@@ -1476,18 +1604,19 @@ function renderBasicInfoStep() {
     <section class="workbench-card step-card">
       <div class="card-heading">
         <div>
-          <span class="eyebrow">Step 1</span>
+          <span class="eyebrow">Step 2</span>
           <h3>基础信息</h3>
         </div>
+        <span class="soft-pill">${strategyMeta[state.strategy].short}</span>
       </div>
-      ${renderRequirementNote("PRD 5.1", "基础信息必填规则", [
-        "任务名称、任务执行大区、目标固件版本、任务起止时间、任务升级说明均为必填。",
+      ${renderRequirementNote("PRD 03", "基础信息必填规则", [
+        "任务名称、任务下发范围、目标固件版本、任务起止时间、任务升级说明均为必填。",
+        "指定版本可在基础信息中选择当前大区任务或跨大区同步任务；文件/手动导入固定为当前顶部大区。",
         "过去日期不可选；默认开始时间为当前时间后 5 分钟。",
-        "快捷周期固定为未来 7 天、30 天、90 天。",
       ])}
       <div class="form-grid element-form basic-info-form">
         <label class="field-stack basic-name-field ${state.errors.taskName ? "has-error" : ""}">
-          ${renderRequirementNote("PRD 5.1", "任务名称字段要求", [
+          ${renderRequirementNote("PRD 03", "任务名称字段要求", [
             "必填，1-64 个字符，不允许只输入空格。",
             "建议包含升级对象、地区或升级目的，便于列表识别。",
             "未填写提示：请输入任务名称；超过 64 个字符时禁止继续输入或提示最多 64 个字符。",
@@ -1499,24 +1628,17 @@ function renderBasicInfoStep() {
           </div>
           ${renderFieldError("taskName")}
         </label>
-        <label class="field-stack basic-region-field ${state.errors.selectedRegions ? "has-error" : ""}">
-          ${renderRequirementNote("PRD 5.1", "任务执行大区字段要求", [
-            "必选，至少选择 1 个任务执行大区，支持大区及子集群多选。",
-            "未选择提示：请选择任务执行大区。",
-            "采用下拉级联多选，标签展示已选项，支持删除单个标签、全选、清空和高度自适应。",
+        <div class="field-stack basic-region-field ${state.errors.selectedRegions || state.errors.syncRegions ? "has-error" : ""}">
+          ${renderRequirementNote("PRD 03", "任务下发范围字段要求", [
+            "指定版本可选择当前大区任务或跨大区同步任务。",
+            "当前大区任务只能在当前顶部大区内选择执行范围；跨大区同步只选择父级目标大区。",
+            "文件导入和手动导入仅支持当前顶部大区，任务下发范围展示为只读。",
           ])}
-          <span><span class="required">*</span> 任务执行大区</span>
-          <div class="select-field multi-select-field ${state.regionDropdownOpen ? "open" : ""}" data-action="toggle-region-dropdown">
-            <div class="multi-select-values">
-              ${renderSelectedRegionTags("请选择任务执行大区")}
-            </div>
-            ${icon("chevron", "select-arrow")}
-            ${state.regionDropdownOpen ? renderRegionCascaderDropdown() : ""}
-          </div>
-          ${renderFieldError("selectedRegions")}
-        </label>
+          <span><span class="required">*</span> 任务下发范围</span>
+          ${renderExecutionRegionField()}
+        </div>
         <label class="field-stack basic-version-field ${state.errors.targetVersion ? "has-error" : ""}">
-          ${renderRequirementNote("PRD 5.1", "目标固件版本字段要求", [
+          ${renderRequirementNote("PRD 03", "目标固件版本字段要求", [
             "必选，只能从已上架或已生成升级包的目标版本中选择。",
             "未选择提示：请选择目标固件版本；版本不可用提示当前版本暂不可用。",
             "切换整包/差分包时需展示对应版本可用状态，已是目标版本的设备不进入升级范围。",
@@ -1531,7 +1653,7 @@ function renderBasicInfoStep() {
           ${renderFieldError("targetVersion")}
         </label>
         <label class="field-stack basic-time-field ${state.errors.taskTime ? "has-error" : ""}">
-          ${renderRequirementNote("PRD 5.1", "任务起止时间字段要求", [
+          ${renderRequirementNote("PRD 03", "任务起止时间字段要求", [
             "必选，开始时间不得早于当前时间，结束时间必须晚于开始时间。",
             "默认开始时间为当前时间后 5 分钟，过去日期不可选。",
             "未选择提示：请选择任务起止时间；支持未来 7 天、30 天、90 天快捷设置。",
@@ -1542,7 +1664,7 @@ function renderBasicInfoStep() {
           ${renderFieldError("taskTime")}
         </label>
         <label class="field-stack wide-field basic-desc-field ${state.errors.upgradeDesc ? "has-error" : ""}">
-          ${renderRequirementNote("PRD 5.1", "任务升级说明字段要求", [
+          ${renderRequirementNote("PRD 03", "任务升级说明字段要求", [
             "必填，1-500 个有效字符，不允许只输入空格。",
             "需说明升级目标、影响范围、灰度或回滚关注点。",
             "未填写提示：请输入任务升级说明；超过 500 个字符提示最多 500 个字符。",
@@ -1661,56 +1783,98 @@ function renderCalendarMonth(date, target) {
   `;
 }
 
-function renderSelectedRegionTags(placeholder) {
-  if (!state.selectedRegions.length) return `<span class="select-placeholder">${placeholder}</span>`;
-  const visible = state.selectedRegions.slice(0, 3);
-  const more = state.selectedRegions.length - visible.length;
+function renderRegionTags(regions, placeholder, action = "remove-region") {
+  if (!regions.length) return `<span class="select-placeholder">${placeholder}</span>`;
+  const visible = regions.slice(0, 3);
+  const more = regions.length - visible.length;
   return `
     ${visible.map(region => `
       <span class="chip removable-chip">
         ${region}
-        <button type="button" aria-label="移除 ${region}" data-action="remove-region" data-region="${region}">${icon("close")}</button>
+        <button type="button" aria-label="移除 ${region}" data-action="${action}" data-region="${region}">${icon("close")}</button>
       </span>
     `).join("")}
     ${more > 0 ? `<span class="chip muted-chip">+ ${more}</span>` : ""}
   `;
 }
 
-function renderRegionCascaderDropdown() {
-  const selectedSet = new Set(state.selectedRegions);
-  return `
-    <div class="cascader-dropdown" data-stop>
-      <div class="select-dropdown-tools">
-        <button class="link-btn" type="button" data-action="select-all-regions">全选</button>
-        <button class="link-btn" type="button" data-action="clear-regions">清空</button>
+function renderExecutionRegionField() {
+  if (isFixedCurrentRegionStrategy()) {
+    return `
+      <div class="readonly-region-card">
+        <strong>${state.topRegion}</strong>
+        <span>${strategyMeta[state.strategy].short}仅支持当前顶部大区；非当前大区设备进入异常明细。</span>
       </div>
-      <div class="cascader-columns">
-        <div class="cascader-column">
-          ${regionTree.map(region => renderCascaderOption(region.label, region.label, selectedSet, true)).join("")}
+    `;
+  }
+
+  if (state.strategy === "version") {
+    return `
+      <section class="task-scope-panel basic-task-scope-panel">
+        <div class="task-scope-head">
+          <span class="field-caption">任务范围</span>
+          <p>${state.taskScope === "sync" ? "跨大区同步会提交统一审批，审批通过后分别生成各大区本地任务。" : "当前大区任务仅在顶部选择的大区及已选子节点内执行。"}</p>
         </div>
-        <div class="cascader-column">
-          ${regionTree.flatMap(region => (region.children || []).map(child => {
-            const path = `${region.label} / ${child.label}`;
-            return renderCascaderOption(child.label, path, selectedSet, Boolean(child.children));
-          })).join("")}
+        <div class="scope-segmented" role="radiogroup" aria-label="任务范围">
+          ${scopeRadio("current", "当前大区任务", "按当前顶部大区和所选子节点创建")}
+          ${scopeRadio("sync", "跨大区同步", "按父级大区同步创建本地任务")}
         </div>
-        <div class="cascader-column">
-          ${regionTree.flatMap(region => (region.children || []).flatMap(child => (child.children || []).map(area => {
-            const path = `${region.label} / ${child.label} / ${area.label}`;
-            return renderCascaderOption(area.label, path, selectedSet, false);
-          }))).join("")}
+        ${state.taskScope === "sync" ? renderSyncRegionPicker() : renderCurrentRegionScopePicker()}
+      </section>
+    `;
+  }
+
+  return renderCurrentRegionScopePicker();
+}
+
+function renderCurrentRegionScopePicker() {
+  return `
+    <div class="current-region-scope-panel">
+      <div class="current-region-head">
+        <span>当前大区执行范围</span>
+        <em>顶部大区：${state.topRegion}</em>
+      </div>
+      <div class="select-field multi-select-field ${state.regionDropdownOpen ? "open" : ""}" data-action="toggle-region-dropdown">
+        <div class="multi-select-values">
+          ${renderRegionTags(state.selectedRegions, "请选择当前大区执行范围", "remove-region")}
         </div>
+        ${icon("chevron", "select-arrow")}
+        ${state.regionDropdownOpen ? renderRegionScopeDropdown("execution") : ""}
+      </div>
+      ${renderFieldError("selectedRegions")}
+      <em class="field-help">只能选择当前顶部大区及其子节点；切换顶部大区后会按新大区重置可选范围。</em>
+    </div>
+  `;
+}
+
+function renderRegionScopeDropdown(type) {
+  const isCondition = type === "condition";
+  const selected = isCondition ? state.conditionRegions : state.selectedRegions;
+  const options = isCondition ? availableConditionRegions() : currentRegionScopeOptions();
+  const action = isCondition ? "toggle-condition-region" : "toggle-region";
+  const selectAllAction = isCondition ? "select-all-condition-regions" : "select-all-regions";
+  const clearAction = isCondition ? "clear-condition-regions" : "clear-regions";
+  return `
+    <div class="cascader-dropdown scope-region-dropdown" data-stop>
+      <div class="select-dropdown-tools">
+        <span>${isCondition ? "策略条件地区" : `当前顶部大区：${state.topRegion}`}</span>
+        <div>
+          <button class="link-btn" type="button" data-action="${selectAllAction}">全选</button>
+          <button class="link-btn" type="button" data-action="${clearAction}">清空</button>
+        </div>
+      </div>
+      <div class="scope-region-options">
+        ${options.map(region => renderScopeRegionOption(region, selected.includes(region), action)).join("")}
       </div>
     </div>
   `;
 }
 
-function renderCascaderOption(label, path, selectedSet, hasChildren) {
+function renderScopeRegionOption(region, selected, action) {
   return `
-    <label class="cascader-option ${selectedSet.has(path) ? "checked" : ""}" data-action="toggle-region" data-region="${path}">
-      <input type="checkbox" ${selectedSet.has(path) ? "checked" : ""} />
-      <span>${label}</span>
-      ${hasChildren ? icon("back", "cascader-next") : ""}
+    <label class="scope-region-option ${selected ? "checked" : ""}" data-action="${action}" data-region="${region}">
+      <input type="checkbox" ${selected ? "checked" : ""} />
+      <span>${region}</span>
     </label>
   `;
 }
@@ -1722,15 +1886,22 @@ function renderStrategyStep() {
       <div class="card-heading">
         <div>
           <span class="eyebrow">Step 2</span>
-          <h3>配置升级策略</h3>
+          <h3>升级配置</h3>
         </div>
-        <span class="soft-pill">策略选择后，仅展示相关配置项</span>
+        <span class="soft-pill">当前方式：${strategyMeta[state.strategy].short}</span>
       </div>
-      ${renderRequirementNote("PRD 5.2 / 5.3", "策略配置规则", [
+      ${renderRequirementNote("PRD 06 / 07 / 08", "策略配置规则", [
         "升级方式支持指定版本、文件导入、手动导入。",
         "指定版本不再拆分三个规则切换，统一通过源版本表格勾选。",
         "全量展示全量；批量只支持统一输入数量，不支持单版本分别输入。",
       ])}
+      <div class="selected-strategy-strip">
+        <div>
+          <strong>${strategyMeta[state.strategy].title}</strong>
+          <span>${strategyMeta[state.strategy].desc}</span>
+        </div>
+        <button class="link-btn" type="button" data-action="prev-create-step">切换升级方式</button>
+      </div>
       <div class="config-section">
         <h4>升级包类型</h4>
         <div class="package-choice-panel" role="radiogroup" aria-label="升级包类型">
@@ -1739,14 +1910,6 @@ function renderStrategyStep() {
           <div class="package-desc-card">${icon("info")} ${state.packageType === "whole"
             ? "整包适用于常规升级和跨版本升级，兼容性更高。"
             : "差分包适合连续版本小包升级，下发更快；仅支持 4G 模组产线。"}</div>
-        </div>
-      </div>
-      <div class="config-section">
-        <h4>选择升级策略</h4>
-        <div class="strategy-grid">
-          ${strategyCard("version", "指定版本号升级", "按当前指定源版本批量升级到目标版本，适合正式灰度与区域筛选。", ["版本范围", "批量控制", "可灰度"])}
-          ${strategyCard("file", "文件导入升级", "上传 CSV / Excel 设备清单，适合运营定向升级和名单制发布。", ["CSV/Excel", "自动校验", "可下载异常"])}
-          ${strategyCard("manual", "手动导入升级", "最多 10 台，适合灰度测试、单台验证或临时处理。", ["≤10台", "实时校验", "测试友好"])}
         </div>
       </div>
       <div class="strategy-config-panel">
@@ -1766,7 +1929,7 @@ function renderPreviewStep() {
         </div>
         ${state.strategy === "version" ? `<span class="soft-pill blue-pill">动态匹配预览</span>` : renderPreviewScenarioSwitch()}
       </div>
-      ${renderRequirementNote("PRD 5.6", "预览发布场景", [
+      ${renderRequirementNote("PRD 03 / 14", "预览发布场景", [
         "需支持部分可升级、无可升级、全部可升级三种场景模拟。",
         "无可升级时不允许发布；指定版本和文件导入方式发布需进入审批流程。",
         "异常场景支持下载异常明细。",
@@ -1809,7 +1972,7 @@ function renderWizardActions() {
       <button class="btn" type="button" data-action="${state.createStep === 1 ? "cancel-create" : "prev-create-step"}">${state.createStep === 1 ? "取消" : "上一步"}</button>
       <button class="btn" type="button" data-action="save-task">保存草稿</button>
       ${state.createStep < 3
-        ? `<button class="btn primary" type="button" data-action="next-create-step">${state.createStep === 1 ? "下一步：配置升级策略" : "下一步：预览发布"}</button>`
+        ? `<button class="btn primary" type="button" data-action="next-create-step">${state.createStep === 1 ? "下一步：配置任务内容" : "下一步：预览发布"}</button>`
         : `${shouldShowPreviewExceptions() ? `<button class="btn" type="button" data-action="download-exception">${icon("download")}下载异常明细</button>` : ""}${renderPublishButton()}`}
     </div>
   `;
@@ -1856,12 +2019,13 @@ function renderVersionStrategy(packageLabel) {
     <div class="config-panel-heading">
       <div>
         <strong>指定版本号升级配置</strong>
-        <p>先选择可升级源版本，再设置全量 / 批量策略。</p>
+        <p>任务范围已在基础信息中确定；此处选择可升级源版本并设置全量 / 批量策略。</p>
       </div>
       <span class="soft-pill blue-pill">已选择 ${state.selectedVersions.length} 个源版本</span>
     </div>
     <div class="rule-panel">
       ${renderFieldError("strategy")}
+      ${renderVersionScopeSummary()}
       <div class="quantity-panel">
         <span class="field-caption">配置升级数量</span>
         <div class="segmented compact-segmented" role="radiogroup" aria-label="升级数量">
@@ -1891,6 +2055,60 @@ function renderVersionStrategy(packageLabel) {
   `;
 }
 
+function renderVersionScopeSummary() {
+  const isSync = state.taskScope === "sync";
+  const title = isSync ? "跨大区同步任务" : "当前大区任务";
+  const regions = isSync
+    ? renderMiniRegionTags(state.syncRegions)
+    : renderMiniRegionTags(state.selectedRegions);
+  return `
+    <section class="task-scope-panel">
+      <div class="task-scope-head">
+        <span class="field-caption">任务范围承接</span>
+        <p>任务下发范围已在基础信息中确定，升级配置不再二次选择范围。</p>
+      </div>
+      <div class="scope-summary-card ${isSync ? "sync" : ""}">
+        <strong>${isSync ? `<span class="mini-tag blue">跨大区同步</span>` : ""}${title}</strong>
+        <div class="preview-tag-list">${regions}</div>
+        <span>${isSync ? "审批通过后按所选父级大区生成本地任务；列表和详情按顶部大区分别查看。" : "仅在当前顶部大区及所选子节点内动态匹配可升级设备。"}</span>
+      </div>
+    </section>
+  `;
+}
+
+function scopeRadio(value, title, desc) {
+  return `
+    <label class="scope-option ${state.taskScope === value ? "active" : ""}">
+      <input type="radio" name="taskScope" value="${value}" ${state.taskScope === value ? "checked" : ""} data-radio="taskScope" />
+      <span></span>
+      <strong>${title}</strong>
+      <em>${desc}</em>
+    </label>
+  `;
+}
+
+function renderSyncRegionPicker() {
+  return `
+    <div class="sync-region-panel">
+      <div class="sync-region-head">
+        <span>同步目标大区</span>
+        <em>已选择 ${state.syncRegions.length} 个</em>
+      </div>
+      <div class="sync-region-options">
+        ${syncRegionOptions.map(region => `
+          <label class="sync-region-option ${state.syncRegions.includes(region) ? "checked" : ""}" data-action="toggle-sync-region" data-region="${region}">
+            <input type="checkbox" ${state.syncRegions.includes(region) ? "checked" : ""} />
+            <span>${region}</span>
+            ${region === "中国" ? "<em>覆盖全部中国子节点</em>" : ""}
+          </label>
+        `).join("")}
+      </div>
+      ${renderFieldError("syncRegions")}
+      <div class="scope-note">${icon("info")} 跨大区同步只选择父级大区；任务详情仍需切换顶部大区分别查看，中国详情展示杭州、杭州低功耗、深圳、成都、上海（宠物）节点统计。</div>
+    </div>
+  `;
+}
+
 function renderFileStrategy(packageLabel) {
   return `
     <div class="config-panel-heading">
@@ -1898,11 +2116,13 @@ function renderFileStrategy(packageLabel) {
         <strong>文件导入升级配置</strong>
         <p>上传设备清单后，系统会自动完成设备识别与发布预检。</p>
       </div>
+      <span class="soft-pill">仅当前大区</span>
       <div class="template-actions">
         <button class="btn" type="button" data-action="download-template">下载 CSV 模板</button>
         <button class="btn" type="button" data-action="download-template">下载 Excel 模板</button>
       </div>
     </div>
+    <div class="scope-note file-scope-note">${icon("info")} 当前版本文件导入不支持跨大区同步；非当前顶部大区设备会进入异常明细，不会自动拆分到其他大区。</div>
     <div class="import-panel">
       ${renderUploadState()}
     </div>
@@ -1935,7 +2155,7 @@ function renderUploadState() {
           <div class="upload-progress" aria-label="上传进度 ${state.uploadProgress}%">
             <span style="width: ${state.uploadProgress}%"></span>
           </div>
-          <p>${isChecking ? "正在匹配设备大区、源固件版本与升级包可用性。" : `已上传 ${state.uploadProgress}%，请稍候。`}</p>
+          <p>${isChecking ? "正在匹配设备大区、源固件版本与可升级条件。" : `已上传 ${state.uploadProgress}%，请稍候。`}</p>
         </div>
       </div>
     `;
@@ -1963,10 +2183,11 @@ function renderManualStrategy(packageLabel) {
       <div class="manual-import-header">
         <div>
           <strong>手动导入升级配置</strong>
-          <p>适合小范围验证；最多 10 台，设备 ID 输入后实时校验。</p>
+          <p>适合小范围验证；最多 10 台，设备 ID 输入后实时校验。当前版本仅支持当前大区。</p>
         </div>
         <span class="manual-count-pill">当前 ${count} / 10 台</span>
       </div>
+      <div class="scope-note manual-scope-note">${icon("info")} 非当前大区设备会进入异常，并提示切换到设备所属大区创建。</div>
       <div class="manual-import-table">
         <table>
           <thead>
@@ -2035,15 +2256,17 @@ function renderVersionRows() {
 
 function renderStrategyConditions() {
   const disabled = !state.conditionRegionEnabled;
+  const hasConditionOptions = availableConditionRegions().length > 0;
+  const conditionDisabled = disabled || !hasConditionOptions || isSyncCreateTask();
   return `
     <div class="condition-panel">
       <div class="condition-row">
         <span class="condition-label">策略条件</span>
-        <label class="checkbox-line condition-check"><input type="checkbox" ${state.conditionRegionEnabled ? "checked" : ""} data-action="toggle-condition-region-enabled" /> 指定地区</label>
-        <div class="select-field condition-operator ${state.regionOperatorOpen ? "open" : ""} ${disabled ? "disabled" : ""}" data-action="toggle-region-operator">
+        <label class="checkbox-line condition-check"><input type="checkbox" ${state.conditionRegionEnabled ? "checked" : ""} data-action="toggle-condition-region-enabled" ${isSyncCreateTask() ? "disabled" : ""} /> 指定地区</label>
+        <div class="select-field condition-operator ${state.regionOperatorOpen ? "open" : ""} ${conditionDisabled ? "disabled" : ""}" data-action="toggle-region-operator">
           <span>${state.regionOperator}</span>
           ${icon("chevron", "select-arrow")}
-          ${state.regionOperatorOpen && !disabled ? `
+          ${state.regionOperatorOpen && !conditionDisabled ? `
             <div class="operator-dropdown" data-stop>
               ${["等于", "不等于"].map(option => `
                 <button class="${state.regionOperator === option ? "active" : ""}" type="button" data-action="set-region-operator" data-operator="${option}">${option}</button>
@@ -2051,14 +2274,19 @@ function renderStrategyConditions() {
             </div>
           ` : ""}
         </div>
-        <div class="select-field multi-select-field condition-cascader ${state.conditionRegionDropdownOpen ? "open" : ""} ${disabled ? "disabled" : ""}" data-action="toggle-condition-region-dropdown">
+        <div class="select-field multi-select-field condition-cascader ${state.conditionRegionDropdownOpen ? "open" : ""} ${conditionDisabled ? "disabled" : ""}" data-action="toggle-condition-region-dropdown">
           <div class="multi-select-values">
-            ${disabled ? `<span class="select-placeholder">未启用指定地区</span>` : renderSelectedRegionTags("请选择地区")}
+            ${disabled
+              ? `<span class="select-placeholder">未启用指定地区</span>`
+              : isSyncCreateTask()
+                ? `<span class="select-placeholder">跨大区同步不使用子节点地区条件</span>`
+                : renderRegionTags(state.conditionRegions, "请选择地区", "remove-condition-region")}
           </div>
           ${icon("chevron", "select-arrow")}
-          ${state.conditionRegionDropdownOpen && !disabled ? renderRegionCascaderDropdown() : ""}
+          ${state.conditionRegionDropdownOpen && !conditionDisabled ? renderRegionScopeDropdown("condition") : ""}
         </div>
       </div>
+      <div class="scope-note condition-scope-note">${icon("info")} 策略条件地区只能在当前大区执行范围内进一步收窄，不能扩大到其他顶部大区。</div>
       ${renderFieldError("conditionRegion")}
     </div>
   `;
@@ -2088,7 +2316,7 @@ function renderTaskDetail() {
       ${renderDetailStatusSwitch()}
       <div class="annotated-block">
         ${renderDetailHero(detail)}
-        ${renderRequirementNote("PRD 7.2", "顶部任务概览卡", [
+        ${renderRequirementNote("PRD 11", "顶部任务概览卡", [
           "顶部卡片关注任务本身，状态标签放在任务名称旁边。",
           "展示任务标识、创建人、更新时间、任务说明、目标版本、任务时间、任务大区、升级方式、升级包和策略条件。",
           "不展示重复执行概览，不放查看升级明细按钮，避免与页签导航重复。",
@@ -2096,7 +2324,7 @@ function renderTaskDetail() {
       </div>
       <div class="annotated-block compact-note-block">
         ${renderDetailTabs()}
-        ${renderRequirementNote("PRD 7.1", "详情页信息架构", [
+        ${renderRequirementNote("PRD 11", "详情页信息架构", [
           "主页签固定为任务概览和升级明细。",
           "任务概览展示任务配置和流转；升级明细展示升级概览、异常分类和设备列表。",
         ])}
@@ -2137,7 +2365,7 @@ function renderDetailTabContent(detail) {
         <h3 class="section-title">${icon("layer")}升级概览</h3>
         <div class="annotated-block">
           ${renderExecutionOverview(detail)}
-          ${renderRequirementNote("PRD 7.4 / 8", "升级概览统计口径", [
+          ${renderRequirementNote("PRD 11", "升级概览统计口径", [
             "文件/手动导入展示固定设备总数、已处理、成功、失败、未处理。",
             "指定版本全量只展示已匹配数、成功数、失败数，不展示未知总数百分比。",
             "指定版本批量展示计划成功下发数量、已匹配数和待匹配名额。",
@@ -2145,7 +2373,7 @@ function renderDetailTabContent(detail) {
         </div>
         <div class="annotated-block">
           ${renderExceptionSummary(detail)}
-          ${renderRequirementNote("PRD 7.5", "异常分类", [
+          ${renderRequirementNote("PRD 11", "异常分类", [
             "仅执行态且存在失败设备时展示。",
             "使用 6 个一级异常分类和 ECharts 基础环形图。",
             "图表与分类列表支持鼠标悬停联动，并提供下载异常明细入口。",
@@ -2153,7 +2381,7 @@ function renderDetailTabContent(detail) {
         </div>
         <div class="annotated-block">
           ${renderDeviceDetailTable(detail)}
-          ${renderRequirementNote("PRD 7.6", "设备列表", [
+          ${renderRequirementNote("PRD 11", "设备列表", [
             "非执行态展示空状态，不展示设备表格。",
             "执行态展示进入下发链路的设备；指定版本全量仅展示已动态匹配设备。",
             "设备标识搜索与导出设备列表按钮需位于同一工具栏。",
@@ -2165,7 +2393,7 @@ function renderDetailTabContent(detail) {
   return `
     <div class="annotated-block">
       ${renderTaskFlowOverview(detail)}
-      ${renderRequirementNote("PRD 7.3 / 9", "任务进度与流转明细", [
+      ${renderRequirementNote("PRD 11 / 09", "任务进度与流转明细", [
         "任务进度只表达流程阶段，不展示设备执行百分比或升级仪表盘。",
         "流转明细按时间线展示创建、审批、下发、完成或结束。",
         "已完成包含成功和失败设备；已结束表示用户提前手动结束。",
@@ -2192,6 +2420,10 @@ function isVersionFullDetailMode() {
 
 function isVersionBatchDetailMode() {
   return state.detailMetricMode === "versionBatch";
+}
+
+function isVersionSyncDetailMode() {
+  return state.detailMetricMode === "versionSync";
 }
 
 function isFixedDeviceDetailMode() {
@@ -2228,11 +2460,13 @@ function taskDetailData(status) {
     method: modeConfig.method,
     packageType: modeConfig.packageType,
     total: modeConfig.total,
-    region: "中国 / 杭州低功耗",
+    region: modeConfig.region || "中国 / 杭州低功耗",
     desc: modeConfig.desc,
     sourceScope: modeConfig.sourceScope,
     sourceVersions: modeConfig.sourceVersions || [],
     condition: modeConfig.condition,
+    syncBatchId: modeConfig.syncBatchId || "",
+    syncRegions: modeConfig.syncRegions || [],
   };
   const variants = {
     "待审批": { success: 0, failed: 0, running: 0, pending: 6505 },
@@ -2281,6 +2515,18 @@ function detailModeConfig() {
       sourceScope: "23.422.208.91、23.110.105.46、23.110.105.43、10.176.42",
       sourceVersions: ["23.422.208.91", "23.110.105.46", "23.110.105.43", "10.176.42"],
     },
+    versionSync: {
+      ...common,
+      method: "指定版本",
+      total: 6505,
+      region: "中国",
+      desc: "多大区安全补丁统一发版，当前页面仅展示中国大区执行结果。",
+      condition: "同步目标大区 = 中国、香港、法兰福克、硅谷",
+      sourceScope: "23.422.208.91、23.110.105.46、23.110.105.43、10.176.42",
+      sourceVersions: ["23.422.208.91", "23.110.105.46", "23.110.105.43", "10.176.42"],
+      syncBatchId: "SYNC-20260603-0001",
+      syncRegions: ["中国", "香港", "法兰福克", "硅谷"],
+    },
   };
   return configs[state.detailMetricMode] || configs.versionFull;
 }
@@ -2317,6 +2563,7 @@ function renderDetailStatusSwitch() {
     ["manual", "手动导入"],
     ["versionFull", "指定版本全量"],
     ["versionBatch", "指定版本批量"],
+    ["versionSync", "跨大区同步"],
   ];
   return `
     <div class="detail-status-switch">
@@ -2341,11 +2588,12 @@ function renderDetailHero(detail) {
   const actions = renderDetailHeaderActions(detail);
   return `
     <div class="task-overview-card ${summary.tone}">
+      ${detail.syncBatchId ? renderSyncTaskNotice(detail) : ""}
       <div class="task-overview-head">
         <div class="task-overview-titlemark">${icon("refresh")}</div>
         <div class="task-overview-title">
           <div class="task-title-line"><h2>${detail.name}</h2>${statusTag(detail.status)}</div>
-          <p>任务 ID：OTA-20260610-0008 · 创建人：${detail.creator} · 更新时间：${detail.updatedAt}</p>
+          <p>任务 ID：OTA-20260610-0008${detail.syncBatchId ? ` · 同步批次：${detail.syncBatchId}` : ""} · 创建人：${detail.creator} · 更新时间：${detail.updatedAt}</p>
           <p class="task-title-desc">${detail.desc}</p>
         </div>
         ${actions ? `<div class="task-overview-actions">${actions}</div>` : ""}
@@ -2356,11 +2604,84 @@ function renderDetailHero(detail) {
         ${renderTaskKpi("任务大区", detail.region)}
         ${renderTaskKpi("升级设备数", overviewDeviceScale(detail))}
       </section>
+      ${renderCurrentFlowState(detail, summary)}
       <section class="task-overview-middle">
         ${renderTaskStrategyPanel(detail)}
         ${renderTaskConditionPanel(detail)}
       </section>
+      ${detail.syncBatchId ? renderChinaNodeSummary(detail) : ""}
     </div>
+  `;
+}
+
+function renderSyncTaskNotice(detail) {
+  return `
+    <div class="sync-task-notice">
+      ${icon("info")}
+      <span>该任务来自跨大区同步批次，审批通过后按所选父级大区生成本地任务。当前页仅展示顶部大区结果，如需查看其他大区，请切换顶部大区。</span>
+    </div>
+  `;
+}
+
+function renderCurrentFlowState(detail, summary) {
+  const isSync = Boolean(detail.syncBatchId);
+  const nextAction = {
+    "待审批": "等待产线负责人审批",
+    "已驳回": "可复制重建后重新提交",
+    "已失效": "可复制重建后重新提交",
+    "待执行": "等待到达任务开始时间",
+    "升级中": "可查看升级明细或结束任务",
+    "已完成": "查看最终结果和异常明细",
+    "已结束": "查看结束前处理结果",
+  }[detail.status] || "查看任务详情";
+  const strategyText = isManualDetailMode()
+    ? "手动导入无需审批，发布后直接进入执行队列。"
+    : isSync
+      ? "跨大区同步使用统一审批；升级包各大区一致，审批通过后生成各大区本地任务。"
+      : "该策略需审批，审批通过后按任务时间进入执行队列。";
+  return `
+    <section class="current-flow-state">
+      <div>
+        <span>当前链路节点</span>
+        <strong>${summary.node}</strong>
+        <p>${summary.text}</p>
+      </div>
+      <dl>
+        <div><dt>下一步</dt><dd>${nextAction}</dd></div>
+        <div><dt>流转规则</dt><dd>${strategyText}</dd></div>
+      </dl>
+    </section>
+  `;
+}
+
+function renderChinaNodeSummary(detail) {
+  if (detail.region !== "中国") return "";
+  const nodes = [
+    ["杭州", 1288, 1276, 12],
+    ["杭州低功耗", 2380, 2366, 14],
+    ["深圳", 1130, 1122, 8],
+    ["成都", 980, 973, 7],
+    ["上海（宠物）", 707, 704, 3],
+  ];
+  return `
+    <section class="china-node-panel">
+      <div class="task-panel-title">
+        <h3>中国区子节点统计</h3>
+        <span>按当前中国大区 regionId 聚合展示</span>
+      </div>
+      <div class="china-node-grid">
+        ${nodes.map(([name, matched, success, failed]) => `
+          <article>
+            <strong>${name}</strong>
+            <dl>
+              <dt>已匹配</dt><dd>${Number(matched).toLocaleString()} 台</dd>
+              <dt>成功</dt><dd class="success">${Number(success).toLocaleString()} 台</dd>
+              <dt>失败</dt><dd class="failed">${Number(failed).toLocaleString()} 台</dd>
+            </dl>
+          </article>
+        `).join("")}
+      </div>
+    </section>
   `;
 }
 
@@ -2482,10 +2803,14 @@ function executionProgressText(detail, stats) {
 }
 
 function renderTaskConditionPanel(detail) {
-  const isVersionMode = isVersionFullDetailMode() || isVersionBatchDetailMode();
+  const isVersionMode = isVersionFullDetailMode() || isVersionBatchDetailMode() || isVersionSyncDetailMode();
   const sourceTitle = isVersionMode ? "指定源版本" : "设备来源";
   const sourceContent = isVersionMode ? renderTaskSourceVersions(detail, state.detailSourceExpanded ? Infinity : 4) : detail.sourceScope;
   const hasMore = isVersionMode && (detail.sourceVersions?.length || 0) > 4;
+  const regionLabel = detail.syncBatchId ? "同步目标大区" : "指定地区";
+  const regionContent = detail.syncBatchId
+    ? detail.syncRegions.map(region => `<span class="condition-chip">${region}</span>`).join("")
+    : `<span class="condition-chip">${detail.region}</span>`;
   return `
     <section class="task-condition-panel">
       <div class="task-panel-title">
@@ -2493,7 +2818,7 @@ function renderTaskConditionPanel(detail) {
         ${hasMore ? `<button class="link-btn" type="button" data-action="toggle-detail-source">${state.detailSourceExpanded ? "收起" : "展开全部"}</button>` : ""}
       </div>
       <div class="condition-summary-grid">
-        <dl><dt>指定地区</dt><dd><span class="condition-chip">${detail.region}</span></dd></dl>
+        <dl><dt>${regionLabel}</dt><dd>${regionContent}</dd></dl>
         <dl><dt>${sourceTitle}</dt><dd>${sourceContent}</dd></dl>
       </div>
     </section>
@@ -2501,12 +2826,13 @@ function renderTaskConditionPanel(detail) {
 }
 
 function overviewDeviceScale(detail) {
-  if (isVersionFullDetailMode()) return "全量";
+  if (isVersionFullDetailMode() || isVersionSyncDetailMode()) return "全量";
   if (isVersionBatchDetailMode()) return `${Number(plannedBatchTotal()).toLocaleString()} 台`;
   return `${Number(detail.total).toLocaleString()} 台`;
 }
 
 function overviewDispatchText(detail) {
+  if (isVersionSyncDetailMode()) return "跨大区同步，本地动态匹配";
   if (isVersionFullDetailMode()) return "动态匹配";
   if (isVersionBatchDetailMode()) return "批量下发";
   return detail.sourceScope;
@@ -3442,22 +3768,33 @@ function renderPreviewModal() {
 function renderPublishResultModal() {
   const meta = strategyMeta[state.strategy];
   const isManual = state.strategy === "manual";
+  const isSync = state.strategy === "version" && state.taskScope === "sync";
   const taskStatus = isManual ? manualPublishStatus() : meta.nextStatus;
   const title = isManual ? "任务发布成功" : "任务已提交审批";
   const desc = isManual
     ? "OTA 升级任务已创建，系统将在任务时间窗口内执行。"
-    : "OTA 升级任务已创建并提交审批，审批通过后将在任务时间窗口内执行。";
+    : isSync
+      ? "跨大区同步任务已创建并提交统一审批，审批通过后会在各目标大区生成本地任务。"
+      : "OTA 升级任务已创建并提交审批，审批通过后将在任务时间窗口内执行。";
   const flowNotes = isManual
     ? [
       ["当前状态", taskStatus === "升级中" ? "任务已到达开始时间，进入升级中。" : "任务已进入待执行，未到开始时间前不会下发。", "clock"],
       ["执行规则", "到达任务开始时间后系统自动下发 OTA；执行结果可在任务详情的升级明细中查看。", "refresh"],
       ["后续操作", "关闭弹窗或返回任务列表后，可通过任务详情持续查看任务流转与设备升级结果。", "info"],
     ]
-    : [
+    : isSync ? [
+      ["当前状态", "任务已进入待审批，审批通过前不会生成各大区本地执行任务。", "shield"],
+      ["同步规则", "升级包在各大区保持一致，审批通过后按所选父级大区自动生成本地任务。", "refresh"],
+      ["查看方式", "列表和详情仍按顶部大区分别查看；切换到中国区时可查看子节点统计。", "info"],
+    ] : [
       ["当前状态", "任务已进入待审批，审批通过前不会进入执行队列，也不会下发 OTA。", "shield"],
       ["审批结果", "审批通过后按任务时间进入待执行或升级中；若审批驳回或超时失效，任务不会下发。", "clock"],
       ["后续操作", "关闭弹窗或返回任务列表后，可在待审批任务中查看详情，等待产线负责人处理。", "info"],
     ];
+  const syncRegions = isSync && state.syncRegions.length
+    ? state.syncRegions.map(region => `<span class="mini-tag blue">${region}</span>`).join("")
+    : "";
+  const executionRegions = !isSync ? renderMiniRegionTags(currentExecutionRegions()) : "";
 
   return `
     <div class="modal-backdrop" data-action="publish-result-list">
@@ -3481,6 +3818,7 @@ function renderPublishResultModal() {
             <dt>升级包</dt><dd>${state.packageType === "whole" ? "整包" : "差分包"}</dd>
             <dt>目标版本</dt><dd>${escapeHtml(state.form.targetVersion)}</dd>
             <dt>任务时间</dt><dd>${escapeHtml(state.taskStartAt)} ~ ${escapeHtml(state.taskEndAt)}</dd>
+            ${isSync ? `<dt>同步目标大区</dt><dd class="preview-tag-list">${syncRegions}</dd>` : `<dt>当前大区执行范围</dt><dd class="preview-tag-list">${executionRegions}</dd>`}
             <dt>设备规模</dt><dd>${finishDeviceScaleText()}</dd>
             <dt>当前状态</dt><dd>${statusTag(taskStatus)}</dd>
           </dl>
@@ -3516,13 +3854,16 @@ function manualPublishStatus() {
 function previewData() {
   const meta = strategyMeta[state.strategy];
   if (state.strategy === "version") {
+    const isSync = state.taskScope === "sync";
     return {
       bad: 0,
       good: 0,
       total: 0,
       alertClass: "success",
-      alertTitle: "指定版本升级任务待提交审批",
-      alertText: "请确认升级包、源版本范围、任务大区和策略条件；审批通过后进入执行窗口。",
+      alertTitle: isSync ? "跨大区指定版本同步任务待提交审批" : "指定版本升级任务待提交审批",
+      alertText: isSync
+        ? "请确认同步目标大区、升级包和源版本范围；审批通过后将分别生成各大区本地任务。"
+        : "请确认升级包、源版本范围、任务大区和策略条件；审批通过后进入执行窗口。",
       action: "提交审批",
       disabled: false,
     };
@@ -3575,9 +3916,15 @@ function renderPreviewVersionRange() {
 function renderPreviewStrategyNote() {
   if (state.strategy !== "version") return "";
 
-  const text = state.quantityMode === "full"
+  const quantityText = state.quantityMode === "full"
     ? "全量任务在执行期按源版本、区域和策略条件动态匹配设备，预览阶段不统计固定设备总数，实际设备数以执行结果为准。"
-    : "批量任务使用统一计划成功下发数量，系统会在选定源版本和区域内持续匹配符合条件设备。";
+    : state.taskScope === "sync"
+      ? "批量任务按每个目标大区各自使用统一计划数量执行，不做跨大区总量汇总。"
+      : "批量任务使用统一计划成功下发数量，系统会在选定源版本和区域内持续匹配符合条件设备。";
+  const scopeText = state.taskScope === "sync"
+    ? "跨大区同步只保证统一创建与配置一致性，升级包各大区一致；任务列表和详情仍按顶部大区分别查看。"
+    : "当前大区任务只在当前顶部大区及所选节点内执行。";
+  const text = `${quantityText}${scopeText}`;
 
   return `<div class="suggestion preview-strategy-note">${icon("info")} ${text}</div>`;
 }
@@ -3600,9 +3947,9 @@ function renderPreviewContent(compact) {
   const meta = strategyMeta[state.strategy];
   const data = previewData();
   const exceptions = shouldShowPreviewExceptions();
-  const regions = state.selectedRegions.length
-    ? state.selectedRegions.map(region => `<span class="mini-tag blue">${region}</span>`).join("")
-    : "-";
+  const isSync = isSyncCreateTask();
+  const regionContent = renderMiniRegionTags(currentExecutionRegions());
+  const taskScopeText = isSync ? "跨大区同步" : "当前大区";
   return `
     <div class="preview-alert ${data.alertClass}">
       ${icon(data.alertClass === "success" ? "check" : "alert")}
@@ -3615,7 +3962,7 @@ function renderPreviewContent(compact) {
           <dl>
             <dt>任务名称：</dt><dd>${state.form.taskName || "-"}</dd>
             <dt>目标固件版本：</dt><dd><button class="link-btn">${state.form.targetVersion || "-"}</button></dd>
-            <dt>任务执行大区：</dt><dd class="preview-tag-list">${regions}</dd>
+            <dt>${isSync ? "同步目标大区：" : "当前大区执行范围："}</dt><dd class="preview-tag-list">${regionContent}</dd>
             <dt>任务起止时间：</dt><dd>${state.taskStartAt || "-"} ~ ${state.taskEndAt || "-"}</dd>
             <dt>升级说明：</dt><dd class="preview-wide-value">${state.form.upgradeDesc || "-"}</dd>
           </dl>
@@ -3628,6 +3975,7 @@ function renderPreviewContent(compact) {
           <dl>
             <dt>升级包：</dt><dd><span class="mini-tag blue">${state.packageType === "whole" ? "整包" : "差分包"}</span></dd>
             <dt>升级策略：</dt><dd>${meta.title}</dd>
+            <dt>任务范围：</dt><dd>${taskScopeText}</dd>
             <dt>升级数量：</dt><dd>${state.quantityMode === "full" ? "全量" : "批量"}</dd>
             <dt>审批流程：</dt><dd>${state.strategy === "manual" ? "无需审批" : "需产线负责人审批"}</dd>
             <dt class="preview-version-label">版本范围：</dt><dd class="preview-version-cell">${renderPreviewVersionRange()}</dd>
@@ -3643,7 +3991,7 @@ function renderPreviewContent(compact) {
           <h3 style="border-left-color: var(--orange); color: var(--orange)">异常分类明细</h3>
           <div class="exception-list">
             <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>已是目标版本：设备当前版本与目标固件版本一致</span><span class="mini-tag">${state.previewScenario === "blocked" ? Math.ceil(data.bad * 0.42) : Math.min(data.bad, 2)}台</span></div>
-            <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>${state.packageType === "diff" ? "无可用差分包：源版本未匹配差分基线" : "设备不在任务执行大区或机型不匹配"}</span><span class="mini-tag">${state.previewScenario === "blocked" ? Math.floor(data.bad * 0.58) : Math.max(data.bad - 2, 0)}台</span></div>
+            <div class="exception-item"><span><span class="dot" style="display:inline-block;background:var(--orange);vertical-align:middle;margin-right:8px"></span>${state.packageType === "diff" ? "无可用差分包：源版本未匹配差分基线" : "设备不在当前大区执行范围或机型不匹配"}</span><span class="mini-tag">${state.previewScenario === "blocked" ? Math.floor(data.bad * 0.58) : Math.max(data.bad - 2, 0)}台</span></div>
           </div>
           <div class="suggestion">${icon("info")} 建议下载异常明细排查；存在部分可升级时，可过滤异常设备后继续发布。</div>
           <button class="btn" type="button" data-action="download-exception" style="margin-top: 12px">${icon("download")}下载异常文件明细</button>
@@ -3662,25 +4010,21 @@ function renderRegionModal() {
   return `
     <div class="modal-backdrop" data-action="close-modal">
       <section class="modal medium" role="dialog" aria-modal="true" aria-labelledby="regionTitle" data-stop>
-        <header class="modal-header"><span id="regionTitle">选择地区</span><button class="modal-close" data-action="close-modal">${icon("close")}</button></header>
+        <header class="modal-header"><span id="regionTitle">切换顶部大区</span><button class="modal-close" data-action="close-modal">${icon("close")}</button></header>
         <div class="modal-body">
           <div class="region-picker-panel">
             <div class="region-picker-toolbar">
-              <span class="text-muted">已选择 ${state.selectedRegions.length} 个地区</span>
-              <div>
-                <button class="link-btn" type="button" data-action="select-all-regions">全选</button>
-                <button class="link-btn" type="button" data-action="clear-regions">清空</button>
-              </div>
+              <span class="text-muted">当前顶部大区：${state.topRegion}</span>
             </div>
             <div class="region-option-list">
-              ${regionOptions.map(region => `
-                <label class="region-option" data-action="toggle-region" data-region="${region}">
-                  <input type="checkbox" ${state.selectedRegions.includes(region) ? "checked" : ""} />
+              ${topRegionOptions.map(region => `
+                <label class="region-option ${state.topRegion === region ? "checked" : ""}" data-action="set-top-region" data-region="${region}">
+                  <input type="radio" name="topRegion" ${state.topRegion === region ? "checked" : ""} />
                   <span>${region}</span>
                 </label>
               `).join("")}
             </div>
-            <div class="suggestion">${icon("info")} 支持多选地区；未选择时默认按任务执行大区下发。</div>
+            <div class="suggestion">${icon("info")} 顶部大区只影响列表和详情查询上下文；新增任务的执行范围只能在当前顶部大区内选择。</div>
           </div>
         </div>
         <footer class="modal-footer">
@@ -3778,7 +4122,22 @@ function bindEvents(root) {
     el.addEventListener("click", event => {
       const action = el.dataset.action;
       if (action === "close-modal" && event.target !== el && !el.classList.contains("modal-close") && !el.classList.contains("btn")) return;
-      if (["toggle-region", "remove-region", "select-all-regions", "clear-regions", "toggle-version", "toggle-all-versions", "remove-device", "clear-date-range"].includes(action)) {
+      if ([
+        "toggle-region",
+        "remove-region",
+        "select-all-regions",
+        "clear-regions",
+        "toggle-condition-region",
+        "remove-condition-region",
+        "select-all-condition-regions",
+        "clear-condition-regions",
+        "toggle-version",
+        "toggle-all-versions",
+        "toggle-sync-region",
+        "set-top-region",
+        "remove-device",
+        "clear-date-range",
+      ].includes(action)) {
         event.stopPropagation();
       }
       event.preventDefault();
@@ -3823,6 +4182,22 @@ function bindEvents(root) {
     });
   });
 
+  root.querySelectorAll("[data-radio='taskScope']").forEach(input => {
+    input.addEventListener("change", () => {
+      state.taskScope = input.value;
+      if (state.taskScope === "sync" && !state.syncRegions.length) state.syncRegions = ["中国"];
+      if (state.taskScope === "sync") {
+        state.conditionRegionEnabled = false;
+        state.conditionRegions = [];
+      }
+      sanitizeRegionState();
+      delete state.errors.syncRegions;
+      delete state.errors.selectedRegions;
+      delete state.errors.conditionRegion;
+      render();
+    });
+  });
+
   root.querySelectorAll("[data-package-card]").forEach(el => {
     el.addEventListener("click", () => {
       state.packageType = el.dataset.packageCard;
@@ -3833,10 +4208,23 @@ function bindEvents(root) {
 
   root.querySelectorAll("[data-strategy]").forEach(el => {
     el.addEventListener("click", () => {
-      state.strategy = el.dataset.strategy;
+      const nextStrategy = el.dataset.strategy;
+      if (state.strategy === nextStrategy) return;
+      state.strategy = nextStrategy;
+      if (state.strategy !== "version") {
+        state.taskScope = "current";
+        delete state.errors.syncRegions;
+      } else if (!state.syncRegions.length) {
+        state.syncRegions = ["中国", "香港"];
+      }
+      sanitizeRegionState();
+      state.previewScenario = "mixed";
       delete state.errors.strategy;
       delete state.errors.fileUpload;
       delete state.errors.manualDevices;
+      delete state.errors.selectedRegions;
+      delete state.errors.conditionRegion;
+      showToast("已切换升级方式，当前页仅保留公共任务信息");
       render();
     });
   });
@@ -4069,20 +4457,25 @@ function resetTaskFilters() {
 function validateStep(step) {
   const errors = {};
   if (step === 1) {
+    if (!state.strategy) errors.strategy = "请选择升级方式";
+  }
+  if (step === 2) {
     if (!state.form.taskName.trim()) errors.taskName = "请输入任务名称";
-    if (!state.selectedRegions.length) errors.selectedRegions = "请选择任务执行大区";
+    if (isSyncCreateTask()) {
+      if (!state.syncRegions.length) errors.syncRegions = "请至少选择一个同步目标大区";
+    } else if (!isFixedCurrentRegionStrategy() && !state.selectedRegions.length) {
+      errors.selectedRegions = "请选择当前大区执行范围";
+    }
     if (!state.form.targetVersion) errors.targetVersion = "请选择目标固件版本";
     if (!state.taskStartAt || !state.taskEndAt) errors.taskTime = "请选择任务起止时间";
     if (!state.form.upgradeDesc.trim()) errors.upgradeDesc = "请输入任务升级说明";
-  }
-  if (step === 2) {
     if (!state.packageType) errors.strategy = "请选择升级包类型";
-    if (!state.strategy) errors.strategy = "请选择升级策略";
     if (state.strategy === "version" && !state.selectedVersions.length) errors.strategy = "请至少选择一个源版本";
     if (state.strategy === "version" && state.quantityMode === "batch" && Number(state.batchQuantity) <= 0) errors.batchQuantity = "请输入大于 0 的统一下发数量";
     if (state.strategy === "file" && state.fileUploadStatus !== "uploaded") errors.fileUpload = "请先上传设备清单";
     if (state.strategy === "manual" && !state.manualDevices.some(device => device.deviceId && device.status === "可升级")) errors.manualDevices = "请至少添加一台可升级设备";
-    if (state.conditionRegionEnabled && !state.selectedRegions.length) errors.conditionRegion = "请选择指定地区";
+    if (state.conditionRegionEnabled && !availableConditionRegions().length) errors.conditionRegion = "当前执行范围下暂无可选地区";
+    if (state.conditionRegionEnabled && availableConditionRegions().length && !state.conditionRegions.length) errors.conditionRegion = "请选择指定地区";
   }
   state.errors = errors;
   return Object.keys(errors);
@@ -4169,6 +4562,10 @@ function handleAction(action, el) {
       openModal("region");
       break;
     case "toggle-region-dropdown":
+      if (isSyncCreateTask() || isFixedCurrentRegionStrategy()) {
+        showToast(isSyncCreateTask() ? "跨大区同步目标已在任务下发范围中选择" : "当前升级方式执行范围固定为顶部大区");
+        break;
+      }
       state.regionDropdownOpen = !state.regionDropdownOpen;
       state.conditionRegionDropdownOpen = false;
       state.regionOperatorOpen = false;
@@ -4177,6 +4574,14 @@ function handleAction(action, el) {
     case "toggle-condition-region-dropdown":
       if (!state.conditionRegionEnabled) {
         showToast("请先勾选指定地区");
+        break;
+      }
+      if (isSyncCreateTask()) {
+        showToast("跨大区同步不使用子节点地区条件");
+        break;
+      }
+      if (!availableConditionRegions().length) {
+        showToast("当前执行范围下暂无可选地区");
         break;
       }
       state.conditionRegionDropdownOpen = !state.conditionRegionDropdownOpen;
@@ -4189,16 +4594,30 @@ function handleAction(action, el) {
         showToast("请先勾选指定地区");
         break;
       }
+      if (isSyncCreateTask()) {
+        showToast("跨大区同步不使用子节点地区条件");
+        break;
+      }
       state.regionOperatorOpen = !state.regionOperatorOpen;
       state.regionDropdownOpen = false;
       state.conditionRegionDropdownOpen = false;
       render();
       break;
     case "toggle-condition-region-enabled":
+      if (isSyncCreateTask()) {
+        showToast("跨大区同步不使用子节点地区条件");
+        break;
+      }
       state.conditionRegionEnabled = !state.conditionRegionEnabled;
       state.conditionRegionDropdownOpen = false;
       state.regionOperatorOpen = false;
-      if (!state.conditionRegionEnabled) delete state.errors.conditionRegion;
+      if (state.conditionRegionEnabled && !state.conditionRegions.length && availableConditionRegions().length) {
+        state.conditionRegions = [availableConditionRegions()[0]];
+      }
+      if (!state.conditionRegionEnabled) {
+        state.conditionRegions = [];
+        delete state.errors.conditionRegion;
+      }
       render();
       break;
     case "set-region-operator":
@@ -4212,8 +4631,11 @@ function handleAction(action, el) {
       if (state.selectedRegions.includes(region)) {
         state.selectedRegions = state.selectedRegions.filter(item => item !== region);
       } else {
-        state.selectedRegions = [...state.selectedRegions, region];
+        state.selectedRegions = isAllRegionScope(region)
+          ? [region]
+          : [...state.selectedRegions.filter(item => !isAllRegionScope(item)), region];
       }
+      sanitizeRegionState({ preserveEmpty: true });
       delete state.errors.selectedRegions;
       delete state.errors.conditionRegion;
       render();
@@ -4222,18 +4644,49 @@ function handleAction(action, el) {
     case "remove-region": {
       const region = el.dataset.region;
       state.selectedRegions = state.selectedRegions.filter(item => item !== region);
+      sanitizeRegionState({ preserveEmpty: true });
       if (state.selectedRegions.length) delete state.errors.selectedRegions;
       render();
       break;
     }
     case "select-all-regions":
-      state.selectedRegions = [...regionOptions];
+      state.selectedRegions = [...selectableExecutionRegions()];
+      sanitizeRegionState();
       delete state.errors.selectedRegions;
       delete state.errors.conditionRegion;
       render();
       break;
     case "clear-regions":
       state.selectedRegions = [];
+      state.conditionRegions = [];
+      render();
+      break;
+    case "toggle-condition-region": {
+      const region = el.dataset.region;
+      if (!region || !availableConditionRegions().includes(region)) break;
+      if (state.conditionRegions.includes(region)) {
+        state.conditionRegions = state.conditionRegions.filter(item => item !== region);
+      } else {
+        state.conditionRegions = [...state.conditionRegions, region];
+      }
+      delete state.errors.conditionRegion;
+      render();
+      break;
+    }
+    case "remove-condition-region": {
+      const region = el.dataset.region;
+      state.conditionRegions = state.conditionRegions.filter(item => item !== region);
+      if (state.conditionRegions.length) delete state.errors.conditionRegion;
+      render();
+      break;
+    }
+    case "select-all-condition-regions":
+      state.conditionRegions = [...availableConditionRegions()];
+      delete state.errors.conditionRegion;
+      render();
+      break;
+    case "clear-condition-regions":
+      state.conditionRegions = [];
       render();
       break;
     case "toggle-version": {
@@ -4258,10 +4711,41 @@ function handleAction(action, el) {
       render();
       break;
     }
+    case "toggle-sync-region": {
+      const region = el.dataset.region;
+      if (!region) break;
+      if (state.syncRegions.includes(region)) {
+        state.syncRegions = state.syncRegions.filter(item => item !== region);
+      } else {
+        state.syncRegions = [...state.syncRegions, region];
+      }
+      if (state.syncRegions.length) delete state.errors.syncRegions;
+      render();
+      break;
+    }
+    case "set-top-region": {
+      const region = el.dataset.region;
+      if (!region || state.topRegion === region) break;
+      state.topRegion = region;
+      state.selectedRegions = [topRegionAllScope()];
+      state.conditionRegions = [];
+      state.conditionRegionEnabled = false;
+      state.regionDropdownOpen = false;
+      state.conditionRegionDropdownOpen = false;
+      state.regionOperatorOpen = false;
+      state.taskCreatorDropdownOpen = false;
+      state.taskPage = 1;
+      delete state.errors.selectedRegions;
+      delete state.errors.conditionRegion;
+      closeModal();
+      showToast(`已切换顶部大区：${region}`);
+      render();
+      break;
+    }
     case "confirm-region":
       closeModal();
       state.regionDropdownOpen = false;
-      showToast("地区条件已更新");
+      showToast(`当前顶部大区：${state.topRegion}`);
       break;
     case "toggle-creator-filter":
       state.taskCreatorDropdownOpen = !state.taskCreatorDropdownOpen;
@@ -4354,6 +4838,12 @@ function handleAction(action, el) {
       closeModal();
       break;
     case "save-task":
+      if (!state.strategy) {
+        state.errors.strategy = "请选择升级方式后再保存草稿";
+        showToast("请选择升级方式后再保存草稿");
+        render();
+        break;
+      }
       state.draftTask = snapshotDraftTask();
       state.editingDraft = false;
       state.regionDropdownOpen = false;
