@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="560" viewBox="0 0 1320 560" role="img" aria-labelledby="title desc">
+  <title id="title">新增任务两步流程与校验判断流程图</title>
+  <desc id="desc">展示新增 OTA 任务从选择升级方式、配置任务、保存草稿、字段校验、预检到预览发布和提交发布的交互逻辑。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#8492a6"/></marker>
+    <style>
+      .bg{fill:#f7fafc}.title{fill:#172033;font:700 27px "Microsoft YaHei",Arial,sans-serif}.sub{fill:#536176;font:500 14px "Microsoft YaHei",Arial,sans-serif}
+      .node{fill:#fff;stroke:#d7e0ec;stroke-width:1.4}.blue{stroke:#2f6fed}.green{stroke:#1f9d72}.orange{stroke:#c66a16}.red{stroke:#d64545}.gray{stroke:#65758b}
+      .t{fill:#172033;font:700 15px "Microsoft YaHei",Arial,sans-serif}.d{fill:#536176;font:500 12px "Microsoft YaHei",Arial,sans-serif}
+      .tag{font:700 12px "Microsoft YaHei",Arial,sans-serif}.arrow{stroke:#8492a6;stroke-width:2;fill:none;marker-end:url(#arrow)}.dash{stroke:#a5afbd;stroke-width:2;fill:none;stroke-dasharray:5 5;marker-end:url(#arrow)}
+      .stage{fill:#eef5ff;stroke:#c9dcff;stroke-width:1.2}.stageText{fill:#2f6fed;font:700 13px "Microsoft YaHei",Arial,sans-serif}
+    </style>
+  </defs>
+  <rect class="bg" width="1320" height="560" rx="22"/>
+  <text class="title" x="46" y="54">新增任务两步流程与校验判断</text>
+  <text class="sub" x="46" y="82">将“配置任务 → 预览发布”拆成可执行交互链路，草稿、字段校验、预检结果和发布动作均有明确分支。</text>
+
+  <rect class="stage" x="46" y="118" width="190" height="34" rx="17"/><text class="stageText" x="141" y="140" text-anchor="middle">步骤 1：配置任务</text>
+  <rect class="stage" x="948" y="118" width="190" height="34" rx="17"/><text class="stageText" x="1043" y="140" text-anchor="middle">步骤 2：预览发布</text>
+
+  <rect class="node blue" x="46" y="190" width="170" height="76" rx="10"/><text class="t" x="68" y="220">进入新增任务</text><text class="d" x="68" y="244">初始化顶部大区和默认时间</text>
+  <rect class="node blue" x="262" y="190" width="190" height="76" rx="10"/><text class="t" x="284" y="220">选择升级方式</text><text class="d" x="284" y="244">指定版本 / 文件 / 手动</text>
+  <rect class="node blue" x="498" y="190" width="205" height="76" rx="10"/><text class="t" x="520" y="220">填写任务内容</text><text class="d" x="520" y="244">公共字段 + 策略字段</text>
+
+  <polygon class="node orange" points="796,174 890,228 796,282 702,228"/><text class="t" x="796" y="224" text-anchor="middle">用户动作</text><text class="d" x="796" y="246" text-anchor="middle">草稿 / 下一步</text>
+  <rect class="node gray" x="708" y="348" width="176" height="76" rx="10"/><text class="tag" x="730" y="376" fill="#65758b">保存草稿</text><text class="t" x="730" y="400">生成待发布</text>
+
+  <polygon class="node orange" points="1042,174 1136,228 1042,282 948,228"/><text class="t" x="1042" y="224" text-anchor="middle">字段校验</text><text class="d" x="1042" y="246" text-anchor="middle">是否通过</text>
+  <rect class="node red" x="948" y="348" width="188" height="76" rx="10"/><text class="tag" x="970" y="376" fill="#d64545">不通过</text><text class="t" x="970" y="400">字段级错误</text>
+  <rect class="node green" x="1182" y="190" width="112" height="76" rx="10"/><text class="t" x="1204" y="220">发起预检</text><text class="d" x="1204" y="244">进入预览</text>
+
+  <rect class="node green" x="790" y="468" width="176" height="64" rx="10"/><text class="t" x="812" y="494">存在可升级</text><text class="d" x="812" y="516">允许提交审批或发布</text>
+  <rect class="node red" x="1012" y="468" width="176" height="64" rx="10"/><text class="t" x="1034" y="494">无可升级</text><text class="d" x="1034" y="516">禁用发布动作</text>
+
+  <path class="arrow" d="M216 228 H262"/><path class="arrow" d="M452 228 H498"/><path class="arrow" d="M703 228 H702"/>
+  <path class="dash" d="M796 282 V348"/><text class="tag" x="814" y="324" fill="#65758b">保存</text>
+  <path class="arrow" d="M890 228 H948"/><text class="tag" x="906" y="216" fill="#2f6fed">下一步</text>
+  <path class="dash" d="M1042 282 V348"/><text class="tag" x="1060" y="324" fill="#d64545">否</text>
+  <path class="arrow" d="M1136 228 H1182"/><text class="tag" x="1148" y="216" fill="#1f9d72">是</text>
+  <path class="arrow" d="M1238 266 C1238 344 910 344 878 468"/><text class="tag" x="1134" y="344" fill="#1f9d72">预检通过</text>
+  <path class="dash" d="M1238 266 C1238 384 1110 384 1100 468"/><text class="tag" x="1166" y="402" fill="#d64545">无对象</text>
+</svg>

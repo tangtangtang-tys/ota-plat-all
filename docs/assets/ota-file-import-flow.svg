@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="560" viewBox="0 0 1320 560" role="img" aria-labelledby="title desc">
+  <title id="title">文件导入任务流程与异常判断流程图</title>
+  <desc id="desc">展示文件导入任务上传设备清单后，系统清洗去重并按设备归属、版本前三位、目标版本状态和可升级结果进行判断。</desc>
+  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#8492a6"/></marker><style>.bg{fill:#f7fafc}.title{fill:#172033;font:700 27px "Microsoft YaHei",Arial,sans-serif}.sub{fill:#536176;font:500 14px "Microsoft YaHei",Arial,sans-serif}.node{fill:#fff;stroke:#d7e0ec;stroke-width:1.4}.blue{stroke:#2f6fed}.green{stroke:#1f9d72}.orange{stroke:#c66a16}.red{stroke:#d64545}.t{fill:#172033;font:700 15px "Microsoft YaHei",Arial,sans-serif}.d{fill:#536176;font:500 12px "Microsoft YaHei",Arial,sans-serif}.tag{font:700 12px "Microsoft YaHei",Arial,sans-serif}.arrow{stroke:#8492a6;stroke-width:2;fill:none;marker-end:url(#arrow)}.dash{stroke:#a5afbd;stroke-width:2;fill:none;stroke-dasharray:5 5;marker-end:url(#arrow)}</style></defs>
+  <rect class="bg" width="1320" height="560" rx="22"/>
+  <text class="title" x="46" y="54">文件导入流程与异常判断</text>
+  <text class="sub" x="46" y="82">文件导入基于固定设备清单，异常设备进入明细；存在可升级设备时才允许预览发布和提交审批。</text>
+
+  <rect class="node blue" x="46" y="142" width="155" height="70" rx="10"/><text class="t" x="68" y="170">选择文件导入</text><text class="d" x="68" y="194">当前大区任务</text>
+  <rect class="node blue" x="241" y="142" width="160" height="70" rx="10"/><text class="t" x="263" y="170">配置公共字段</text><text class="d" x="263" y="194">名称、版本、时间</text>
+  <rect class="node blue" x="441" y="142" width="160" height="70" rx="10"/><text class="t" x="463" y="170">上传设备清单</text><text class="d" x="463" y="194">CSV / Excel</text>
+  <rect class="node blue" x="641" y="142" width="170" height="70" rx="10"/><text class="t" x="663" y="170">清洗去重</text><text class="d" x="663" y="194">解析设备 ID</text>
+
+  <polygon class="node orange" points="210,284 298,334 210,384 122,334"/><text class="t" x="210" y="330" text-anchor="middle">当前大区?</text><text class="d" x="210" y="352" text-anchor="middle">设备归属</text>
+  <polygon class="node orange" points="464,284 552,334 464,384 376,334"/><text class="t" x="464" y="330" text-anchor="middle">版本匹配?</text><text class="d" x="464" y="352" text-anchor="middle">前三位一致</text>
+  <polygon class="node orange" points="718,284 806,334 718,384 630,334"/><text class="t" x="718" y="330" text-anchor="middle">已是目标?</text><text class="d" x="718" y="352" text-anchor="middle">目标版本判断</text>
+  <polygon class="node orange" points="972,284 1060,334 972,384 884,334"/><text class="t" x="972" y="330" text-anchor="middle">有可升级?</text><text class="d" x="972" y="352" text-anchor="middle">预检结果</text>
+
+  <rect class="node red" x="110" y="450" width="190" height="68" rx="10"/><text class="t" x="132" y="478">进入异常明细</text><text class="d" x="132" y="500">非当前大区 / 版本异常 / 已是目标</text>
+  <rect class="node green" x="1096" y="300" width="168" height="68" rx="10"/><text class="t" x="1118" y="328">预览发布</text><text class="d" x="1118" y="350">展示导入与异常数</text>
+  <rect class="node orange" x="1096" y="420" width="168" height="68" rx="10"/><text class="t" x="1118" y="448">提交审批</text><text class="d" x="1118" y="470">通过后当前大区执行</text>
+
+  <path class="arrow" d="M201 177 H241"/><path class="arrow" d="M401 177 H441"/><path class="arrow" d="M601 177 H641"/>
+  <path class="arrow" d="M726 212 C726 252 210 248 210 284"/>
+  <path class="arrow" d="M298 334 H376"/><path class="arrow" d="M552 334 H630"/><path class="arrow" d="M806 334 H884"/><path class="arrow" d="M1060 334 H1096"/>
+  <path class="dash" d="M210 384 V450"/><path class="dash" d="M464 384 C464 430 266 430 250 450"/><path class="dash" d="M718 384 C718 448 326 430 290 450"/><path class="dash" d="M972 384 C972 460 318 462 300 484"/>
+  <path class="arrow" d="M1180 368 V420"/>
+  <text class="tag" x="314" y="322" fill="#1f9d72">是</text><text class="tag" x="568" y="322" fill="#1f9d72">是</text><text class="tag" x="822" y="322" fill="#1f9d72">否</text><text class="tag" x="1074" y="322" fill="#1f9d72">是</text>
+</svg>

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="520" viewBox="0 0 1320 520" role="img" aria-labelledby="title desc">
+  <title id="title">指定版本当前大区任务流程图</title>
+  <desc id="desc">展示指定版本当前大区任务从配置、范围、版本、数量、预览、审批、执行到详情复盘的业务流转。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#8492a6"/></marker>
+    <style>.bg{fill:#f7fafc}.title{fill:#172033;font:700 27px "Microsoft YaHei",Arial,sans-serif}.sub{fill:#536176;font:500 14px "Microsoft YaHei",Arial,sans-serif}.node{fill:#fff;stroke:#d7e0ec;stroke-width:1.4}.blue{stroke:#2f6fed}.green{stroke:#1f9d72}.orange{stroke:#c66a16}.t{fill:#172033;font:700 15px "Microsoft YaHei",Arial,sans-serif}.d{fill:#536176;font:500 12px "Microsoft YaHei",Arial,sans-serif}.tag{font:700 12px "Microsoft YaHei",Arial,sans-serif}.arrow{stroke:#8492a6;stroke-width:2;fill:none;marker-end:url(#arrow)}.dash{stroke:#a5afbd;stroke-width:2;fill:none;stroke-dasharray:5 5;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect class="bg" width="1320" height="520" rx="22"/>
+  <text class="title" x="46" y="54">指定版本：当前大区任务流程</text>
+  <text class="sub" x="46" y="82">先确定当前大区范围，再配置版本、源版本和数量口径；全量与批量在执行期采用不同统计口径。</text>
+
+  <rect class="node blue" x="46" y="150" width="160" height="72" rx="10"/><text class="t" x="68" y="180">选择指定版本</text><text class="d" x="68" y="204">进入策略配置</text>
+  <rect class="node blue" x="246" y="150" width="170" height="72" rx="10"/><text class="t" x="268" y="180">配置公共字段</text><text class="d" x="268" y="204">名称、时间、说明</text>
+  <rect class="node blue" x="456" y="150" width="190" height="72" rx="10"/><text class="t" x="478" y="180">选择当前大区任务</text><text class="d" x="478" y="204">锁定顶部大区上下文</text>
+  <rect class="node blue" x="686" y="150" width="200" height="72" rx="10"/><text class="t" x="708" y="180">选择执行范围</text><text class="d" x="708" y="204">父级全部或子节点</text>
+  <rect class="node blue" x="926" y="150" width="170" height="72" rx="10"/><text class="t" x="948" y="180">选择目标版本</text><text class="d" x="948" y="204">整包 / 差分包</text>
+  <rect class="node blue" x="1136" y="150" width="150" height="72" rx="10"/><text class="t" x="1158" y="180">勾选源版本</text><text class="d" x="1158" y="204">表格选择</text>
+
+  <polygon class="node orange" points="256,306 342,358 256,410 170,358"/><text class="t" x="256" y="354" text-anchor="middle">数量口径</text><text class="d" x="256" y="376" text-anchor="middle">全量 / 批量</text>
+  <rect class="node green" x="426" y="322" width="170" height="72" rx="10"/><text class="tag" x="448" y="348" fill="#1f9d72">全量</text><text class="t" x="448" y="374">展示“全量”</text>
+  <rect class="node orange" x="636" y="322" width="190" height="72" rx="10"/><text class="tag" x="658" y="348" fill="#c66a16">批量</text><text class="t" x="658" y="374">记录计划数量</text>
+  <rect class="node blue" x="866" y="322" width="160" height="72" rx="10"/><text class="t" x="888" y="352">预览发布</text><text class="d" x="888" y="376">确认策略摘要</text>
+  <rect class="node orange" x="1066" y="322" width="150" height="72" rx="10"/><text class="t" x="1088" y="352">提交审批</text><text class="d" x="1088" y="376">通过后执行</text>
+  <rect class="node green" x="1046" y="434" width="210" height="60" rx="10"/><text class="t" x="1068" y="459">详情复盘</text><text class="d" x="1068" y="480">已匹配、成功、失败、异常分类</text>
+
+  <path class="arrow" d="M206 186 H246"/><path class="arrow" d="M416 186 H456"/><path class="arrow" d="M646 186 H686"/><path class="arrow" d="M886 186 H926"/><path class="arrow" d="M1096 186 H1136"/>
+  <path class="arrow" d="M1211 222 C1211 282 256 262 256 306"/>
+  <path class="dash" d="M342 358 H426"/><path class="dash" d="M342 370 C470 430 586 394 636 370"/>
+  <path class="arrow" d="M596 358 H866"/><path class="arrow" d="M826 358 H866"/><path class="arrow" d="M1026 358 H1066"/><path class="arrow" d="M1141 394 V434"/>
+</svg>
