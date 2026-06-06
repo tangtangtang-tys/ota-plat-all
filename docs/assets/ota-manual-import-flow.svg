@@ -1,26 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1320" height="540" viewBox="0 0 1320 540" role="img" aria-labelledby="title desc">
-  <title id="title">手动导入任务流程与校验判断流程图</title>
-  <desc id="desc">展示手动导入最多 10 台设备、逐台校验设备归属和版本条件，存在可升级设备时无需审批直接发布。</desc>
-  <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#8492a6"/></marker><style>.bg{fill:#f7fafc}.title{fill:#172033;font:700 27px "Microsoft YaHei",Arial,sans-serif}.sub{fill:#536176;font:500 14px "Microsoft YaHei",Arial,sans-serif}.node{fill:#fff;stroke:#d7e0ec;stroke-width:1.4}.blue{stroke:#2f6fed}.green{stroke:#1f9d72}.orange{stroke:#c66a16}.red{stroke:#d64545}.t{fill:#172033;font:700 15px "Microsoft YaHei",Arial,sans-serif}.d{fill:#536176;font:500 12px "Microsoft YaHei",Arial,sans-serif}.tag{font:700 12px "Microsoft YaHei",Arial,sans-serif}.arrow{stroke:#8492a6;stroke-width:2;fill:none;marker-end:url(#arrow)}.dash{stroke:#a5afbd;stroke-width:2;fill:none;stroke-dasharray:5 5;marker-end:url(#arrow)}</style></defs>
+  <title id="title">手动导入下发业务流程图</title>
+  <desc id="desc">展示手动导入最多 10 台设备、逐台校验、可选策略条件、确认发布，并由后端按设备所属大区自动分发的流程。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#8492a6"/></marker>
+    <style>
+      .bg{fill:#f7fafc}.title{fill:#172033;font:700 27px "Microsoft YaHei","PingFang SC",Arial,sans-serif}.sub{fill:#536176;font:500 14px "Microsoft YaHei","PingFang SC",Arial,sans-serif}
+      .node{fill:#fff;stroke:#d7e0ec;stroke-width:1.4}.blue{stroke:#2f6fed}.green{stroke:#1f9d72}.orange{stroke:#c66a16}.red{stroke:#d64545}.gray{stroke:#65758b}
+      .t{fill:#172033;font:700 15px "Microsoft YaHei","PingFang SC",Arial,sans-serif}.d{fill:#536176;font:500 12px "Microsoft YaHei","PingFang SC",Arial,sans-serif}.tag{font:700 12px "Microsoft YaHei","PingFang SC",Arial,sans-serif}
+      .arrow{stroke:#8492a6;stroke-width:2;fill:none;marker-end:url(#arrow)}.dash{stroke:#a5afbd;stroke-width:2;fill:none;stroke-dasharray:5 5;marker-end:url(#arrow)}
+    </style>
+  </defs>
   <rect class="bg" width="1320" height="540" rx="22"/>
-  <text class="title" x="46" y="54">手动导入流程与校验判断</text>
-  <text class="sub" x="46" y="82">手动导入适合小批灰度或单台处理；逐台校验后，只要存在可升级设备即可确认发布且无需审批。</text>
+  <text class="title" x="46" y="54">手动导入下发业务流程</text>
+  <text class="sub" x="46" y="82">创建时不选择大区；最多录入 10 台设备；无需审批，发布后按设备所属大区自动分发。</text>
 
-  <rect class="node blue" x="46" y="146" width="155" height="70" rx="10"/><text class="t" x="68" y="174">选择手动导入</text><text class="d" x="68" y="198">当前大区任务</text>
-  <rect class="node blue" x="241" y="146" width="160" height="70" rx="10"/><text class="t" x="263" y="174">配置公共字段</text><text class="d" x="263" y="198">名称、版本、时间</text>
-  <polygon class="node orange" points="518,126 612,181 518,236 424,181"/><text class="t" x="518" y="177" text-anchor="middle">设备数量</text><text class="d" x="518" y="199" text-anchor="middle">1-10 台</text>
-  <rect class="node blue" x="656" y="146" width="190" height="70" rx="10"/><text class="t" x="678" y="174">查询设备信息</text><text class="d" x="678" y="198">归属大区和源版本</text>
+  <rect class="node blue" x="46" y="146" width="158" height="72" rx="10"/><text class="t" x="68" y="176">选择手动导入</text><text class="d" x="68" y="200">进入策略配置</text>
+  <polygon class="node orange" points="310,126 404,182 310,238 216,182"/><text class="t" x="310" y="178" text-anchor="middle">设备数量</text><text class="d" x="310" y="200" text-anchor="middle">1-10 台</text>
+  <rect class="node blue" x="446" y="146" width="176" height="72" rx="10"/><text class="t" x="468" y="176">逐台校验</text><text class="d" x="468" y="200">设备、版本、包可用性</text>
+  <rect class="node gray" x="664" y="146" width="198" height="72" rx="10"/><text class="t" x="686" y="176">展示所属大区</text><text class="d" x="686" y="200">辅助复盘，不做拦截</text>
 
-  <polygon class="node orange" points="230,308 318,358 230,408 142,358"/><text class="t" x="230" y="354" text-anchor="middle">当前大区?</text><text class="d" x="230" y="376" text-anchor="middle">归属判断</text>
-  <polygon class="node orange" points="510,308 598,358 510,408 422,358"/><text class="t" x="510" y="354" text-anchor="middle">版本可升?</text><text class="d" x="510" y="376" text-anchor="middle">匹配目标</text>
-  <polygon class="node orange" points="790,308 878,358 790,408 702,358"/><text class="t" x="790" y="354" text-anchor="middle">有可升级?</text><text class="d" x="790" y="376" text-anchor="middle">逐台结果</text>
-  <rect class="node red" x="116" y="450" width="218" height="64" rx="10"/><text class="t" x="138" y="476">异常设备</text><text class="d" x="138" y="496">提示切换大区或版本不匹配</text>
-  <rect class="node green" x="932" y="324" width="180" height="68" rx="10"/><text class="t" x="954" y="352">确认发布</text><text class="d" x="954" y="374">无需审批</text>
-  <rect class="node green" x="1148" y="324" width="126" height="68" rx="10"/><text class="t" x="1170" y="352">进入执行</text><text class="d" x="1170" y="374">待执行 / 升级中</text>
+  <polygon class="node orange" points="210,310 298,360 210,410 122,360"/><text class="t" x="210" y="356" text-anchor="middle">有可升级?</text><text class="d" x="210" y="378" text-anchor="middle">逐台结果</text>
+  <rect class="node red" x="92" y="452" width="236" height="62" rx="10"/><text class="t" x="114" y="478">禁用发布</text><text class="d" x="114" y="498">无可升级设备</text>
+  <rect class="node gray" x="378" y="322" width="218" height="76" rx="10"/><text class="tag" x="400" y="348" fill="#65758b">可选</text><text class="t" x="400" y="374">策略条件项</text>
+  <rect class="node green" x="644" y="322" width="168" height="76" rx="10"/><text class="t" x="666" y="352">预览发布</text><text class="d" x="666" y="376">设备清单与异常数</text>
+  <rect class="node green" x="860" y="322" width="168" height="76" rx="10"/><text class="t" x="882" y="352">确认发布</text><text class="d" x="882" y="376">无需审批</text>
+  <rect class="node green" x="1076" y="146" width="198" height="252" rx="10"/><text class="t" x="1098" y="180">后端自动分发</text><text class="d" x="1098" y="208">按设备所属大区拆分</text><text class="d" x="1098" y="234">进入待执行或升级中</text><text class="d" x="1098" y="260">下发到对应大区</text><text class="d" x="1098" y="286">详情按大区 tab 查看</text>
 
-  <path class="arrow" d="M201 181 H241"/><path class="arrow" d="M401 181 H424"/><path class="arrow" d="M612 181 H656"/>
-  <path class="arrow" d="M751 216 C751 268 230 268 230 308"/>
-  <path class="arrow" d="M318 358 H422"/><path class="arrow" d="M598 358 H702"/><path class="arrow" d="M878 358 H932"/><path class="arrow" d="M1112 358 H1148"/>
-  <path class="dash" d="M230 408 V450"/><path class="dash" d="M510 408 C510 462 334 444 300 450"/><path class="dash" d="M790 408 C790 486 350 482 334 482"/>
-  <text class="tag" x="624" y="168" fill="#d64545">超过则禁用添加</text><text class="tag" x="334" y="346" fill="#1f9d72">是</text><text class="tag" x="614" y="346" fill="#1f9d72">是</text><text class="tag" x="894" y="346" fill="#1f9d72">是</text>
+  <path class="arrow" d="M204 182 H216"/><path class="arrow" d="M404 182 H446"/><path class="arrow" d="M622 182 H664"/><path class="arrow" d="M862 182 H1076"/>
+  <path class="arrow" d="M763 218 C763 278 210 262 210 310"/>
+  <path class="dash" d="M210 410 V452"/><path class="arrow" d="M298 360 H378"/><path class="arrow" d="M596 360 H644"/><path class="arrow" d="M812 360 H860"/><path class="arrow" d="M1028 360 H1076"/>
+  <text class="tag" x="410" y="168" fill="#d64545">超过 10 台禁用添加</text>
 </svg>

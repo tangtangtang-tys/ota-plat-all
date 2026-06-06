@@ -1,165 +1,123 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="920" viewBox="0 0 1440 920" role="img" aria-labelledby="title desc">
-  <title id="title">OTA 升级任务完整生命周期流程图</title>
-  <desc id="desc">展示 OTA 升级任务从创建任务、预检、发布、审批、执行到详情复盘的主链路，以及草稿、不可发布、驳回、失效、手动结束和完成分支。</desc>
+  <title id="title">OTA 升级任务状态流转流程图</title>
+  <desc id="desc">展示 OTA 升级任务从三步创建、保存草稿、提交审批或直接发布，到待执行、升级中、完成、结束、驳回和失效的完整状态流转。</desc>
   <defs>
-    <style>
-      .bg { fill: #f7fafc; }
-      .title { fill: #172033; font: 700 28px "Microsoft YaHei", "PingFang SC", Arial, sans-serif; }
-      .subtitle { fill: #536176; font: 500 15px "Microsoft YaHei", "PingFang SC", Arial, sans-serif; }
-      .lane { fill: #ffffff; stroke: #d7e0ec; stroke-width: 1.4; }
-      .laneText { fill: #344256; font: 700 16px "Microsoft YaHei", "PingFang SC", Arial, sans-serif; }
-      .node { fill: #ffffff; stroke: #d7e0ec; stroke-width: 1.4; }
-      .nodeTitle { fill: #172033; font: 700 16px "Microsoft YaHei", "PingFang SC", Arial, sans-serif; }
-      .nodeDesc { fill: #536176; font: 500 13px "Microsoft YaHei", "PingFang SC", Arial, sans-serif; }
-      .tag { font: 700 12px "Microsoft YaHei", "PingFang SC", Arial, sans-serif; }
-      .arrow { stroke: #8795a8; stroke-width: 2; fill: none; marker-end: url(#arrow); }
-      .branchArrow { stroke: #a5afbd; stroke-width: 2; fill: none; stroke-dasharray: 5 5; marker-end: url(#arrowGray); }
-      .blue { stroke: #2f6fed; }
-      .green { stroke: #1f9d72; }
-      .orange { stroke: #c66a16; }
-      .red { stroke: #d64545; }
-      .gray { stroke: #65758b; }
-    </style>
     <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-      <path d="M0,0 L10,5 L0,10 Z" fill="#8795a8" />
+      <path d="M0,0 L10,5 L0,10 Z" fill="#8492a6" />
     </marker>
-    <marker id="arrowGray" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-      <path d="M0,0 L10,5 L0,10 Z" fill="#a5afbd" />
-    </marker>
+    <style>
+      .bg{fill:#f7fafc}.title{fill:#172033;font:700 28px "Microsoft YaHei","PingFang SC",Arial,sans-serif}.sub{fill:#536176;font:500 15px "Microsoft YaHei","PingFang SC",Arial,sans-serif}
+      .lane{fill:#fff;stroke:#d7e0ec;stroke-width:1.4}.laneText{fill:#344256;font:700 16px "Microsoft YaHei","PingFang SC",Arial,sans-serif}
+      .node{fill:#fff;stroke:#d7e0ec;stroke-width:1.4}.blue{stroke:#2f6fed}.green{stroke:#1f9d72}.orange{stroke:#c66a16}.red{stroke:#d64545}.gray{stroke:#65758b}
+      .t{fill:#172033;font:700 15px "Microsoft YaHei","PingFang SC",Arial,sans-serif}.d{fill:#536176;font:500 12px "Microsoft YaHei","PingFang SC",Arial,sans-serif}.tag{font:700 12px "Microsoft YaHei","PingFang SC",Arial,sans-serif}
+      .arrow{stroke:#8492a6;stroke-width:2;fill:none;marker-end:url(#arrow)}.dash{stroke:#a5afbd;stroke-width:2;fill:none;stroke-dasharray:5 5;marker-end:url(#arrow)}
+    </style>
   </defs>
-  <rect class="bg" width="1440" height="920" rx="24" />
-  <text class="title" x="54" y="58">OTA 升级任务完整生命周期流程图</text>
-  <text class="subtitle" x="54" y="86">主链路覆盖创建、预检、发布、审批、执行、详情复盘，并标出关键业务分支。</text>
+  <rect class="bg" width="1440" height="920" rx="24"/>
+  <text class="title" x="54" y="58">OTA 升级任务状态流转</text>
+  <text class="sub" x="54" y="86">手动导入直接发布；指定版本和文件导入先审批；终态只允许详情和复制重建。</text>
 
   <g transform="translate(54 126)">
-    <rect class="lane" x="0" y="0" width="128" height="86" rx="10" />
-    <text class="laneText" x="64" y="38" text-anchor="middle">创建任务</text>
-    <text class="nodeDesc" x="64" y="60" text-anchor="middle">配置阶段</text>
-
-    <rect class="node blue" x="154" y="0" width="190" height="86" rx="10" />
-    <text class="nodeTitle" x="178" y="31">进入新增任务</text>
-    <text class="nodeDesc" x="178" y="56">初始化表单、顶部大区</text>
-
-    <rect class="node blue" x="390" y="0" width="220" height="86" rx="10" />
-    <text class="nodeTitle" x="414" y="31">选择升级方式</text>
-    <text class="nodeDesc" x="414" y="56">指定版本 / 文件导入 / 手动导入</text>
-
-    <rect class="node blue" x="656" y="0" width="220" height="86" rx="10" />
-    <text class="nodeTitle" x="680" y="31">填写任务配置</text>
-    <text class="nodeDesc" x="680" y="56">公共字段与策略字段</text>
-
-    <path class="arrow" d="M344 43 H390" />
-    <path class="arrow" d="M610 43 H656" />
+    <rect class="lane" x="0" y="0" width="128" height="92" rx="10"/>
+    <text class="laneText" x="64" y="42" text-anchor="middle">创建</text>
+    <text class="d" x="64" y="64" text-anchor="middle">三步流程</text>
+    <rect class="node blue" x="162" y="0" width="188" height="92" rx="10"/>
+    <text class="t" x="184" y="34">基本任务</text>
+    <text class="d" x="184" y="58">名称、版本、包、时间、说明</text>
+    <rect class="node blue" x="394" y="0" width="210" height="92" rx="10"/>
+    <text class="t" x="416" y="34">策略配置</text>
+    <text class="d" x="416" y="58">指定版本 / 文件 / 手动</text>
+    <rect class="node blue" x="648" y="0" width="210" height="92" rx="10"/>
+    <text class="t" x="670" y="34">预览发布</text>
+    <text class="d" x="670" y="58">预检、摘要、发布动作</text>
+    <path class="arrow" d="M350 46 H394"/>
+    <path class="arrow" d="M604 46 H648"/>
   </g>
 
-  <g transform="translate(54 248)">
-    <rect class="lane" x="0" y="0" width="128" height="112" rx="10" />
-    <text class="laneText" x="64" y="50" text-anchor="middle">分支决策</text>
-    <text class="nodeDesc" x="64" y="72" text-anchor="middle">草稿 / 发布</text>
-
-    <rect class="node gray" x="154" y="0" width="306" height="112" rx="10" />
-    <text class="tag" x="178" y="26" fill="#65758b">保存草稿</text>
-    <text class="nodeTitle" x="178" y="55">生成待发布任务</text>
-    <text class="nodeDesc" x="178" y="80">返回任务列表，可继续编辑或删除</text>
-
-    <rect class="node blue" x="506" y="0" width="306" height="112" rx="10" />
-    <text class="tag" x="530" y="26" fill="#2f6fed">提交发布</text>
-    <text class="nodeTitle" x="530" y="55">字段校验通过</text>
-    <text class="nodeDesc" x="530" y="80">进入预检；失败时停留当前步骤</text>
-
-    <path class="branchArrow" d="M249 -36 V0" />
-    <path class="arrow" d="M766 -36 V0" />
+  <g transform="translate(54 260)">
+    <rect class="lane" x="0" y="0" width="128" height="112" rx="10"/>
+    <text class="laneText" x="64" y="50" text-anchor="middle">发布决策</text>
+    <text class="d" x="64" y="72" text-anchor="middle">草稿 / 正式</text>
+    <rect class="node gray" x="162" y="0" width="220" height="112" rx="10"/>
+    <text class="tag" x="184" y="28" fill="#65758b">保存草稿</text>
+    <text class="t" x="184" y="58">待发布</text>
+    <text class="d" x="184" y="82">可编辑、删除、再次提交</text>
+    <rect class="node orange" x="428" y="0" width="246" height="112" rx="10"/>
+    <text class="tag" x="450" y="28" fill="#c66a16">指定版本 / 文件导入</text>
+    <text class="t" x="450" y="58">提交审批</text>
+    <text class="d" x="450" y="82">预检通过后进入待审批</text>
+    <rect class="node green" x="720" y="0" width="246" height="112" rx="10"/>
+    <text class="tag" x="742" y="28" fill="#1f9d72">手动导入</text>
+    <text class="t" x="742" y="58">确认发布</text>
+    <text class="d" x="742" y="82">无需审批，按任务时间执行</text>
+    <path class="dash" d="M256 -42 V0"/>
+    <path class="arrow" d="M752 -42 V0"/>
   </g>
 
-  <g transform="translate(54 396)">
-    <rect class="lane" x="0" y="0" width="128" height="106" rx="10" />
-    <text class="laneText" x="64" y="48" text-anchor="middle">预检</text>
-    <text class="nodeDesc" x="64" y="70" text-anchor="middle">可发布判断</text>
-
-    <rect class="node blue" x="154" y="0" width="234" height="106" rx="10" />
-    <text class="nodeTitle" x="178" y="38">发起预检</text>
-    <text class="nodeDesc" x="178" y="64">查询版本、设备归属、可升级条件</text>
-
-    <rect class="node red" x="434" y="0" width="234" height="106" rx="10" />
-    <text class="nodeTitle" x="458" y="38">无可升级对象</text>
-    <text class="nodeDesc" x="458" y="64">提示不可发布</text>
-
-    <rect class="node green" x="714" y="0" width="266" height="106" rx="10" />
-    <text class="nodeTitle" x="738" y="38">存在可升级对象</text>
-    <text class="nodeDesc" x="738" y="64">展示任务摘要与预检结果</text>
-
-    <path class="arrow" d="M388 53 H434" />
-    <path class="arrow" d="M668 53 H714" />
-  </g>
-
-  <g transform="translate(54 538)">
-    <rect class="lane" x="0" y="0" width="128" height="112" rx="10" />
-    <text class="laneText" x="64" y="50" text-anchor="middle">发布</text>
-    <text class="nodeDesc" x="64" y="72" text-anchor="middle">按策略流转</text>
-
-    <rect class="node green" x="154" y="0" width="330" height="112" rx="10" />
-    <text class="tag" x="178" y="26" fill="#1f9d72">手动导入</text>
-    <text class="nodeTitle" x="178" y="55">确认发布</text>
-    <text class="nodeDesc" x="178" y="80">创建当前大区任务，进入待执行或升级中</text>
-
-    <rect class="node orange" x="530" y="0" width="360" height="112" rx="10" />
-    <text class="tag" x="554" y="26" fill="#c66a16">指定版本 / 文件导入</text>
-    <text class="nodeTitle" x="554" y="55">提交审批</text>
-    <text class="nodeDesc" x="554" y="80">创建发布单，任务进入待审批</text>
-
-    <path class="branchArrow" d="M319 -36 V0" />
-    <path class="arrow" d="M710 -36 V0" />
-  </g>
-
-  <g transform="translate(54 686)">
-    <rect class="lane" x="0" y="0" width="128" height="112" rx="10" />
+  <g transform="translate(54 414)">
+    <rect class="lane" x="0" y="0" width="128" height="112" rx="10"/>
     <text class="laneText" x="64" y="50" text-anchor="middle">审批</text>
-    <text class="nodeDesc" x="64" y="72" text-anchor="middle">正式任务</text>
-
-    <rect class="node red" x="154" y="0" width="240" height="112" rx="10" />
-    <text class="tag" x="178" y="26" fill="#d64545">审批驳回</text>
-    <text class="nodeTitle" x="178" y="55">已驳回</text>
-    <text class="nodeDesc" x="178" y="80">记录审批人、时间和原因</text>
-
-    <rect class="node gray" x="440" y="0" width="240" height="112" rx="10" />
-    <text class="tag" x="464" y="26" fill="#65758b">审批超时</text>
-    <text class="nodeTitle" x="464" y="55">已失效</text>
-    <text class="nodeDesc" x="464" y="80">记录失效原因和失效时间</text>
-
-    <rect class="node green" x="726" y="0" width="240" height="112" rx="10" />
-    <text class="tag" x="750" y="26" fill="#1f9d72">审批通过</text>
-    <text class="nodeTitle" x="750" y="55">待执行</text>
-    <text class="nodeDesc" x="750" y="80">等待计划开始时间</text>
-
-    <path class="branchArrow" d="M274 -36 V0" />
-    <path class="branchArrow" d="M560 -36 V0" />
-    <path class="arrow" d="M846 -36 V0" />
+    <text class="d" x="64" y="72" text-anchor="middle">风险控制</text>
+    <rect class="node orange" x="162" y="0" width="190" height="112" rx="10"/>
+    <text class="t" x="184" y="44">待审批</text>
+    <text class="d" x="184" y="68">等待审批人处理</text>
+    <rect class="node green" x="398" y="0" width="190" height="112" rx="10"/>
+    <text class="tag" x="420" y="28" fill="#1f9d72">审批通过</text>
+    <text class="t" x="420" y="58">待执行 / 升级中</text>
+    <text class="d" x="420" y="82">按当前时间判断</text>
+    <rect class="node red" x="634" y="0" width="190" height="112" rx="10"/>
+    <text class="tag" x="656" y="28" fill="#d64545">审批驳回</text>
+    <text class="t" x="656" y="58">已驳回</text>
+    <text class="d" x="656" y="82">终态，可复制重建</text>
+    <rect class="node gray" x="870" y="0" width="190" height="112" rx="10"/>
+    <text class="tag" x="892" y="28" fill="#65758b">审批超时</text>
+    <text class="t" x="892" y="58">已失效</text>
+    <text class="d" x="892" y="82">终态，可复制重建</text>
+    <path class="arrow" d="M352 56 H398"/>
+    <path class="dash" d="M352 44 C470 4 576 4 634 44"/>
+    <path class="dash" d="M352 70 C540 136 784 136 870 70"/>
   </g>
 
-  <g transform="translate(54 834)">
-    <rect class="lane" x="0" y="0" width="128" height="66" rx="10" />
-    <text class="laneText" x="64" y="28" text-anchor="middle">执行复盘</text>
-    <text class="nodeDesc" x="64" y="48" text-anchor="middle">详情查阅</text>
+  <g transform="translate(54 568)">
+    <rect class="lane" x="0" y="0" width="128" height="120" rx="10"/>
+    <text class="laneText" x="64" y="54" text-anchor="middle">执行</text>
+    <text class="d" x="64" y="76" text-anchor="middle">匹配与下发</text>
+    <rect class="node blue" x="162" y="0" width="220" height="120" rx="10"/>
+    <text class="t" x="184" y="42">待执行</text>
+    <text class="d" x="184" y="66">尚未到计划开始时间</text>
+    <text class="d" x="184" y="88">不提供结束任务</text>
+    <rect class="node green" x="428" y="0" width="236" height="120" rx="10"/>
+    <text class="t" x="450" y="42">升级中</text>
+    <text class="d" x="450" y="66">匹配、下发、等待回执</text>
+    <text class="d" x="450" y="88">可结束任务</text>
+    <rect class="node green" x="710" y="0" width="250" height="120" rx="10"/>
+    <text class="t" x="732" y="42">已完成</text>
+    <text class="d" x="732" y="66">窗口结束 / 全部处理 / 达到上限</text>
+    <text class="d" x="732" y="88">终态，可复制重建</text>
+    <rect class="node orange" x="1006" y="0" width="220" height="120" rx="10"/>
+    <text class="t" x="1028" y="42">已结束</text>
+    <text class="d" x="1028" y="66">用户提前结束</text>
+    <text class="d" x="1028" y="88">停止新增匹配和下发</text>
+    <path class="arrow" d="M382 60 H428"/>
+    <path class="arrow" d="M664 60 H710"/>
+    <path class="dash" d="M664 78 C760 146 930 146 1006 78"/>
+  </g>
 
-    <rect class="node green" x="154" y="0" width="174" height="66" rx="10" />
-    <text class="nodeTitle" x="178" y="26">开始下发</text>
-    <text class="nodeDesc" x="178" y="47">升级中</text>
-
-    <rect class="node blue" x="374" y="0" width="304" height="66" rx="10" />
-    <text class="nodeTitle" x="398" y="26">详情查阅</text>
-    <text class="nodeDesc" x="398" y="47">概览、异常分类、设备列表、流转明细</text>
-
-    <rect class="node orange" x="724" y="0" width="190" height="66" rx="10" />
-    <text class="nodeTitle" x="748" y="26">手动结束</text>
-    <text class="nodeDesc" x="748" y="47">已结束</text>
-
-    <rect class="node green" x="960" y="0" width="190" height="66" rx="10" />
-    <text class="nodeTitle" x="984" y="26">周期结束</text>
-    <text class="nodeDesc" x="984" y="47">已完成</text>
-
-    <path class="arrow" d="M328 33 H374" />
-    <path class="arrow" d="M678 33 H724" />
-    <path class="arrow" d="M914 33 H960" />
-    <path class="arrow" d="M846 -36 V0" />
+  <g transform="translate(54 730)">
+    <rect class="lane" x="0" y="0" width="128" height="104" rx="10"/>
+    <text class="laneText" x="64" y="46" text-anchor="middle">详情复盘</text>
+    <text class="d" x="64" y="68" text-anchor="middle">按状态展示</text>
+    <rect class="node blue" x="162" y="0" width="260" height="104" rx="10"/>
+    <text class="t" x="184" y="38">非执行态</text>
+    <text class="d" x="184" y="62">只展示任务配置和流转记录</text>
+    <text class="d" x="184" y="82">升级明细为空态</text>
+    <rect class="node green" x="468" y="0" width="300" height="104" rx="10"/>
+    <text class="t" x="490" y="38">执行态和终态</text>
+    <text class="d" x="490" y="62">展示升级概览、异常分类、设备列表</text>
+    <text class="d" x="490" y="82">指定版本按分发范围 tab 查看</text>
+    <rect class="node gray" x="814" y="0" width="250" height="104" rx="10"/>
+    <text class="t" x="836" y="38">终态操作</text>
+    <text class="d" x="836" y="62">已完成 / 已结束 / 已驳回 / 已失效</text>
+    <text class="d" x="836" y="82">仅详情、复制重建</text>
   </g>
 </svg>
