@@ -6131,6 +6131,30 @@ tbody tr:hover .sticky-action-col {
   line-height: 1.4;
 }
 
+.publish-flow-note p,
+.device-detail-note p {
+  margin: 0;
+  color: #5f6b7d;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.device-detail-note {
+  margin: -2px 0 14px;
+  padding: 12px 14px;
+  border: 1px solid #e7edf6;
+  border-radius: 6px;
+  background: #f8fbff;
+}
+
+.device-detail-note strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #172033;
+  font-size: 13px;
+}
+
 .publish-flow-list {
   display: grid;
   gap: 12px;
