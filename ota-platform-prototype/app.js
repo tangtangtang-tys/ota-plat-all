@@ -224,6 +224,12 @@ const firmwareVersions = [
   { version: "10.176.42", count: 664, diffReady: false, note: "整包可跨版本升级" },
 ];
 
+const targetVersionProductLines = {
+  "23.422.209.17": "IPC",
+  "23.110.105.46": "IPC",
+  "10.176.46": "IPC",
+};
+
 const regionScopeOptionsByTopRegion = {
   中国: [
     "中国全部",
@@ -1572,6 +1578,47 @@ function generateSyncBatchId() {
   return `SYNC-${date}-${String(existing).padStart(4, "0")}`;
 }
 
+function productLineForVersion(version = state.form.targetVersion) {
+  return targetVersionProductLines[version] || "";
+}
+
+function renderProductLineTag(version = state.form.targetVersion) {
+  const productLine = productLineForVersion(version);
+  return `<span class="product-line-tag ${productLine ? "" : "muted"}">所属产线：${escapeHtml(productLine || "-")}</span>`;
+}
+
+function renderVersionWithProductLine(version = state.form.targetVersion, options = {}) {
+  const safeVersion = escapeHtml(version || "-");
+  const versionContent = options.link
+    ? `<button class="link-btn" type="button">${safeVersion}</button>`
+    : `<span>${safeVersion}</span>`;
+  return `<span class="version-product-line">${versionContent}${renderProductLineTag(version)}</span>`;
+}
+
+function importFileNameForTask(task = null) {
+  if (task?.importFileName) return task.importFileName;
+  if (task?.sourceScope) {
+    const match = String(task.sourceScope).match(/已导入设备清单[:：]\s*(.+)$/);
+    if (match?.[1]) return match[1];
+  }
+  return "ipc_hangzhou_20260601.xlsx";
+}
+
+function importFileAvailableForTask(task = null) {
+  return task?.importFileAvailable !== false;
+}
+
+function renderImportOriginalFileAction(detail) {
+  if (detail.method !== "文件导入") return "";
+  const disabled = !detail.importFileAvailable;
+  return `
+    <div class="import-source-file">
+      <span>${escapeHtml(detail.sourceScope || `已导入设备清单：${Number(detail.total || 0).toLocaleString()} 台`)}</span>
+      <button class="btn subtle" type="button" data-action="download-import-original" ${disabled ? "disabled title='原文件暂不可下载'" : ""}>${icon("download")}下载原文件</button>
+    </div>
+  `;
+}
+
 function publishCurrentTask() {
   const task = buildPublishedTask();
   state.createdTasks = [task, ...state.createdTasks.filter(item => item.id !== task.id)];
@@ -1607,6 +1654,7 @@ function buildPublishedTask() {
     maxDispatchTotal: state.strategy === "version" && state.quantityMode === "batch" ? maxDispatchTotal : "",
     packageType: state.packageType === "whole" ? "整包" : "差分包",
     targetVersion: state.form.targetVersion,
+    productLine: productLineForVersion(state.form.targetVersion),
     total,
     time: `${state.taskStartAt}~${state.taskEndAt}`,
     result: null,
@@ -1624,6 +1672,8 @@ function buildPublishedTask() {
     strategyCondition: strategyConditionRecord(),
     sourceScope: publishedTaskSourceScope(selectedVersionText),
     sourceVersions: [...state.selectedVersions],
+    importFileName: state.strategy === "file" ? (state.uploadFileName || "20.121.102.29.csv") : "",
+    importFileAvailable: state.strategy === "file",
     syncBatchId: "",
     syncRegions: null,
     isLocal: true,
@@ -2010,8 +2060,9 @@ function renderBasicInfoStep() {
       ${renderRequirementNote("PRD 03", "基础信息必填规则", [
         "任务名称、目标固件版本、任务起止时间、任务升级说明均为必填。",
         "基本任务步骤不展示大区选择；指定版本的大区选择在策略配置步骤完成。",
+        "目标固件版本选择后自动带出所属产线，所属产线不可编辑。",
         "过去日期不可选；默认开始时间为当前时间后 5 分钟。",
-        "基础信息入库字段包含 taskName、targetVersion、taskStartAt、taskEndAt、description。",
+        "基础信息入库字段包含 taskName、targetVersion、productLine、taskStartAt、taskEndAt、description。",
       ])}
       <div class="form-grid element-form basic-info-form">
         <label class="field-stack basic-name-field ${state.errors.taskName ? "has-error" : ""}">
@@ -2034,11 +2085,14 @@ function renderBasicInfoStep() {
             "切换整包/差分包时需展示对应版本可用状态，已是目标版本的设备不进入升级范围。",
           ])}
           <span><span class="required">*</span> 目标固件版本</span>
-          <select class="select" aria-label="目标固件版本" data-field="targetVersion">
-            <option value="23.422.209.17" ${state.form.targetVersion === "23.422.209.17" ? "selected" : ""}>${state.packageType === "diff" ? "23.422.209.17（差分包生成成功）" : "23.422.209.17（已上架）"}</option>
-            <option>23.110.105.46</option>
-            <option>10.176.46</option>
-          </select>
+          <div class="target-version-inline">
+            <select class="select" aria-label="目标固件版本" data-field="targetVersion">
+              <option value="23.422.209.17" ${state.form.targetVersion === "23.422.209.17" ? "selected" : ""}>${state.packageType === "diff" ? "23.422.209.17（差分包生成成功）" : "23.422.209.17（已上架）"}</option>
+              <option value="23.110.105.46" ${state.form.targetVersion === "23.110.105.46" ? "selected" : ""}>23.110.105.46</option>
+              <option value="10.176.46" ${state.form.targetVersion === "10.176.46" ? "selected" : ""}>10.176.46</option>
+            </select>
+            ${renderProductLineTag()}
+          </div>
           <em class="field-help">已是目标版本的设备不会进入升级范围。</em>
           ${renderFieldError("targetVersion")}
         </label>
@@ -2868,6 +2922,7 @@ function taskDetailData(status, task = null) {
     startAt: taskStartFromRow(task) || "2026-06-10 09:00:00",
     endAt: taskEndFromRow(task) || "2026-06-17 09:00:00",
     targetVersion: task?.targetVersion || "23.422.209.17",
+    productLine: task?.productLine || productLineForVersion(task?.targetVersion || "23.422.209.17") || "IPC",
     method: useTaskConfig ? task.method : modeConfig.method,
     packageType: useTaskConfig ? task.packageType : modeConfig.packageType,
     total: useTaskConfig && task?.total ? Number(task.total) : (Number(modeConfig.total) || 6505),
@@ -2875,6 +2930,8 @@ function taskDetailData(status, task = null) {
     desc: useTaskConfig && task?.desc ? task.desc : modeConfig.desc,
     sourceScope: useTaskConfig && task?.sourceScope ? task.sourceScope : modeConfig.sourceScope,
     sourceVersions: useTaskConfig && task?.sourceVersions?.length ? task.sourceVersions : (modeConfig.sourceVersions || []),
+    importFileName: useTaskConfig ? importFileNameForTask(task) : modeConfig.importFileName || "ipc_hangzhou_20260601.xlsx",
+    importFileAvailable: useTaskConfig ? importFileAvailableForTask(task) : true,
     condition: useTaskConfig && task?.condition ? task.condition : modeConfig.condition,
     strategyCondition: useTaskConfig && task?.strategyCondition ? task.strategyCondition : { enabled: false, text: "未配置" },
     dispatchRegion: dispatchRegionSummary(dispatchRegions),
@@ -3017,6 +3074,7 @@ function detailModeConfig() {
       method: "文件导入",
       total: 6505,
       sourceScope: "已导入设备清单：6505 台",
+      importFileName: "ipc_hangzhou_20260601.xlsx",
     },
     manual: {
       ...common,
@@ -3124,7 +3182,7 @@ function renderDetailHero(detail) {
         ${actions ? `<div class="task-overview-actions">${actions}</div>` : ""}
       </div>
       <section class="task-kpi-grid">
-        ${renderTaskKpi("目标版本", detail.targetVersion, "blue")}
+        ${renderTaskKpi("目标版本", renderVersionWithProductLine(detail.targetVersion), "blue")}
         ${renderTaskKpi("任务时间", `${detail.startAt}<br />至 ${detail.endAt}`)}
         ${renderTaskKpi(detail.method === "指定版本" ? "升级区域" : "升级方式", detail.method === "指定版本" ? dispatchRegionSummary(detail.dispatchRegions) : "自动按设备大区")}
         ${renderTaskKpi("升级设备数", overviewDeviceScale(detail))}
@@ -3428,7 +3486,11 @@ function executionProgressText(detail, stats) {
 function renderTaskConditionPanel(detail) {
   const isVersionMode = isVersionFullDetailMode() || isVersionBatchDetailMode() || isVersionSyncDetailMode();
   const sourceTitle = isVersionMode ? "指定源版本" : "设备来源";
-  const sourceContent = isVersionMode ? renderTaskSourceVersions(detail, state.detailSourceExpanded ? Infinity : 4) : detail.sourceScope;
+  const sourceContent = isVersionMode
+    ? renderTaskSourceVersions(detail, state.detailSourceExpanded ? Infinity : 4)
+    : detail.method === "文件导入"
+      ? renderImportOriginalFileAction(detail)
+      : detail.sourceScope;
   const hasMore = isVersionMode && (detail.sourceVersions?.length || 0) > 4;
   const regionLabel = detail.method === "指定版本" ? "升级区域" : "升级方式";
   const regionContent = detail.method === "指定版本"
@@ -3459,7 +3521,7 @@ function overviewDeviceScale(detail) {
 function taskOverviewFields(detail) {
   const fields = [
     { label: "任务名称", icon: "log", value: detail.name, span: "wide" },
-    { label: "目标版本", icon: "layer", value: detail.targetVersion },
+    { label: "目标版本", icon: "layer", value: renderVersionWithProductLine(detail.targetVersion) },
     { label: "任务时间", icon: "clock", value: `${detail.startAt} ~ ${detail.endAt}`, span: "wide" },
     { label: detail.method === "指定版本" ? "升级区域" : "升级方式", icon: "map", value: detail.method === "指定版本" ? renderDispatchRegionTags(detail.dispatchRegions) : "按设备所属大区自动分发" },
     { label: "创建人", icon: "users", value: detail.creator },
@@ -4586,7 +4648,7 @@ function renderPublishResultModal() {
             <dt>任务名称</dt><dd>${escapeHtml(task?.name || state.form.taskName || "未命名任务")}</dd>
             <dt>升级方式</dt><dd>${task?.method || meta.short}</dd>
             <dt>升级包</dt><dd>${task?.packageType || (state.packageType === "whole" ? "整包" : "差分包")}</dd>
-            <dt>目标版本</dt><dd>${escapeHtml(task?.targetVersion || state.form.targetVersion)}</dd>
+            <dt>目标版本</dt><dd>${renderVersionWithProductLine(task?.targetVersion || state.form.targetVersion)}</dd>
             <dt>任务时间</dt><dd>${escapeHtml(taskStartFromRow(task) || state.taskStartAt)} ~ ${escapeHtml(taskEndFromRow(task) || state.taskEndAt)}</dd>
             <dt>${state.strategy === "version" ? "升级区域" : "升级方式"}</dt><dd class="preview-tag-list">${dispatchContent}</dd>
             <dt>设备规模</dt><dd>${finishDeviceScaleText()}</dd>
@@ -4719,7 +4781,7 @@ function renderPreviewContent(compact) {
         <div class="info-grid preview-basic-grid">
           <dl>
             <dt>任务名称：</dt><dd>${state.form.taskName || "-"}</dd>
-            <dt>目标固件版本：</dt><dd><button class="link-btn">${state.form.targetVersion || "-"}</button></dd>
+            <dt>目标固件版本：</dt><dd>${renderVersionWithProductLine(state.form.targetVersion, { link: true })}</dd>
             <dt>${state.strategy === "version" ? "升级区域：" : "升级方式："}</dt><dd class="preview-tag-list">${dispatchText}</dd>
             <dt>任务起止时间：</dt><dd>${state.taskStartAt || "-"} ~ ${state.taskEndAt || "-"}</dd>
             <dt>升级说明：</dt><dd class="preview-wide-value">${state.form.upgradeDesc || "-"}</dd>
@@ -5261,6 +5323,7 @@ function validateStep(step) {
   if (step === 1) {
     if (!state.form.taskName.trim()) errors.taskName = "请输入任务名称";
     if (!state.form.targetVersion) errors.targetVersion = "请选择目标固件版本";
+    else if (!productLineForVersion(state.form.targetVersion)) errors.targetVersion = "当前目标固件版本未配置所属产线，请先维护版本产线归属";
     if (!state.taskStartAt || !state.taskEndAt) errors.taskTime = "请选择任务起止时间";
     if (!state.form.upgradeDesc.trim()) errors.upgradeDesc = "请输入任务升级说明";
     if (!state.packageType) errors.strategy = "请选择升级包类型";
@@ -5282,6 +5345,7 @@ function validatePublishReady() {
   const errors = {};
   if (!state.form.taskName.trim()) errors.taskName = "请输入任务名称";
   if (!state.form.targetVersion) errors.targetVersion = "请选择目标固件版本";
+  else if (!productLineForVersion(state.form.targetVersion)) errors.targetVersion = "当前目标固件版本未配置所属产线，请先维护版本产线归属";
   if (!state.taskStartAt || !state.taskEndAt) errors.taskTime = "请选择任务起止时间";
   if (!state.form.upgradeDesc.trim()) errors.upgradeDesc = "请输入任务升级说明";
   if (!state.packageType) errors.strategy = "请选择升级包类型";
@@ -5825,6 +5889,9 @@ function handleAction(action, el) {
     }
     case "download-exception":
       showToast("异常明细已生成");
+      break;
+    case "download-import-original":
+      showToast("原始设备清单已生成，浏览器将开始下载");
       break;
     case "export-device-list":
       handleDeviceExport(el.dataset.exportScope || "current");
