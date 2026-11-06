@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="OTA升级管理系统产品介绍与业务协作说明">
+  <title>OTA升级管理系统｜产品介绍</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080b10;
+      --bg-soft: #101721;
+      --panel: rgba(19, 28, 40, .82);
+      --panel-strong: #162332;
+      --line: rgba(180, 208, 231, .18);
+      --line-soft: rgba(180, 208, 231, .10);
+      --text: #f4f8fc;
+      --muted: #a9b8c8;
+      --faint: #74859a;
+      --cyan: #55d7ff;
+      --cyan-soft: rgba(85, 215, 255, .12);
+      --green: #73e0ad;
+      --yellow: #ffd479;
+      --red: #ff839b;
+      --max: 1240px;
+      --radius: 16px;
+      --shadow: 0 26px 70px rgba(0, 0, 0, .30);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      color: var(--text);
+      background: linear-gradient(180deg, #070a0f 0%, #0b121a 50%, #090d13 100%);
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      letter-spacing: 0;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .42;
+      background-image: linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: linear-gradient(to bottom, #000, transparent 78%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    .progress { position: fixed; z-index: 50; top: 0; left: 0; height: 3px; width: 100%; transform: scaleX(0); transform-origin: left; background: var(--cyan); box-shadow: 0 0 20px rgba(85,215,255,.55); }
+    .shell { position: relative; z-index: 1; }
+    .nav {
+      position: fixed; z-index: 40; top: 16px; left: 50%; transform: translateX(-50%);
+      width: min(1160px, calc(100% - 32px)); min-height: 62px; padding: 10px 14px 10px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      border: 1px solid var(--line); border-radius: 999px; background: rgba(7, 11, 16, .84);
+      backdrop-filter: blur(18px); box-shadow: 0 16px 50px rgba(0,0,0,.24);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 760; white-space: nowrap; }
+    .brand-mark { width: 27px; height: 27px; display: grid; place-items: center; border: 1px solid rgba(85,215,255,.6); border-radius: 8px; color: var(--cyan); font-size: 12px; font-weight: 800; box-shadow: inset 0 0 14px rgba(85,215,255,.13); }
+    .nav-links { display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-links a { padding: 7px 10px; border-radius: 10px; color: var(--muted); font-size: 12px; white-space: nowrap; transition: .18s ease; }
+    .nav-links a:hover, .nav-links a.active { color: var(--text); background: var(--cyan-soft); }
+    .hero { min-height: 650px; display: grid; align-items: center; padding: 108px 24px 56px; }
+    .hero-inner, .content { width: min(var(--max), 100%); margin: 0 auto; }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, .92fr); gap: clamp(32px, 6vw, 86px); align-items: center; }
+    .kicker, .tag { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: rgba(255,255,255,.04); }
+    .kicker { padding: 8px 12px; margin-bottom: 20px; font-size: 12px; font-weight: 700; }
+    .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 0 6px rgba(85,215,255,.10); }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 660px; margin-bottom: 18px; font-size: clamp(34px, 4.2vw, 50px); font-weight: 740; line-height: 1.12; letter-spacing: 0; }
+    h1 span { display: block; margin-top: 7px; color: var(--cyan); font-size: .82em; line-height: 1.12; }
+    .lead { max-width: 620px; margin-bottom: 20px; color: var(--muted); font-size: clamp(14px, 1.45vw, 16px); }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; padding: 0 15px; border: 1px solid var(--line); border-radius: 10px; color: var(--text); background: rgba(255,255,255,.05); cursor: pointer; transition: .18s ease; }
+    .btn:hover { border-color: rgba(85,215,255,.56); background: rgba(85,215,255,.10); }
+    .btn.primary { border-color: transparent; color: #061018; background: var(--cyan); font-weight: 760; }
+    .btn.small { min-height: 34px; padding: 0 11px; font-size: 12px; }
+    .hero-note { max-width: 660px; padding: 11px 14px; border-left: 3px solid var(--yellow); color: #d8e0e9; background: rgba(255,212,121,.07); font-size: 12px; }
+    .hero-panel { position: relative; min-height: 430px; padding: 20px; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(145deg, rgba(22,35,50,.92), rgba(12,20,29,.90)); box-shadow: var(--shadow); overflow: hidden; }
+    .hero-panel::before { content: ""; position: absolute; inset: 18px; border: 1px solid rgba(85,215,255,.18); border-radius: 14px; pointer-events: none; }
+    .window-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 22px; color: var(--faint); font-size: 11px; }
+    .window-bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); }
+    .window-bar i:nth-child(2) { background: var(--yellow); }
+    .window-bar i:nth-child(3) { background: var(--green); }
+    .mock-title { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 22px 0 18px; }
+    .mock-title strong { font-size: 16px; }
+    .mock-title small { color: var(--faint); }
+    .mock-grid { display: grid; grid-template-columns: 1.25fr .75fr; gap: 12px; }
+    .mock-card { min-height: 108px; padding: 16px; border: 1px solid var(--line-soft); border-radius: 12px; background: rgba(255,255,255,.045); }
+    .mock-card.wide { grid-column: 1 / -1; min-height: 132px; }
+    .mock-card label { display: block; margin-bottom: 10px; color: var(--faint); font-size: 11px; }
+    .mock-card b { font-size: 22px; line-height: 1; }
+    .bar { height: 8px; margin-top: 16px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.08); }
+    .bar span { display: block; height: 100%; width: 72%; background: var(--cyan); }
+    .mini-list { display: grid; gap: 8px; margin-top: 15px; }
+    .mini-row { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; }
+    .mini-row b { color: var(--text); font-size: 12px; }
+    .section { padding: 62px 24px; scroll-margin-top: 90px; }
+    .section + .section { border-top: 1px solid var(--line-soft); }
+    .section-head { display: flex; justify-content: space-between; gap: 24px; align-items: start; margin-bottom: 24px; }
+    .eyebrow { margin-bottom: 9px; color: var(--cyan); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    h2 { max-width: 780px; margin-bottom: 8px; font-size: clamp(23px, 2.7vw, 30px); font-weight: 720; line-height: 1.24; }
+    .summary { max-width: 760px; color: var(--muted); font-size: 14px; }
+    .step-index { flex: 0 0 auto; color: rgba(85,215,255,.65); font-size: 34px; font-weight: 760; line-height: 1; }
+    .grid { display: grid; gap: 14px; }
+    .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .panel, .tile, .compare-card, .role-card, .step-card, .qa, .table-wrap { border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .panel, .tile, .compare-card, .role-card, .step-card { padding: 22px; }
+    .tile h3, .panel h3, .compare-card h3, .role-card h3, .step-card h3 { margin-bottom: 7px; font-size: 16px; font-weight: 700; }
+    .tile p, .panel p, .compare-card p, .role-card p, .step-card p { margin-bottom: 0; color: var(--muted); font-size: 14px; }
+    .tile .story { margin: 14px 0 13px; padding: 11px 12px; border-left: 2px solid var(--cyan); color: #d8e4ef; background: rgba(85,215,255,.06); font-size: 13px; line-height: 1.65; }
+    .tile:nth-child(2) .story { border-left-color: var(--yellow); background: rgba(255,212,121,.06); }
+    .tile:nth-child(3) .story { border-left-color: var(--green); background: rgba(115,224,173,.06); }
+    .story-label { display: block; margin-bottom: 3px; color: var(--cyan); font-size: 11px; font-weight: 750; }
+    .tile:nth-child(2) .story-label { color: var(--yellow); }
+    .tile:nth-child(3) .story-label { color: var(--green); }
+    .tile strong, .panel strong, .compare-card strong, .role-card strong { color: var(--text); }
+    .tag { padding: 4px 9px; font-size: 11px; }
+    .tag.cyan { border-color: rgba(85,215,255,.4); color: var(--cyan); background: var(--cyan-soft); }
+    .tag.green { border-color: rgba(115,224,173,.36); color: var(--green); background: rgba(115,224,173,.08); }
+    .tag.yellow { border-color: rgba(255,212,121,.36); color: var(--yellow); background: rgba(255,212,121,.08); }
+    .tag.red { border-color: rgba(255,131,155,.36); color: var(--red); background: rgba(255,131,155,.08); }
+    .flow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; margin: 30px 0; }
+    .flow-node { position: relative; min-height: 130px; padding: 17px 15px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(255,255,255,.035); }
+    .flow-node:first-child { border-left: 1px solid var(--line); border-radius: 14px 0 0 14px; }
+    .flow-node:last-child { border-right: 1px solid var(--line); border-radius: 0 14px 14px 0; }
+    .flow-node::after { content: "→"; position: absolute; z-index: 2; top: 50%; right: -12px; transform: translateY(-50%); color: var(--cyan); font-size: 20px; }
+    .flow-node:last-child::after { display: none; }
+    .flow-node strong { display: block; margin-bottom: 7px; font-size: 14px; }
+    .flow-node span { color: var(--muted); font-size: 12px; }
+    .visual-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 14px; margin-top: 18px; }
+    .visual-card { position: relative; overflow: hidden; padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(145deg, rgba(21, 35, 50, .88), rgba(10, 18, 27, .92)); }
+    .visual-card h3 { margin-bottom: 6px; font-size: 18px; }
+    .visual-card > p { margin-bottom: 18px; color: var(--muted); font-size: 13px; }
+    .visual-card figure { margin: 0; }
+    .visual-card img { display: block; width: 100%; height: auto; border: 1px solid var(--line-soft); border-radius: 10px; background: #f7fafc; }
+    .loop-visual { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; align-items: center; min-height: 205px; }
+    .loop-node { position: relative; min-height: 78px; display: grid; place-items: center; padding: 11px 8px; border: 1px solid rgba(85,215,255,.34); border-radius: 12px; color: var(--text); background: rgba(85,215,255,.08); text-align: center; }
+    .loop-node strong { display: block; font-size: 13px; }
+    .loop-node small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .loop-node:nth-child(2), .loop-node:nth-child(5) { border-color: rgba(115,224,173,.34); background: rgba(115,224,173,.08); }
+    .loop-node:nth-child(3), .loop-node:nth-child(4) { border-color: rgba(255,212,121,.34); background: rgba(255,212,121,.08); }
+    .loop-arrow { color: var(--cyan); font-size: 19px; text-align: center; }
+    .loop-center { grid-column: 2; grid-row: 2; min-height: 88px; border-color: rgba(255,255,255,.26); background: rgba(255,255,255,.08); }
+    .loop-center::after { content: "任务 ID 贯穿全程"; display: block; margin-top: 3px; color: var(--faint); font-size: 10px; }
+    .split-visual { display: grid; grid-template-columns: 1fr 28px 1fr; gap: 9px; align-items: center; min-height: 205px; }
+    .split-source, .split-target { min-height: 110px; display: grid; align-content: center; gap: 7px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.045); }
+    .split-source strong, .split-target strong { font-size: 13px; }
+    .split-source span, .split-target span { color: var(--muted); font-size: 11px; }
+    .split-target { border-color: rgba(85,215,255,.3); }
+    .split-target span { padding: 5px 7px; border-radius: 7px; background: rgba(85,215,255,.08); }
+    .split-arrow { color: var(--cyan); font-size: 24px; text-align: center; }
+    .role-visual { position: relative; min-height: 245px; display: grid; place-items: center; }
+    .role-orbit { width: 148px; height: 148px; display: grid; place-items: center; border: 1px solid rgba(85,215,255,.45); border-radius: 50%; background: radial-gradient(circle, rgba(85,215,255,.16), rgba(85,215,255,.03) 64%, transparent 65%); box-shadow: 0 0 40px rgba(85,215,255,.10); text-align: center; }
+    .role-orbit strong { display: block; font-size: 16px; }
+    .role-orbit small { display: block; color: var(--muted); font-size: 10px; }
+    .orbit-role { position: absolute; min-width: 68px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: rgba(255,255,255,.06); font-size: 11px; text-align: center; }
+    .orbit-role:nth-child(1) { top: 8px; left: 50%; transform: translateX(-50%); }
+    .orbit-role:nth-child(2) { top: 68px; right: 2px; }
+    .orbit-role:nth-child(3) { bottom: 8px; right: 22px; }
+    .orbit-role:nth-child(4) { bottom: 8px; left: 22px; }
+    .orbit-role:nth-child(5) { top: 68px; left: 2px; }
+    .asset-caption { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; color: var(--faint); font-size: 11px; }
+    .bullet-list { display: grid; gap: 9px; padding-left: 18px; margin: 12px 0 0; color: var(--muted); font-size: 14px; }
+    .bullet-list li::marker { color: var(--cyan); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 680px; font-size: 13px; }
+    th, td { padding: 13px 15px; border-bottom: 1px solid var(--line-soft); text-align: left; vertical-align: top; }
+    th { color: var(--cyan); background: rgba(85,215,255,.06); font-size: 12px; white-space: nowrap; }
+    tr:last-child td { border-bottom: 0; }
+    td { color: var(--muted); }
+    td:first-child { color: var(--text); font-weight: 700; }
+    .note { padding: 15px 17px; border-left: 3px solid var(--cyan); color: var(--muted); background: rgba(85,215,255,.06); font-size: 13px; }
+    .note.warning { border-color: var(--yellow); background: rgba(255,212,121,.06); }
+    .screenshot-shell { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 16px; align-items: start; }
+    .shot-tabs { display: grid; gap: 8px; }
+    .shot-tab, .demo-tab, .role-filter { width: 100%; padding: 12px 13px; border: 1px solid var(--line); border-radius: 10px; color: var(--muted); background: rgba(255,255,255,.035); text-align: left; cursor: pointer; }
+    .shot-tab:hover, .shot-tab.active, .demo-tab:hover, .demo-tab.active, .role-filter:hover, .role-filter.active { border-color: rgba(85,215,255,.52); color: var(--text); background: var(--cyan-soft); }
+    .shot-tab b { display: block; margin-bottom: 2px; font-size: 13px; }
+    .shot-tab span { font-size: 11px; }
+    .shot-view { padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: #071019; }
+    .shot-view img, .visual-card img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line-soft); cursor: zoom-in; }
+    .shot-caption { display: flex; justify-content: space-between; gap: 16px; padding: 12px 4px 2px; color: var(--muted); font-size: 12px; }
+    .lightbox { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 24px; }
+    .lightbox[hidden] { display: none; }
+    .lightbox-backdrop { position: absolute; inset: 0; background: rgba(2, 5, 9, .88); backdrop-filter: blur(8px); }
+    .lightbox-dialog { position: relative; z-index: 1; width: min(1380px, 100%); height: min(900px, 100%); display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: #09121c; box-shadow: 0 30px 90px rgba(0,0,0,.58); }
+    .lightbox-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 11px 14px; border-bottom: 1px solid var(--line); background: rgba(16, 25, 36, .96); }
+    .lightbox-title { min-width: 0; overflow: hidden; color: var(--text); font-size: 13px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .lightbox-actions { display: flex; align-items: center; gap: 7px; flex: 0 0 auto; }
+    .lightbox-actions button { min-width: 34px; height: 32px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: rgba(255,255,255,.05); cursor: pointer; }
+    .lightbox-actions button:hover { border-color: rgba(85,215,255,.55); color: var(--text); background: var(--cyan-soft); }
+    .lightbox-actions .zoom-value { min-width: 52px; border-color: transparent; color: var(--cyan); background: transparent; cursor: default; text-align: center; }
+    .lightbox-viewport { min-height: 0; overflow: auto; display: grid; place-items: center; padding: 22px; background: radial-gradient(circle at center, rgba(85,215,255,.07), transparent 58%); }
+    .lightbox-viewport img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; border: 1px solid var(--line-soft); border-radius: 8px; box-shadow: 0 14px 36px rgba(0,0,0,.32); transform-origin: center center; transition: transform .16s ease; }
+    body.lightbox-open { overflow: hidden; }
+    .strategy-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+    .strategy-tab { padding: 9px 13px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: transparent; cursor: pointer; }
+    .strategy-tab.active { color: #061018; border-color: var(--cyan); background: var(--cyan); font-weight: 750; }
+    .strategy-panel { display: none; }
+    .strategy-panel.active { display: block; }
+    .demo { display: grid; grid-template-columns: 245px minmax(0, 1fr); gap: 18px; }
+    .demo-tabs { display: grid; gap: 8px; align-content: start; }
+    .demo-tab { text-align: left; }
+    .demo-tab b { display: block; font-size: 13px; }
+    .demo-tab span { color: var(--faint); font-size: 11px; }
+    .demo-stage { min-height: 390px; padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(145deg, rgba(23,37,53,.9), rgba(10,17,25,.9)); }
+    .demo-stage h3 { margin-bottom: 5px; }
+    .demo-stage > p { color: var(--muted); font-size: 13px; }
+    .demo-content { display: grid; grid-template-columns: 1.1fr .9fr; gap: 12px; margin-top: 20px; }
+    .demo-box { padding: 17px; border: 1px solid var(--line-soft); border-radius: 12px; background: rgba(255,255,255,.04); }
+    .demo-box h4 { margin: 0 0 10px; font-size: 13px; }
+    .demo-box p { margin: 0; color: var(--muted); font-size: 13px; }
+    .status-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+    .status-btn { padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: transparent; cursor: pointer; font-size: 12px; }
+    .status-btn.active { color: var(--text); border-color: rgba(85,215,255,.55); background: var(--cyan-soft); }
+    .demo-result { display: flex; gap: 12px; align-items: center; margin-top: 14px; padding: 12px; border-radius: 10px; background: rgba(85,215,255,.07); }
+    .result-number { color: var(--cyan); font-size: 28px; font-weight: 800; line-height: 1; }
+    .result-copy { color: var(--muted); font-size: 12px; }
+    .role-filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .role-filter { width: auto; padding: 8px 12px; font-size: 12px; }
+    .role-card[hidden] { display: none; }
+    .role-card .role-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .role-mark { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(85,215,255,.32); border-radius: 10px; color: var(--cyan); font-weight: 800; }
+    .qa { overflow: hidden; }
+    .qa + .qa { margin-top: 8px; }
+    .qa summary { padding: 16px 18px; color: var(--text); cursor: pointer; font-weight: 700; list-style: none; }
+    .qa summary::-webkit-details-marker { display: none; }
+    .qa summary::after { content: "+"; float: right; color: var(--cyan); font-size: 20px; line-height: 1; }
+    .qa[open] summary::after { content: "−"; }
+    .qa p { padding: 0 18px 17px; margin: 0; color: var(--muted); font-size: 13px; }
+    .footer { padding: 45px 24px 70px; border-top: 1px solid var(--line-soft); color: var(--faint); text-align: center; font-size: 12px; }
+    .footer strong { color: var(--text); }
+    @media (max-width: 900px) {
+      .nav { border-radius: 16px; align-items: flex-start; flex-direction: column; }
+      .hero { padding-top: 160px; }
+      .hero-grid, .grid.two, .demo, .screenshot-shell, .visual-grid { grid-template-columns: 1fr; }
+      .hero-panel { min-height: 360px; }
+      .flow { grid-template-columns: 1fr; gap: 8px; }
+      .flow-node, .flow-node:first-child, .flow-node:last-child { min-height: 0; border: 1px solid var(--line); border-radius: 12px; }
+      .flow-node::after { content: "↓"; top: auto; right: 50%; bottom: -17px; transform: translateX(50%); }
+      .flow-node:last-child::after { display: none; }
+      .section { padding: 68px 18px; }
+      .hero { padding-left: 18px; padding-right: 18px; }
+    }
+    @media (max-width: 620px) {
+      h1 { font-size: 34px; }
+      .grid.three, .demo-content, .mock-grid, .loop-visual { grid-template-columns: 1fr; }
+      .mock-card.wide { grid-column: auto; }
+      .loop-center { grid-column: auto; grid-row: auto; }
+      .loop-arrow { transform: rotate(90deg); }
+      .split-visual { grid-template-columns: 1fr; }
+      .split-arrow { transform: rotate(90deg); }
+      .section-head { display: block; }
+      .step-index { display: block; margin-top: 18px; font-size: 30px; }
+      .nav { width: calc(100% - 20px); top: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <div class="shell">
+    <nav class="nav" aria-label="资料导航">
+      <a class="brand" href="#top"><span class="brand-mark">OTA</span><span>产品介绍</span></a>
+      <div class="nav-links">
+        <a href="#overview">产品定位</a>
+        <a href="#value">产品价值</a>
+        <a href="#features">核心能力</a>
+        <a href="#business">核心流程</a>
+        <a href="#scenarios">典型场景</a>
+        <a href="#summary">产品总结</a>
+      </div>
+    </nav>
+
+    <header class="hero" id="top">
+      <div class="hero-inner hero-grid">
+        <div>
+          <div class="kicker"><span class="pulse"></span>OTA PRODUCT OVERVIEW</div>
+          <h1>OTA升级管理系统<br><span>让每次设备升级更可控</span></h1>
+          <p class="lead">围绕固件、设备范围、执行过程和升级结果，建立统一的升级管理链路。</p>
+          <div class="hero-actions">
+            <a class="btn primary" href="#value">了解产品价值 →</a>
+            <a class="btn" href="./ota-platform-prototype/#task-list" target="_blank" rel="noreferrer">查看产品演示 ↗</a>
+          </div>
+          <div class="hero-note"><strong>产品价值：</strong>OTA 不只是远程下发固件，更让每一次升级都能明确目标、控制影响、保留证据并形成完整闭环。</div>
+        </div>
+        <div class="hero-panel" aria-label="OTA任务监控示意">
+          <div class="window-bar"><i></i><i></i><i></i><span>OTA / task-observability / training-view</span></div>
+          <div class="mock-title"><div><small>任务执行概览 · 示例任务</small><strong>杭州低功耗 + 香港灰度升级</strong></div><span class="tag cyan">升级中</span></div>
+          <div class="mock-grid">
+            <div class="mock-card"><label>升级范围</label><b>多大区</b><div class="bar"><span></span></div></div>
+            <div class="mock-card"><label>结果追踪</label><b>可追溯</b><div class="mini-list"><div class="mini-row"><span>成功</span><b>按设备查看</b></div><div class="mini-row"><span>异常</span><b>分类定位</b></div></div></div>
+            <div class="mock-card wide"><label>当前协作焦点</label><div class="mini-list"><div class="mini-row"><span>运营</span><b>关注分发范围与批次</b></div><div class="mini-row"><span>测试</span><b>关注失败原因与回归结果</b></div><div class="mini-row"><span>客服</span><b>关注用户反馈与设备清单</b></div></div></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="section" id="overview">
+        <div class="content">
+          <div class="section-head"><div><div class="eyebrow">01 / PRODUCT POSITIONING</div><h2>为什么需要 OTA 升级管理系统</h2><p class="summary">当设备数量、产品线和区域持续增长，升级不再是一次人工操作，而是一个需要被治理的业务过程。</p></div><span class="step-index">01</span></div>
+          <div class="grid three">
+            <article class="tile"><span class="tag cyan">企业问题</span><h3>设备多，人工升级难以规模化</h3><p>设备分布在不同区域和产品线，依赖现场操作或重复沟通，升级效率和一致性难以保障。</p></article>
+            <article class="tile"><span class="tag green">产品定位</span><h3>把固件发布变成任务化管理</h3><p>围绕目标版本、设备范围、升级策略和执行窗口，形成统一的任务对象和状态体系。</p></article>
+            <article class="tile"><span class="tag yellow">统一协作</span><h3>让目标、执行与结果保持一致</h3><p>围绕同一个任务 ID 连接版本、设备、执行状态和结果信息，让各参与方基于同一事实协作。</p></article>
+          </div>
+          <div class="flow" aria-label="OTA价值链路">
+            <div class="flow-node"><strong>固件准备</strong><span>目标版本、升级包和产线条件</span></div>
+            <div class="flow-node"><strong>任务配置</strong><span>范围、策略、时间与说明</span></div>
+            <div class="flow-node"><strong>审批发布</strong><span>按策略进入审批或直接发布</span></div>
+            <div class="flow-node"><strong>设备执行</strong><span>下发、下载、升级和结果上报</span></div>
+            <div class="flow-node"><strong>结果复盘</strong><span>进度、异常、明细与反馈闭环</span></div>
+          </div>
+          <div class="visual-grid">
+            <article class="visual-card">
+              <span class="tag cyan">业务链路</span>
+              <h3>一项升级任务如何形成闭环</h3>
+              <p>用一个任务 ID 把固件、策略、审批、设备和结果串起来，先建立整体画面，再进入页面细节。</p>
+              <div class="loop-visual" aria-label="OTA升级闭环插画">
+                <div class="loop-node"><div><strong>固件</strong><small>目标版本</small></div></div>
+                <div class="loop-arrow">→</div>
+                <div class="loop-node"><div><strong>任务</strong><small>范围与策略</small></div></div>
+                <div class="loop-arrow">↘</div>
+                <div class="loop-node loop-center"><div><strong>OTA</strong><small>统一任务链路</small></div></div>
+                <div class="loop-arrow">↙</div>
+                <div class="loop-node"><div><strong>结果</strong><small>成功与异常</small></div></div>
+                <div class="loop-arrow">←</div>
+                <div class="loop-node"><div><strong>设备</strong><small>下载与执行</small></div></div>
+              </div>
+            </article>
+            <article class="visual-card">
+              <span class="tag green">任务状态</span>
+              <h3>完整状态流转图</h3>
+              <p>呈现任务从草稿、审批、执行到完成、结束、驳回和失效的状态关系。</p>
+              <figure>
+                <img src="./docs/assets/ota-task-lifecycle-flow.svg" alt="OTA升级任务状态流转流程图">
+                <figcaption class="asset-caption"><span>任务生命周期</span><span>流程说明</span></figcaption>
+              </figure>
+            </article>
+          </div>
+          <div class="note warning"><strong>产品差异化：</strong>既支持按版本和范围进行批量升级，也支持按固定清单或少量设备进行定向处理，并将不同方式统一纳入同一条任务链路。</div>
+        </div>
+      </section>
+
+      <section class="section" id="value">
+        <div class="content">
+          <div class="section-head"><div><div class="eyebrow">02 / PRODUCT VALUE</div><h2>从一次下发到全过程升级管理</h2><p class="summary">系统把“能不能升级”延展为“为什么升级、影响谁、谁确认、执行到哪、结果如何”的完整链路。</p></div><span class="step-index">02</span></div>
+          <div class="grid three">
+            <article class="tile"><span class="tag cyan">效率</span><h3>减少重复创建与人工跟进</h3><p>多大区任务一次配置，固定清单按设备所属大区自动分发，减少切换区域、重复建任务和人工汇总。</p></article>
+            <article class="tile"><span class="tag yellow">风险</span><h3>在执行前控制升级影响面</h3><p>通过指定范围、源版本、灰度批次、任务上限和审批机制，把大规模升级拆成可确认、可控制的步骤。</p></article>
+            <article class="tile"><span class="tag green">治理</span><h3>让结果可以追踪和复盘</h3><p>任务状态、审批记录、设备结果、异常原因和分区明细形成可追溯记录，支持问题定位和后续决策。</p></article>
+          </div>
+          <div class="visual-grid">
+            <article class="visual-card">
+              <span class="tag cyan">产品差异</span>
+              <h3>从一次下发到全过程管理</h3>
+              <div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>关注维度</th><th>一次下发方式</th><th>OTA任务化管理</th></tr></thead><tbody><tr><td>升级范围</td><td>重点关注文件或指令是否发出</td><td>按版本、分发范围或设备清单明确目标对象</td></tr><tr><td>风险控制</td><td>通常需要结合其他方式控制执行节奏</td><td>发布前预检，执行中按批次和上限控制影响面</td></tr><tr><td>跨部门协作</td><td>需要通过多个记录协同</td><td>围绕同一任务 ID 共享目标、状态和结果</td></tr><tr><td>结果复盘</td><td>结果通常需要额外整理</td><td>按状态、分发范围、设备和异常原因查看</td></tr></tbody></table></div>
+            </article>
+            <article class="visual-card">
+              <span class="tag green">升级判断</span>
+              <h3>让每一次升级都有依据</h3>
+              <div class="loop-visual" aria-label="升级决策价值示意">
+                <div class="loop-node"><div><strong>目标</strong><small>解决什么问题</small></div></div>
+                <div class="loop-arrow">→</div>
+                <div class="loop-node"><div><strong>影响</strong><small>涉及哪些设备</small></div></div>
+                <div class="loop-arrow">↘</div>
+                <div class="loop-node loop-center"><div><strong>可控</strong><small>是否可审批、可执行、可复盘</small></div></div>
+                <div class="loop-arrow">↙</div>
+                <div class="loop-node"><div><strong>结果</strong><small>是否达到预期</small></div></div>
+                <div class="loop-arrow">←</div>
+                <div class="loop-node"><div><strong>证据</strong><small>状态与异常记录</small></div></div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="features">
+        <div class="content">
+          <div class="section-head"><div><div class="eyebrow">03 / CORE CAPABILITIES</div><h2>系统能力如何支撑业务目标</h2><p class="summary">产品围绕一次升级任务提供范围控制、风险控制、执行监控和结果追踪。</p></div><span class="step-index">03</span></div>
+          <div class="grid two">
+            <article class="panel"><span class="tag cyan">范围控制</span><h3>让升级对象可定义</h3><p>支持指定版本、文件导入和手动导入，分别应对动态匹配、固定清单和少量定向设备。</p></article>
+            <article class="panel"><span class="tag yellow">风险控制</span><h3>让发布前后都有判断依据</h3><p>通过目标版本、升级包、时间窗口、预检结果、审批和批次上限控制升级风险。</p></article>
+            <article class="panel"><span class="tag green">执行监控</span><h3>让过程状态可被共同查看</h3><p>任务状态、设备状态、成功率、失败原因和分区结果，为运营、测试、研发和客服提供同一事实来源。</p></article>
+            <article class="panel"><span class="tag cyan">结果治理</span><h3>让异常能够定位和复盘</h3><p>保留任务流转、操作记录、设备明细和异常分类，支持问题追踪、版本评估和后续决策。</p></article>
+          </div>
+          <div class="panel" style="margin-top:14px">
+            <h3>三种升级方式</h3>
+            <div class="strategy-tabs" role="tablist" aria-label="升级策略切换">
+              <button class="strategy-tab active" data-strategy="version" role="tab" aria-selected="true">指定版本</button>
+              <button class="strategy-tab" data-strategy="file" role="tab" aria-selected="false">文件导入</button>
+              <button class="strategy-tab" data-strategy="manual" role="tab" aria-selected="false">手动导入</button>
+            </div>
+            <div class="strategy-panel active" data-strategy-panel="version"><div class="grid two"><div><h3>适合：版本批量升级与灰度控制</h3><p>创建时选择指定分发范围、源版本和全量 / 批量规则。批量模式可设置单批下发数量和任务最大下发数量。</p></div><div><span class="tag cyan">需要审批</span><p style="margin-top:10px">任务提交后进入待审批；详情按当前分发范围拆分执行结果。</p></div></div></div>
+            <div class="strategy-panel" data-strategy-panel="file"><div class="grid two"><div><h3>适合：已有明确设备清单</h3><p>上传 CSV / Excel 后进行格式、重复、设备有效性和可升级性预检。创建时不选择大区，由后端按设备所属大区自动分发。</p></div><div><span class="tag yellow">需要审批</span><p style="margin-top:10px">重点关注原始文件、去重后数量、可升级数量和异常设备。</p></div></div></div>
+            <div class="strategy-panel" data-strategy-panel="manual"><div class="grid two"><div><h3>适合：少量、临时、定向处理</h3><p>手动录入设备 ID，校验设备状态和当前版本后发布。创建时不选择大区，详情展示设备所属大区。</p></div><div><span class="tag green">无需审批</span><p style="margin-top:10px">适合测试验证或小范围问题修复，需控制录入数量和设备清单准确性。</p></div></div></div>
+          </div>
+          <div class="visual-card" style="margin-top:14px">
+            <span class="tag yellow">升级方式匹配</span>
+            <h3>根据设备范围选择升级方式</h3>
+            <p>三种方式分别对应动态范围、固定清单和少量设备。</p>
+            <div class="grid three">
+              <div class="split-source"><strong>指定版本</strong><span>系统按分发范围 + 源版本动态匹配</span><span class="tag cyan">批量 / 灰度</span></div>
+              <div class="split-source"><strong>文件导入</strong><span>用户提供固定设备清单</span><span class="tag yellow">批量清单</span></div>
+              <div class="split-source"><strong>手动导入</strong><span>用户直接录入少量设备 ID</span><span class="tag green">定向处理</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="business">
+        <div class="content">
+          <div class="section-head"><div><div class="eyebrow">04 / CORE JOURNEY</div><h2>核心链路：一次升级如何从目标走到结果</h2><p class="summary">所有升级方式最终都要回答五个问题：升级什么、影响谁、谁确认、执行到哪、结果如何。</p></div><span class="step-index">04</span></div>
+          <div class="flow">
+            <div class="flow-node"><strong>1. 明确目标</strong><span>目标版本、升级原因和预期结果</span></div>
+            <div class="flow-node"><strong>2. 界定影响</strong><span>设备范围、区域、源版本和批次</span></div>
+            <div class="flow-node"><strong>3. 风险确认</strong><span>预检、审批、时间窗口和上限</span></div>
+            <div class="flow-node"><strong>4. 执行观察</strong><span>匹配、下发、设备回执和状态</span></div>
+            <div class="flow-node"><strong>5. 结果决策</strong><span>成功、异常、复盘和后续动作</span></div>
+          </div>
+          <div class="grid two">
+            <article class="panel"><h3>多范围升级的业务规则</h3><ul class="bullet-list"><li>一次任务可以覆盖多个分发范围，并分别查看执行结果。</li><li>大规模升级支持按批次推进，控制执行节奏和影响范围。</li><li>发布前可确认目标版本、设备范围、时间窗口和预检结果。</li></ul></article>
+            <article class="panel"><h3>参与角色的协作重点</h3><div class="table-wrap"><table><thead><tr><th>参与角色</th><th>主要关注</th><th>协作结果</th></tr></thead><tbody><tr><td>产品 / 运营</td><td>升级目的、范围、时间和风险</td><td>任务目标清晰</td></tr><tr><td>研发</td><td>版本包、设备能力和执行链路</td><td>版本条件可执行</td></tr><tr><td>测试</td><td>预检、灰度结果和异常分类</td><td>结果可验证</td></tr><tr><td>客服</td><td>用户反馈、设备信息和任务状态</td><td>问题可追踪</td></tr></tbody></table></div></article>
+          </div>
+          <div class="visual-grid">
+            <article class="visual-card">
+              <span class="tag cyan">业务场景</span>
+              <h3>一个任务覆盖多个分发范围</h3>
+              <p>一个指定版本任务可以选择多个分发范围，系统分别记录各范围的执行结果，详情页再按当前范围进行复盘。</p>
+              <div class="split-visual" aria-label="多大区任务拆分插画">
+                <div class="split-source"><strong>一个任务</strong><span>杭州低功耗 + 香港灰度升级</span><span>目标版本 23.422.209.17</span></div>
+                <div class="split-arrow">→</div>
+                <div class="split-target"><strong>分发范围</strong><span>中国 / 杭州低功耗</span><span>香港</span><span>各自记录执行结果</span></div>
+              </div>
+            </article>
+            <article class="visual-card">
+              <span class="tag green">流程关系</span>
+              <h3>多范围拆分执行流程</h3>
+              <p>呈现多分发范围任务的拆分执行方式，以及详情页按范围复盘结果的关系。</p>
+              <figure>
+                <img src="./docs/assets/ota-specified-cross-region-flow.svg" alt="指定版本多分发范围拆分执行流程图">
+                <figcaption class="asset-caption"><span>多范围执行拆分</span><span>流程说明</span></figcaption>
+              </figure>
+            </article>
+          </div>
+          <div class="note" style="margin-top:14px"><strong>状态区分：</strong>“任务已提交审批”不等于“设备已升级成功”；“审批通过”也不等于“执行结果已完成”。这三个状态需要分别确认。</div>
+        </div>
+      </section>
+
+      <section class="section" id="scenarios">
+        <div class="content">
+          <div class="section-head"><div><div class="eyebrow">05 / TYPICAL SCENARIOS</div><h2>三个典型场景：同一平台，覆盖不同升级任务</h2><p class="summary">场景的差异在于目标设备如何确定、执行节奏如何控制，以及结果如何被追踪。</p></div><span class="step-index">05</span></div>
+          <div class="grid three">
+            <article class="tile"><span class="tag cyan">场景 A · 规模升级</span><h3>多大区指定版本灰度</h3><p class="story"><span class="story-label">经销商用户故事</span>“我负责多个区域的设备运营，同一目标版本要覆盖杭州低功耗与香港的客户设备，但不同区域需要分别观察上线节奏。我希望一次提交升级任务，同时保留分区结果。”</p><p><strong>方案：</strong>指定分发范围、源版本、批次和任务上限；提交审批后按范围执行。</p><p style="margin-top:10px"><strong>价值：</strong>一次配置多范围，按批次控制影响，按分区复盘结果。</p></article>
+            <article class="tile"><span class="tag yellow">场景 B · 固定清单</span><h3>问题设备批量修复</h3><p class="story"><span class="story-label">经销商用户故事</span>“我负责售后问题处理，已经根据客户反馈整理出一份明确的设备 ID 清单，需要集中修复这些问题设备。我希望直接导入清单，不再手动拆分区域或重复核对设备。”</p><p><strong>方案：</strong>文件导入，系统完成去重、预检并按设备所属大区自动分发。</p><p style="margin-top:10px"><strong>价值：</strong>减少清单整理和区域拆分，异常设备在发布前被识别和保留。</p></article>
+            <article class="tile"><span class="tag green">场景 C · 快速验证</span><h3>少量设备定向验证</h3><p class="story"><span class="story-label">经销商用户故事</span>“我在现场支持客户，需要先在少量设备上验证补丁是否解决问题，再决定是否扩大范围。我希望直接指定设备并尽快得到结果，同时保留验证记录。”</p><p><strong>方案：</strong>手动导入设备 ID，校验当前版本和可升级状态后直接发布。</p><p style="margin-top:10px"><strong>价值：</strong>缩短验证路径，同时保留设备结果和异常信息。</p></article>
+          </div>
+          <div class="visual-grid">
+            <article class="visual-card"><span class="tag cyan">升级方式匹配</span><h3>根据设备范围选择升级方式</h3><div class="flow" style="margin-bottom:0"><div class="flow-node"><strong>动态范围</strong><span>指定版本</span></div><div class="flow-node"><strong>固定清单</strong><span>文件导入</span></div><div class="flow-node"><strong>少量设备</strong><span>手动导入</span></div></div></article>
+            <article class="visual-card"><span class="tag green">统一结果</span><h3>不同场景回到同一条升级链路</h3><p>无论从哪种方式开始，都要经过任务配置、预检或审批、设备执行、状态跟踪和结果复盘，最终形成统一的任务记录。</p><div class="asset-caption"><span>统一任务模型</span><span>统一状态口径</span></div></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="operation">
+        <div class="content">
+          <div class="section-head"><div><div class="eyebrow">06 / PRODUCT EXPERIENCE</div><h2>产品界面：从范围配置到结果复盘</h2><p class="summary">通过产品界面了解一次升级任务如何被创建、配置、执行和追踪。</p></div><span class="step-index">06</span></div>
+          <div class="screenshot-shell">
+            <div class="shot-tabs" role="tablist" aria-label="操作截图切换">
+              <button class="shot-tab active" data-shot="list"><b>任务列表</b><span>进入系统后的统一入口</span></button>
+              <button class="shot-tab" data-shot="basic"><b>基本任务</b><span>填写公共信息</span></button>
+              <button class="shot-tab" data-shot="strategy"><b>指定版本策略</b><span>配置范围与版本</span></button>
+              <button class="shot-tab" data-shot="preview"><b>预览发布</b><span>发布前确认</span></button>
+              <button class="shot-tab" data-shot="detail"><b>升级明细</b><span>按范围查看结果</span></button>
+            </div>
+            <div class="shot-view">
+              <img id="shotImage" src="./docs/assets/screenshots/ota2-task-list.png" alt="OTA任务列表截图">
+              <div class="shot-caption"><span id="shotCaption">任务列表：查看状态、升级方式和任务规模</span><span class="tag cyan">产品页面截图</span></div>
+            </div>
+          </div>
+          <div class="demo" style="margin-top:32px">
+            <div class="demo-tabs" role="tablist" aria-label="交互演示步骤">
+              <button class="demo-tab active" data-demo="step1"><b>01 · 基本信息</b><span>完善升级基础信息</span></button>
+              <button class="demo-tab" data-demo="step2"><b>02 · 升级方式</b><span>确定目标设备</span></button>
+              <button class="demo-tab" data-demo="step3"><b>03 · 发布确认</b><span>确认预检结果</span></button>
+              <button class="demo-tab" data-demo="step4"><b>04 · 状态流转</b><span>区分审批与执行</span></button>
+            </div>
+            <div class="demo-stage" id="demoStage">
+              <h3>基本信息</h3><p>先明确任务名称、目标版本和执行时间，为后续升级方式配置提供基础信息。</p>
+              <div class="demo-content"><div class="demo-box"><h4>关键信息</h4><ul class="bullet-list"><li>任务名称和升级说明</li><li>目标固件版本与升级包类型</li><li>任务开始 / 结束时间</li></ul></div><div class="demo-box"><h4>业务作用</h4><p>基础信息统一后，后续参与方可以基于同一任务了解升级目标和执行窗口。</p></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="roles">
+        <div class="content">
+          <div class="section-head"><div><div class="eyebrow">07 / ROLE COLLABORATION</div><h2>参与角色如何围绕同一条任务链路协作</h2><p class="summary">不同角色承担不同责任，共享任务、设备、版本和结果信息。</p></div><span class="step-index">07</span></div>
+          <div class="role-filter-row"><button class="role-filter active" data-role="all">全部角色</button><button class="role-filter" data-role="product">产品</button><button class="role-filter" data-role="engineering">研发</button><button class="role-filter" data-role="qa">测试</button><button class="role-filter" data-role="operations">运营</button><button class="role-filter" data-role="support">客服</button></div>
+          <div class="grid three" id="roleGrid">
+            <article class="role-card" data-role-card="product"><div class="role-head"><div class="role-mark">PM</div><span class="tag cyan">产品</span></div><h3>统一目标与业务规则</h3><p>明确升级目的、范围、风险和结果口径，推动各参与方围绕同一目标协作。</p></article>
+            <article class="role-card" data-role-card="engineering"><div class="role-head"><div class="role-mark">RD</div><span class="tag green">研发</span></div><h3>保证版本与执行链路</h3><p>关注固件包、设备能力、服务边界、任务状态和结果回写，反馈问题时说明实际执行节点。</p></article>
+            <article class="role-card" data-role-card="qa"><div class="role-head"><div class="role-mark">QA</div><span class="tag yellow">测试</span></div><h3>验证规则和异常闭环</h3><p>覆盖创建校验、审批流转、分发范围、执行结果、失败原因和详情复盘，保留可复现的任务与设备信息。</p></article>
+            <article class="role-card" data-role-card="operations"><div class="role-head"><div class="role-mark">OP</div><span class="tag cyan">运营</span></div><h3>正确配置和控制影响面</h3><p>选择合适升级方式，确认源版本、分发范围、批次节奏和时间窗口，发布前重点阅读预检结果。</p></article>
+            <article class="role-card" data-role-card="support"><div class="role-head"><div class="role-mark">CS</div><span class="tag green">客服</span></div><h3>把反馈转成可追踪事实</h3><p>收集任务 ID、设备 ID、当前版本、目标版本、页面状态、失败提示和发生时间，避免只描述“升级失败”。</p></article>
+            <article class="role-card" data-role-card="all"><div class="role-head"><div class="role-mark">ALL</div><span class="tag red">共同基础</span></div><h3>围绕同一事实协作</h3><p>所有参与方共享任务、设备、版本和状态信息，让目标、执行过程和最终结果保持一致。</p></article>
+          </div>
+          <div class="visual-card" style="margin-top:14px">
+            <span class="tag cyan">角色协作插画</span>
+            <h3>所有角色围绕同一个任务 ID 协作</h3>
+            <p>各角色围绕同一个任务 ID 共享目标、状态和结果，形成连续的协作链路。</p>
+            <div class="role-visual" aria-label="OTA跨部门角色协作插画">
+              <div class="orbit-role">产品</div><div class="orbit-role">运营</div><div class="orbit-role">审批人</div><div class="orbit-role">研发</div><div class="orbit-role">测试</div>
+              <div class="role-orbit"><div><strong>任务 ID</strong><small>同一条事实链</small></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="support">
+        <div class="content">
+          <div class="section-head"><div><div class="eyebrow">08 / ISSUE HANDLING</div><h2>异常如何定位与闭环</h2><p class="summary">通过统一的任务、设备、版本和状态信息，缩短问题定位与协作路径。</p></div><span class="step-index">08</span></div>
+          <div class="grid three">
+            <article class="compare-card"><span class="tag yellow">配置类</span><h3>任务无法发布</h3><p>先检查必填项、目标版本、升级包状态、时间窗口、分发范围和可升级设备数量。</p></article>
+            <article class="compare-card"><span class="tag red">执行类</span><h3>设备升级失败</h3><p>查看任务详情中的设备状态、失败原因、最近上报时间和当前所属大区，确认是设备、网络、固件还是任务链路问题。</p></article>
+            <article class="compare-card"><span class="tag cyan">状态类</span><h3>页面状态与预期不一致</h3><p>记录任务路径、当前状态、升级方式和版本，结合任务详情与执行结果进行判断。</p></article>
+          </div>
+          <div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>定位信息</th><th>示例</th><th>帮助定位</th></tr></thead><tbody><tr><td>任务信息</td><td>任务 ID、升级方式、当前状态</td><td>确认任务处于哪个阶段</td></tr><tr><td>设备信息</td><td>设备 ID、源版本、目标版本、所属范围</td><td>定位单设备与执行范围</td></tr><tr><td>现象与时间</td><td>页面提示、失败原因、发生时间</td><td>判断问题影响与持续情况</td></tr><tr><td>结果证据</td><td>任务详情、设备明细或相关截图</td><td>支持跨团队共同判断</td></tr></tbody></table></div>
+        </div>
+      </section>
+
+      <section class="section" id="qa">
+        <div class="content">
+          <div class="section-head"><div><div class="eyebrow">09 / COMMON QUESTIONS</div><h2>常见问题</h2><p class="summary">围绕升级方式、分发范围、状态含义和结果追踪整理常见疑问。</p></div><span class="step-index">09</span></div>
+          <details class="qa" open><summary>指定版本、文件导入、手动导入，最核心的区别是什么？</summary><p>指定版本按分发范围、源版本和策略条件动态匹配；文件导入基于固定设备清单；手动导入适合少量、临时、定向设备。三者对大区选择、审批流转和详情复盘口径不同。</p></details>
+          <details class="qa"><summary>文件导入和手动导入为什么创建时不选择大区？</summary><p>新版规则中，这两种方式基于明确设备 ID，后端按设备所属大区自动分发；大区信息用于详情和复盘展示，不作为创建时的全局上下文。</p></details>
+          <details class="qa"><summary>审批通过后，是否代表升级已经成功？</summary><p>不代表。审批通过只说明任务进入允许执行的状态；设备是否升级成功，要在执行结果、设备明细和异常分类中确认。</p></details>
+          <details class="qa"><summary>反馈“升级失败”时，最少要补充什么？</summary><p>至少补充任务 ID、设备 ID、源版本、目标版本、任务状态、失败原因、发生时间和可复现步骤。必要时附上任务详情截图或导出明细。</p></details>
+        </div>
+      </section>
+
+      <section class="section" id="summary">
+        <div class="content">
+          <div class="section-head"><div><div class="eyebrow">10 / PRODUCT SUMMARY</div><h2>OTA升级管理系统的核心价值</h2><p class="summary">从目标、策略、预检、执行到结果，所有参与方围绕同一条升级链路协作。</p></div><span class="step-index">10</span></div>
+          <div class="flow">
+            <div class="flow-node"><strong>先确认目标</strong><span>为什么升级、影响谁</span></div>
+            <div class="flow-node"><strong>再选策略</strong><span>版本、文件或手动</span></div>
+            <div class="flow-node"><strong>发布前预检</strong><span>范围、版本、设备和时间</span></div>
+            <div class="flow-node"><strong>执行中分开看</strong><span>审批、调度、设备结果</span></div>
+            <div class="flow-node"><strong>问题可追溯</strong><span>任务、设备、状态和时间</span></div>
+          </div>
+          <div class="grid two"><article class="tile"><h3>核心价值</h3><p>OTA 系统将固件、任务、设备、审批、执行和结果连接起来，让远程升级过程可配置、可追踪、可复盘。</p></article><article class="tile"><h3>协作方式</h3><p>不同角色共享任务 ID、设备信息、版本信息和状态结果，让升级目标、执行过程和最终结果保持一致。</p></article></div>
+        </div>
+      </section>
+    </main>
+
+    <div class="lightbox" id="imageLightbox" hidden aria-hidden="true">
+      <div class="lightbox-backdrop" data-lightbox-close></div>
+      <div class="lightbox-dialog" role="dialog" aria-modal="true" aria-labelledby="lightboxTitle">
+        <div class="lightbox-toolbar">
+          <div class="lightbox-title" id="lightboxTitle">产品页面截图</div>
+          <div class="lightbox-actions">
+            <button type="button" data-lightbox-zoom-out aria-label="缩小" title="缩小">−</button>
+            <span class="zoom-value" id="lightboxZoomLabel">100%</span>
+            <button type="button" data-lightbox-zoom-in aria-label="放大" title="放大">＋</button>
+            <button type="button" data-lightbox-reset title="恢复适配窗口">适应</button>
+            <button type="button" data-lightbox-close aria-label="关闭大图" title="关闭">×</button>
+          </div>
+        </div>
+        <div class="lightbox-viewport" id="lightboxViewport">
+          <img id="lightboxImage" src="" alt="">
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer"><strong>OTA升级管理系统｜产品介绍</strong><br>围绕升级目标、设备范围、执行过程与结果追踪，建立统一的升级管理链路。</footer>
+  </div>
+
+  <script>
+    const shotData = {
+      list: { src: './docs/assets/screenshots/ota2-task-list.png', alt: 'OTA任务列表截图', caption: '任务列表：查看状态、升级方式和任务规模' },
+      basic: { src: './docs/assets/screenshots/ota2-create-basic-task.png', alt: 'OTA基本任务截图', caption: '基本信息：填写升级任务的公共信息' },
+      strategy: { src: './docs/assets/screenshots/ota2-create-version-strategy.png', alt: 'OTA指定版本策略截图', caption: '指定版本策略：选择分发范围、源版本和数量规则' },
+      preview: { src: './docs/assets/screenshots/ota2-preview-publish.png', alt: 'OTA预览发布截图', caption: '预览发布：确认策略摘要、设备规模、异常和发布动作' },
+      detail: { src: './docs/assets/screenshots/ota2-task-detail-upgrade-region.png', alt: 'OTA升级明细截图', caption: '升级明细：按指定分发范围或设备所属大区复盘结果' }
+    };
+    const demoData = {
+      step1: { title: '基本信息', desc: '明确任务名称、目标版本和执行时间，为后续配置提供基础信息。', left: '<h4>关键信息</h4><ul class="bullet-list"><li>任务名称和升级说明</li><li>目标固件版本与升级包类型</li><li>任务开始 / 结束时间</li></ul>', right: '<h4>业务作用</h4><p>基础信息统一后，参与方可以基于同一任务了解升级目标和执行窗口。</p>' },
+      step2: { title: '升级方式', desc: '根据目标设备范围选择合适的升级方式，再配置对应策略。', left: '<h4>示例配置</h4><ul class="bullet-list"><li>指定分发范围：杭州低功耗、香港</li><li>目标版本与源版本</li><li>按批次控制执行节奏</li></ul>', right: '<h4>业务作用</h4><p>指定版本适合动态范围与批量升级；文件导入和手动导入适合明确设备清单。</p>' },
+      step3: { title: '发布确认', desc: '发布前核对配置摘要和预检结果，确认任务进入相应的发布流程。', left: '<h4>确认内容</h4><ul class="bullet-list"><li>目标版本与升级包状态</li><li>可升级设备与异常设备</li><li>时间窗口和任务说明</li></ul>', right: '<h4>业务作用</h4><p>在执行开始前确认升级范围、版本条件和风险信息，保证发布决策有依据。</p>' },
+      step4: { title: '状态流转', desc: '通过任务状态了解当前进度、执行阶段和可确认的结果。', left: '<h4>任务状态</h4><div class="status-row"><button class="status-btn active" data-status="待审批">待审批</button><button class="status-btn" data-status="待执行">待执行</button><button class="status-btn" data-status="升级中">升级中</button><button class="status-btn" data-status="已完成">已完成</button></div><div class="demo-result"><div class="result-number" id="statusNumber">01</div><div class="result-copy" id="statusCopy">等待负责人确认升级范围和影响</div></div>', right: '<h4>业务作用</h4><p>审批、执行和设备最终结果分别记录，便于各参与方准确判断当前进度。</p>' }
+    };
+    const statusCopy = { '待审批': ['01', '等待负责人确认升级范围和影响'], '待执行': ['02', '已允许执行，等待任务时间窗口到达'], '升级中': ['03', '正在按策略匹配并下发设备'], '已完成': ['04', '任务执行链路已收敛，可进行结果复盘'] };
+
+    function updateShot(key) {
+      const item = shotData[key];
+      const shotImage = document.getElementById('shotImage');
+      shotImage.src = item.src;
+      shotImage.alt = item.alt;
+      document.getElementById('shotCaption').textContent = item.caption;
+      document.querySelectorAll('.shot-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.shot === key));
+      if (!document.getElementById('imageLightbox').hidden) openLightbox(item);
+    }
+    document.querySelectorAll('.shot-tab').forEach(btn => btn.addEventListener('click', () => updateShot(btn.dataset.shot)));
+
+    const lightbox = document.getElementById('imageLightbox');
+    const lightboxImage = document.getElementById('lightboxImage');
+    const lightboxTitle = document.getElementById('lightboxTitle');
+    const lightboxZoomLabel = document.getElementById('lightboxZoomLabel');
+    let lightboxZoom = 1;
+    function renderLightboxZoom() {
+      lightboxImage.style.transform = 'scale(' + lightboxZoom + ')';
+      lightboxZoomLabel.textContent = Math.round(lightboxZoom * 100) + '%';
+    }
+    function openLightbox(item) {
+      lightboxImage.src = item.src;
+      lightboxImage.alt = item.alt;
+      lightboxTitle.textContent = item.caption;
+      lightboxZoom = 1;
+      renderLightboxZoom();
+      lightbox.hidden = false;
+      lightbox.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('lightbox-open');
+    }
+    function closeLightbox() {
+      lightbox.hidden = true;
+      lightbox.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('lightbox-open');
+    }
+    document.querySelectorAll('main img').forEach(image => {
+      image.title = '点击放大查看';
+      image.addEventListener('click', () => {
+        openLightbox({ src: image.currentSrc || image.src, alt: image.alt, caption: image.alt || '产品图片' });
+      });
+    });
+    document.querySelectorAll('[data-lightbox-close]').forEach(item => item.addEventListener('click', closeLightbox));
+    document.querySelector('[data-lightbox-zoom-in]').addEventListener('click', () => { lightboxZoom = Math.min(3.5, lightboxZoom + .25); renderLightboxZoom(); });
+    document.querySelector('[data-lightbox-zoom-out]').addEventListener('click', () => { lightboxZoom = Math.max(.5, lightboxZoom - .25); renderLightboxZoom(); });
+    document.querySelector('[data-lightbox-reset]').addEventListener('click', () => { lightboxZoom = 1; renderLightboxZoom(); });
+    document.addEventListener('keydown', event => {
+      if (lightbox.hidden) return;
+      if (event.key === 'Escape') closeLightbox();
+      if (event.key === '+' || event.key === '=') { lightboxZoom = Math.min(3.5, lightboxZoom + .25); renderLightboxZoom(); }
+      if (event.key === '-') { lightboxZoom = Math.max(.5, lightboxZoom - .25); renderLightboxZoom(); }
+      if (event.key === '0') { lightboxZoom = 1; renderLightboxZoom(); }
+    });
+    function updateDemo(key) {
+      const item = demoData[key];
+      document.querySelectorAll('.demo-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.demo === key));
+      document.getElementById('demoStage').innerHTML = '<h3>' + item.title + '</h3><p>' + item.desc + '</p><div class="demo-content"><div class="demo-box">' + item.left + '</div><div class="demo-box">' + item.right + '</div></div>';
+      document.querySelectorAll('[data-status]').forEach(btn => btn.addEventListener('click', () => updateStatus(btn.dataset.status)));
+    }
+    function updateStatus(status) {
+      const result = statusCopy[status];
+      document.querySelectorAll('[data-status]').forEach(btn => btn.classList.toggle('active', btn.dataset.status === status));
+      const number = document.getElementById('statusNumber');
+      const copy = document.getElementById('statusCopy');
+      if (number && copy) { number.textContent = result[0]; copy.textContent = result[1]; }
+    }
+    document.querySelectorAll('.demo-tab').forEach(btn => btn.addEventListener('click', () => updateDemo(btn.dataset.demo)));
+
+    document.querySelectorAll('.strategy-tab').forEach(btn => btn.addEventListener('click', () => {
+      const key = btn.dataset.strategy;
+      document.querySelectorAll('.strategy-tab').forEach(item => { const active = item === btn; item.classList.toggle('active', active); item.setAttribute('aria-selected', active); });
+      document.querySelectorAll('.strategy-panel').forEach(panel => panel.classList.toggle('active', panel.dataset.strategyPanel === key));
+    }));
+
+    document.querySelectorAll('.role-filter').forEach(btn => btn.addEventListener('click', () => {
+      const role = btn.dataset.role;
+      document.querySelectorAll('.role-filter').forEach(item => item.classList.toggle('active', item === btn));
+      document.querySelectorAll('[data-role-card]').forEach(card => { card.hidden = role !== 'all' && card.dataset.roleCard !== role && card.dataset.roleCard !== 'all'; });
+    }));
+
+    const sections = [...document.querySelectorAll('main section[id]')];
+    const links = [...document.querySelectorAll('.nav-links a')];
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(entries => {
+        const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible) links.forEach(link => link.classList.toggle('active', link.getAttribute('href') === '#' + visible.target.id));
+      }, { rootMargin: '-18% 0px -64% 0px', threshold: [0.08, 0.2, 0.35] });
+      sections.forEach(section => observer.observe(section));
+    }
+    const progress = document.getElementById('progress');
+    const updateProgress = () => { const max = document.documentElement.scrollHeight - window.innerHeight; progress.style.transform = 'scaleX(' + (max ? window.scrollY / max : 0) + ')'; };
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    updateProgress();
+  </script>
+</body>
+</html>
