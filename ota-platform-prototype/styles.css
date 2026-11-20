@@ -1580,6 +1580,118 @@ tbody tr:hover .sticky-action-col {
   line-height: 1.5;
 }
 
+.diff-path-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.diff-path-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 62px;
+  border: 1px solid #d5deec;
+  border-radius: 8px;
+  padding: 11px 13px;
+  color: #344054;
+  background: #fff;
+  text-align: left;
+}
+
+.diff-path-option.active {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: #f3f8ff;
+  box-shadow: inset 0 0 0 1px var(--blue);
+}
+
+.diff-path-option .radio-dot {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.diff-path-option.active .radio-dot {
+  border: 5px solid var(--blue);
+}
+
+.diff-path-option strong,
+.diff-path-option em {
+  display: block;
+}
+
+.diff-path-option strong {
+  font-size: 13px;
+}
+
+.diff-path-option em {
+  margin-top: 4px;
+  color: #667085;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.transition-version-field {
+  display: grid;
+  grid-template-columns: auto minmax(200px, 280px);
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px;
+  border: 1px solid #d7e3f5;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.transition-version-field label {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.transition-version-field select {
+  min-height: 34px;
+  border: 1px solid #bfd0e7;
+  border-radius: 6px;
+  padding: 0 10px;
+  color: #1d3557;
+  background: #fff;
+  font-weight: 700;
+}
+
+.transition-version-field p {
+  grid-column: 2;
+  margin: 0;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.source-version-guide {
+  display: grid;
+  gap: 4px;
+  margin: 16px 0 10px;
+}
+
+.source-version-guide > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.source-version-guide strong {
+  color: #172033;
+  font-size: 14px;
+}
+
+.source-version-guide p {
+  margin: 0;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .diff-chain-flow {
   display: flex;
   align-items: center;
@@ -7382,6 +7494,18 @@ tbody tr:hover .sticky-action-col {
 }
 
 @media (max-width: 720px) {
+  .diff-path-choice {
+    grid-template-columns: 1fr;
+  }
+
+  .transition-version-field {
+    grid-template-columns: 1fr;
+  }
+
+  .transition-version-field p {
+    grid-column: auto;
+  }
+
   :root {
     --sidebar-width: 0px;
   }

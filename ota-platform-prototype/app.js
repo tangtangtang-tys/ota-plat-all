@@ -24,6 +24,8 @@ const state = {
   topRegion: "中国",
   dispatchRegions: ["中国 / 杭州低功耗", "香港"],
   packageType: "whole",
+  diffUpgradePath: "direct",
+  transitionVersion: "23.200.100",
   strategy: "version",
   previewScenario: "mixed",
   quantityMode: "full",
@@ -87,7 +89,6 @@ const state = {
   showRequirementNotes: true,
   visibleTaskColumns: {
     method: true,
-    upgradeMode: true,
     versionChain: true,
     packageType: true,
     targetVersion: true,
@@ -164,7 +165,6 @@ const taskPackageOptions = ["全部", "整包", "差分包"];
 
 const taskColumnOptions = [
   ["method", "升级方式"],
-  ["upgradeMode", "升级模式"],
   ["versionChain", "版本链路"],
   ["packageType", "升级包"],
   ["targetVersion", "目标版本"],
@@ -233,6 +233,14 @@ const firmwareVersions = [
   { version: "23.110.105.43", count: 1250, diffReady: false, note: "无可用差分包" },
   { version: "10.176.42", count: 664, diffReady: false, note: "整包可跨版本升级" },
 ];
+
+const transitionVersionOptions = [
+  { version: "23.200.100", note: "推荐过渡版本，阶段一和阶段二差分包均已匹配" },
+];
+
+function eligibleSelectedVersions() {
+  return state.selectedVersions.filter(version => firmwareVersions.some(item => item.version === version && (state.packageType !== "diff" || item.diffReady)));
+}
 
 const targetVersionProductLines = {
   "23.422.209.17": "IPC",
@@ -385,6 +393,8 @@ function resetCreateTaskState() {
   state.topRegion = "中国";
   state.dispatchRegions = ["中国 / 杭州低功耗", "香港"];
   state.packageType = "whole";
+  state.diffUpgradePath = "direct";
+  state.transitionVersion = "23.200.100";
   state.strategy = "version";
   state.taskScope = "current";
   state.syncRegions = ["中国", "香港"];
@@ -433,6 +443,8 @@ function snapshotDraftTask() {
     topRegion: state.topRegion,
     dispatchRegions: [...state.dispatchRegions],
     packageType: state.packageType,
+    diffUpgradePath: state.diffUpgradePath,
+    transitionVersion: state.transitionVersion,
     strategy: state.strategy,
     taskScope: state.taskScope,
     syncRegions: [...state.syncRegions],
@@ -473,6 +485,8 @@ function restoreDraftTask() {
   state.topRegion = draft.topRegion || "中国";
   state.dispatchRegions = normalizeDispatchRegions(draft.dispatchRegions || draft.dispatchRegion || draft.topRegion || ["中国"]);
   state.packageType = draft.packageType;
+  state.diffUpgradePath = draft.diffUpgradePath || (draft.transitionVersion ? "transition" : "direct");
+  state.transitionVersion = draft.transitionVersion || "23.200.100";
   state.strategy = draft.strategy;
   state.taskScope = draft.taskScope || "current";
   state.syncRegions = draft.syncRegions?.length ? [...draft.syncRegions] : ["中国", "香港"];
@@ -1494,7 +1508,6 @@ function renderColumnSettingsPanel() {
 function renderTaskColumnHeaders() {
   const headerMap = {
     method: `<th style="width: 120px">升级方式</th>`,
-    upgradeMode: `<th style="width: 100px">升级模式</th>`,
     versionChain: `<th style="width: 220px">版本链路</th>`,
     packageType: `<th style="width: 100px">升级包</th>`,
     targetVersion: `<th style="width: 140px">目标版本</th>`,
@@ -1651,7 +1664,7 @@ function buildPublishedTask() {
   const isSync = isSyncCreateTask();
   const status = isManual ? manualPublishStatus() : meta.nextStatus;
   const createdAt = formatDateTime(new Date());
-  const selectedVersionText = state.selectedVersions.length ? state.selectedVersions.join("、") : "-";
+  const selectedVersionText = eligibleSelectedVersions().length ? eligibleSelectedVersions().join("、") : "-";
   const executionRegions = currentExecutionRegions();
   const total = publishedTaskTotalText();
   const maxDispatchTotal = state.maxDispatchTotal === "" || state.maxDispatchTotal == null ? "" : Number(state.maxDispatchTotal);
@@ -1665,6 +1678,7 @@ function buildPublishedTask() {
     batchLimit: state.strategy === "version" && state.quantityMode === "batch" ? Number(state.batchLimit || 0) : null,
     maxDispatchTotal: state.strategy === "version" && state.quantityMode === "batch" ? maxDispatchTotal : "",
     packageType: state.packageType === "whole" ? "整包" : "差分包",
+    transitionVersion: state.packageType === "diff" && state.diffUpgradePath === "transition" ? state.transitionVersion : "",
     targetVersion: state.form.targetVersion,
     productLine: productLineForVersion(state.form.targetVersion),
     total,
@@ -1683,7 +1697,7 @@ function buildPublishedTask() {
     condition: publishedTaskConditionText(),
     strategyCondition: strategyConditionRecord(),
     sourceScope: publishedTaskSourceScope(selectedVersionText),
-    sourceVersions: [...state.selectedVersions],
+    sourceVersions: eligibleSelectedVersions(),
     importFileName: state.strategy === "file" ? (state.uploadFileName || "20.121.102.29.csv") : "",
     importFileAvailable: state.strategy === "file",
     syncBatchId: "",
@@ -1752,6 +1766,8 @@ function restoreTaskForRebuild(task) {
     "手动导入": "manual",
   }[task.method] || "version");
   state.packageType = task.packageType === "差分包" ? "diff" : "whole";
+  state.diffUpgradePath = task.transitionVersion || task.upgradeMode === "两阶段" ? "transition" : "direct";
+  state.transitionVersion = task.transitionVersion || "23.200.100";
   state.form.taskName = `${task.name} - 复制`;
   state.form.targetVersion = task.targetVersion || state.form.targetVersion;
   state.form.upgradeDesc = task.desc || state.form.upgradeDesc;
@@ -1856,22 +1872,13 @@ function isTwoStageTask(task) {
   return task?.upgradeMode === "两阶段" || Boolean(task?.transitionVersion);
 }
 
-function taskUpgradeModeLabel(task) {
-  return task?.upgradeMode || "直达";
-}
-
 function taskVersionChainText(task) {
   if (isTwoStageTask(task)) {
     const sources = task.sourceVersions?.length ? "多个源版本" : (task.sourceVersion || "源版本");
     return `${sources} → ${task.transitionVersion || "过渡版本"} → ${task.targetVersion || "目标版本"}`;
   }
-  if (task?.fallbackFrom === "差分包") return `整包直达 · ${task.targetVersion || "目标版本"}`;
-  return `直达 → ${task?.targetVersion || "目标版本"}`;
-}
-
-function renderUpgradeMode(task) {
-  const mode = taskUpgradeModeLabel(task);
-  return `<span class="mini-tag ${mode === "两阶段" ? "purple" : "blue"}">${mode}</span>`;
+  if (task?.fallbackFrom === "差分包") return `整包 → ${task.targetVersion || "目标版本"}`;
+  return task?.targetVersion || "目标版本";
 }
 
 function renderVersionChain(task) {
@@ -1883,7 +1890,6 @@ function renderVersionChain(task) {
 function renderTaskDataCells(task) {
   const cellMap = {
     method: `<td>${task.method}</td>`,
-    upgradeMode: `<td>${renderUpgradeMode(task)}</td>`,
     versionChain: `<td>${renderVersionChain(task)}</td>`,
     packageType: `<td>${task.packageType}</td>`,
     targetVersion: `<td>${task.targetVersion}</td>`,
@@ -2337,7 +2343,8 @@ function renderStrategyStep() {
       </div>
       ${renderRequirementNote("PRD 06 / 07 / 08", "策略配置规则", [
         "升级方式支持指定版本、文件导入、手动导入。",
-        "指定版本不再拆分三个规则切换，统一通过源版本表格勾选。",
+        "差分包选择后先明确直接升级或过渡升级；过渡升级再设置统一过渡版本。",
+        "多个源版本在同一张表中勾选，选中结果会同步展示在版本链路中。",
         "全量展示全量；批量支持每个区域每个版本单批数和任务累计下发上限。",
         "策略字段需记录 dispatchRegions、sourceVersions、quantityMode、batchLimit、maxDispatchTotal 或导入/手动设备校验结果。",
       ])}
@@ -2453,15 +2460,32 @@ function renderStrategyBody(packageLabel) {
 
 function renderVersionStrategy(packageLabel) {
   const selectableVersions = firmwareVersions.filter(item => !(state.packageType === "diff" && !item.diffReady));
-  const allChecked = selectableVersions.every(item => state.selectedVersions.includes(item.version));
+  const selectedSourceVersions = selectableVersions.filter(item => state.selectedVersions.includes(item.version));
+  const allChecked = selectableVersions.length > 0 && selectableVersions.every(item => state.selectedVersions.includes(item.version));
   return `
     <div class="config-panel-heading">
       <div>
         <strong>指定版本号升级配置</strong>
       </div>
-      <span class="soft-pill blue-pill">已选择 ${state.selectedVersions.length} 个源版本</span>
+      <span class="soft-pill blue-pill">已选择 ${selectedSourceVersions.length} 个源版本</span>
     </div>
     ${state.packageType === "diff" ? renderDiffUpgradeChainConfig() : ""}
+    <div class="source-version-guide">
+      <div><strong>选择源版本</strong><span class="mini-tag blue">支持多选</span></div>
+      <p>勾选需要参与本次升级的当前固件版本。多个源版本会共用当前任务的升级路径和目标版本。</p>
+    </div>
+    <div class="version-table">
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 72px"><label class="table-check"><input type="checkbox" ${allChecked ? "checked" : ""} aria-label="全选源版本" data-action="toggle-all-versions" /></label></th>
+            <th>源版本号</th>
+            <th>数量配置</th>
+          </tr>
+        </thead>
+        <tbody>${renderVersionRows()}</tbody>
+      </table>
+    </div>
     <div class="rule-panel">
       ${renderFieldError("strategy")}
       ${renderVersionDispatchRegionPicker()}
@@ -2499,25 +2523,44 @@ function renderVersionStrategy(packageLabel) {
           : `<p class="quantity-mode-note">按已选区域和源版本匹配全部可升级设备。</p>`}
       </div>
       ${renderStrategyConditions()}
-      <div class="version-table">
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 72px"><label class="table-check"><input type="checkbox" ${allChecked ? "checked" : ""} aria-label="全选源版本" data-action="toggle-all-versions" /></label></th>
-              <th>源版本号</th>
-              <th>数量配置</th>
-            </tr>
-          </thead>
-          <tbody>${renderVersionRows()}</tbody>
-        </table>
-      </div>
     </div>
   `;
 }
 
 function renderDiffUpgradeChainConfig() {
-  const transition = "23.200.100";
-  return `<section class="diff-chain-config"><div class="diff-chain-head"><div><strong>4G 模组差分升级链路</strong><p>检测到跨版本差分包升级时，可在一个任务内先升级到过渡版本，再升级到目标版本。</p></div><span class="mini-tag purple">按需启用</span></div><div class="diff-chain-flow"><span>多个源版本</span><i>→</i><select aria-label="过渡版本"><option>${transition}（推荐过渡版本）</option></select><i>→</i><strong>${escapeHtml(state.form.targetVersion)}</strong></div><div class="diff-chain-checks"><span class="check-ok">✓ 阶段一差分包已匹配</span><span class="check-ok">✓ 阶段二差分包已匹配</span><span class="check-info">两个阶段沿用同一种升级包类型和设备范围</span></div><button class="link-btn" type="button" data-action="switch-to-whole">差分链路缺失？切换为整包直达</button></section>`;
+  const selectedSourceCount = firmwareVersions.filter(item => item.diffReady && state.selectedVersions.includes(item.version)).length;
+  const sourceCountLabel = selectedSourceCount ? `${selectedSourceCount} 个源版本` : "请选择源版本";
+  const transitionOptions = transitionVersionOptions.map(item => `<option value="${item.version}" ${state.transitionVersion === item.version ? "selected" : ""}>${item.version}（推荐）</option>`).join("");
+  const isTransition = state.diffUpgradePath === "transition";
+  return `
+    <section class="diff-chain-config">
+      <div class="diff-chain-head">
+        <div><strong>4G 模组差分升级路径</strong><p>请先选择设备是直接升级，还是先升级到统一过渡版本。</p></div>
+        <span class="mini-tag purple">差分包专属</span>
+      </div>
+      <div class="diff-path-choice" role="radiogroup" aria-label="差分升级路径">
+        <button class="diff-path-option ${!isTransition ? "active" : ""}" type="button" data-action="set-diff-upgrade-path" data-path="direct">
+          <span class="radio-dot"></span><span><strong>直接升级</strong><em>当前源版本直接升级到目标版本</em></span>
+        </button>
+        <button class="diff-path-option ${isTransition ? "active" : ""}" type="button" data-action="set-diff-upgrade-path" data-path="transition">
+          <span class="radio-dot"></span><span><strong>过渡升级</strong><em>先到统一过渡版本，再升级到目标版本</em></span>
+        </button>
+      </div>
+      ${isTransition ? `
+        <div class="transition-version-field">
+          <label for="transitionVersion"><span class="required">*</span>统一过渡版本</label>
+          <select id="transitionVersion" aria-label="统一过渡版本" data-transition-version>${transitionOptions}</select>
+          <p>${escapeHtml(transitionVersionOptions.find(item => item.version === state.transitionVersion)?.note || "所有选中的源版本共用同一个过渡版本")}</p>
+        </div>
+        <div class="diff-chain-flow"><span>${sourceCountLabel}</span><i>→</i><strong>${escapeHtml(state.transitionVersion)}</strong><i>→</i><strong>${escapeHtml(state.form.targetVersion)}</strong></div>
+        <div class="diff-chain-checks"><span class="check-ok">✓ 阶段一差分包已匹配</span><span class="check-ok">✓ 阶段二差分包已匹配</span><span class="check-info">多个源版本共用同一过渡版本和设备范围</span></div>
+      ` : `
+        <div class="diff-chain-flow"><span>${sourceCountLabel}</span><i>→</i><strong>${escapeHtml(state.form.targetVersion)}</strong></div>
+        <div class="diff-chain-checks"><span class="check-info">选中的多个源版本将直接升级到目标版本</span></div>
+      `}
+      <button class="link-btn" type="button" data-action="switch-to-whole">差分链路缺失？切换为整包升级</button>
+    </section>
+  `;
 }
 
 function renderVersionDispatchRegionPicker() {
@@ -3010,7 +3053,7 @@ function taskDetailData(status, task = null) {
     syncRegions: [],
     upgradeMode: task?.upgradeMode || "直达",
     transitionVersion: task?.transitionVersion || "",
-    stageState: task?.stageState || (task?.upgradeMode === "两阶段" ? "阶段一待执行" : "直达升级"),
+    stageState: task?.stageState || (task?.transitionVersion || task?.upgradeMode === "两阶段" ? "阶段一待执行" : "直达升级"),
     excludedCount: Number(task?.excludedCount || 0),
     coveredCount: Number(task?.coveredCount || 0),
     coveredTaskId: task?.coveredTaskId || "",
@@ -3277,14 +3320,14 @@ function renderDetailHero(detail) {
 function renderMultiStageDetailPanel(detail) {
   if (!isTwoStageTask(detail) && !detail.fallbackFrom) return "";
   if (detail.fallbackFrom) {
-    return `<section class="scenario-panel fallback-panel"><div class="scenario-panel-head"><div><h3>整包兜底记录</h3><p>差分链路缺失后，任务已切换为整包直达，目标版本保持不变。</p></div>${statusTag("直达")}</div><div class="fallback-flow"><span>差分包链路缺失</span><i>→</i><strong>整包直达</strong><i>→</i><b>${detail.targetVersion}</b></div><div class="fallback-note">${escapeHtml(detail.fallbackReason || "已重新执行设备和任务周期校验")}</div></section>`;
+    return `<section class="scenario-panel fallback-panel"><div class="scenario-panel-head"><div><h3>整包兜底记录</h3><p>差分链路缺失后，任务已切换为整包升级，目标版本保持不变。</p></div></div><div class="fallback-flow"><span>差分包链路缺失</span><i>→</i><strong>整包升级</strong><i>→</i><b>${detail.targetVersion}</b></div><div class="fallback-note">${escapeHtml(detail.fallbackReason || "已重新执行设备和任务周期校验")}</div></section>`;
   }
   const stageItems = [
     ["阶段一", `${detail.sourceVersions?.length ? "多个源版本" : "源版本"} → ${detail.transitionVersion}`, ["阶段一完成", "等待稳定", "阶段一升级中"].includes(detail.stageState) ? "active" : "done"],
     ["等待稳定", "回报过渡版本并重新上线", detail.stageState === "等待稳定" ? "active" : ["阶段二升级中", "已完成"].includes(detail.stageState) ? "done" : "pending"],
     ["阶段二", `${detail.transitionVersion} → ${detail.targetVersion}`, detail.stageState === "阶段二升级中" ? "active" : detail.stageState === "已完成" ? "done" : "pending"],
   ];
-  return `<section class="scenario-panel multi-stage-panel"><div class="scenario-panel-head"><div><h3>升级链路与阶段进度</h3><p>4G 模组差分包任务使用统一过渡版本，阶段二按设备逐台推进。</p></div>${renderUpgradeMode(detail)}</div><div class="stage-progress-track">${stageItems.map(([title, text, stateName], index) => `<div class="stage-progress-item ${stateName}"><span>${index + 1}</span><div><strong>${title}</strong><em>${text}</em></div></div>`).join("")}</div><div class="stage-state-summary"><span>当前阶段</span><strong>${detail.stageState}</strong><span>发布前排除</span><strong>${Number(detail.excludedCount || 0).toLocaleString()} 台</strong><span>任务覆盖</span><strong>${Number(detail.coveredCount || 0).toLocaleString()} 台</strong><span>回退结果</span><strong>${Number(detail.rollbackSuccess || 0)} 成功 / ${Number(detail.rollbackFailed || 0)} 失败</strong></div></section>`;
+  return `<section class="scenario-panel multi-stage-panel"><div class="scenario-panel-head"><div><h3>升级链路与阶段进度</h3><p>4G 模组差分包任务使用统一过渡版本，阶段二按设备逐台推进。</p></div></div><div class="stage-progress-track">${stageItems.map(([title, text, stateName], index) => `<div class="stage-progress-item ${stateName}"><span>${index + 1}</span><div><strong>${title}</strong><em>${text}</em></div></div>`).join("")}</div><div class="stage-state-summary"><span>当前阶段</span><strong>${detail.stageState}</strong><span>发布前排除</span><strong>${Number(detail.excludedCount || 0).toLocaleString()} 台</strong><span>任务覆盖</span><strong>${Number(detail.coveredCount || 0).toLocaleString()} 台</strong><span>回退结果</span><strong>${Number(detail.rollbackSuccess || 0)} 成功 / ${Number(detail.rollbackFailed || 0)} 失败</strong></div></section>`;
 }
 
 function renderSyncTaskNotice(detail) {
@@ -3635,6 +3678,12 @@ function taskOverviewFields(detail) {
         span: "wide",
       },
       {
+        label: "版本链路",
+        icon: "refresh",
+        value: renderVersionChain(detail),
+        span: "full",
+      },
+      {
         label: "升级对象",
         icon: "map",
         value: `${dispatchRegionSummary(detail.dispatchRegions)}；指定源版本设备。`,
@@ -3651,8 +3700,6 @@ function taskOverviewFields(detail) {
 
   if (isTwoStageTask(detail)) {
     fields.push(
-      { label: "升级模式", icon: "refresh", value: renderUpgradeMode(detail) },
-      { label: "版本链路", icon: "layer", value: renderVersionChain(detail), span: "full" },
       { label: "过渡版本", icon: "layer", value: detail.transitionVersion || "-" },
       { label: "当前阶段", icon: "clock", value: detail.stageState || "-" },
     );
@@ -4816,7 +4863,7 @@ function renderPreviewVersionRange() {
     <div class="preview-version-scope">
       <div class="preview-version-head">
         <span>已选源版本</span>
-        <strong>${state.selectedVersions.length} 个</strong>
+        <strong>${eligibleSelectedVersions().length} 个</strong>
       </div>
       <table class="preview-version-table">
         <thead>
@@ -4850,6 +4897,14 @@ function renderPreviewStrategyNote() {
       ])}
     </div>
   `;
+}
+
+function previewDiffChainText() {
+  const selected = eligibleSelectedVersions();
+  const sourceLabel = selected.length > 1 ? `多个源版本（${selected.length} 个）` : (selected[0] || "源版本");
+  return state.diffUpgradePath === "transition"
+    ? `${sourceLabel} → ${state.transitionVersion} → ${state.form.targetVersion}`
+    : `${sourceLabel} → ${state.form.targetVersion}`;
 }
 
 function renderPreviewCards(data) {
@@ -4897,6 +4952,7 @@ function renderPreviewContent(compact) {
         <div class="info-grid preview-strategy-grid">
           <dl>
             <dt>升级包：</dt><dd><span class="mini-tag blue">${state.packageType === "whole" ? "整包" : "差分包"}</span></dd>
+            ${state.strategy === "version" && state.packageType === "diff" ? `<dt>升级路径：</dt><dd>${state.diffUpgradePath === "transition" ? "过渡升级" : "直接升级"}</dd><dt>版本链路：</dt><dd>${escapeHtml(previewDiffChainText())}</dd>` : ""}
             <dt>升级策略：</dt><dd>${meta.title}</dd>
             <dt>升级区域：</dt><dd>${state.strategy === "version" ? "按已选区域" : "按设备所属大区自动分发"}</dd>
             <dt>策略条件：</dt><dd>${strategyConditionText()}</dd>
@@ -5108,7 +5164,19 @@ function bindEvents(root) {
   root.querySelectorAll("[data-package-card]").forEach(el => {
     el.addEventListener("click", () => {
       state.packageType = el.dataset.packageCard;
+      if (state.packageType === "diff") {
+        state.selectedVersions = state.selectedVersions.filter(version => firmwareVersions.some(item => item.version === version && item.diffReady));
+      } else {
+        state.diffUpgradePath = "direct";
+      }
       delete state.errors.strategy;
+      render();
+    });
+  });
+
+  root.querySelectorAll("[data-transition-version]").forEach(select => {
+    select.addEventListener("change", () => {
+      state.transitionVersion = select.value;
       render();
     });
   });
@@ -5434,7 +5502,7 @@ function validateStep(step) {
   if (step === 2) {
     if (!state.strategy) errors.strategy = "请选择升级方式";
     if (state.strategy === "version" && !normalizeDispatchRegions(state.dispatchRegions).length) errors.dispatchRegions = "请选择升级区域";
-    if (state.strategy === "version" && !state.selectedVersions.length) errors.strategy = "请至少选择一个源版本";
+    if (state.strategy === "version" && !eligibleSelectedVersions().length) errors.strategy = "请至少选择一个源版本";
     if (state.strategy === "version" && state.quantityMode === "batch" && Number(state.batchLimit) <= 0) errors.batchLimit = "请输入大于 0 的每个区域每个版本单批数";
     if (state.strategy === "version" && state.quantityMode === "batch" && state.maxDispatchTotal !== "" && Number(state.maxDispatchTotal) <= 0) errors.maxDispatchTotal = "请输入大于 0 的任务累计下发上限";
     if (state.strategy === "file" && state.fileUploadStatus !== "uploaded") errors.fileUpload = "请先上传设备清单";
@@ -5454,7 +5522,7 @@ function validatePublishReady() {
   if (!state.packageType) errors.strategy = "请选择升级包类型";
   if (!state.strategy) errors.strategy = "请选择升级方式";
   if (state.strategy === "version" && !normalizeDispatchRegions(state.dispatchRegions).length) errors.dispatchRegions = "请选择升级区域";
-  if (state.strategy === "version" && !state.selectedVersions.length) errors.strategy = "请至少选择一个源版本";
+  if (state.strategy === "version" && !eligibleSelectedVersions().length) errors.strategy = "请至少选择一个源版本";
   if (state.strategy === "version" && state.quantityMode === "batch" && Number(state.batchLimit) <= 0) errors.batchLimit = "请输入大于 0 的每个区域每个版本单批数";
   if (state.strategy === "version" && state.quantityMode === "batch" && state.maxDispatchTotal !== "" && Number(state.maxDispatchTotal) <= 0) errors.maxDispatchTotal = "请输入大于 0 的任务累计下发上限";
   if (state.strategy === "file" && state.fileUploadStatus !== "uploaded") errors.fileUpload = "请先上传设备清单";
@@ -5996,10 +6064,16 @@ function handleAction(action, el) {
     case "download-import-original":
       showToast("原始设备清单已生成，浏览器将开始下载");
       break;
+    case "set-diff-upgrade-path":
+      state.diffUpgradePath = el.dataset.path === "transition" ? "transition" : "direct";
+      delete state.errors.strategy;
+      render();
+      break;
     case "switch-to-whole":
       state.packageType = "whole";
+      state.diffUpgradePath = "direct";
       state.selectedVersions = state.selectedVersions.filter(version => firmwareVersions.some(item => item.version === version));
-      showToast("已切换为整包直达，正在重新校验设备范围");
+      showToast("已切换为整包升级，正在重新校验设备范围");
       render();
       break;
     case "export-device-list":
