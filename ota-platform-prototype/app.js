@@ -2811,7 +2811,7 @@ function renderTaskDetail() {
       <div class="annotated-block compact-note-block">
         ${renderDetailTabs()}
         ${renderRequirementNote("PRD 12", "详情页信息架构", [
-          "主页签固定为任务概览和升级明细。",
+          "页签固定为任务概览、升级明细和异常清单。",
           "任务概览展示任务配置和流转；升级明细先展示区域升级明细，再展示当前区域的升级概览、异常分类和设备列表。",
           "开发评审视图可切换状态和统计规则，但不影响真实任务记录字段。",
         ])}
@@ -2838,8 +2838,6 @@ function renderDetailTabs() {
     ["overview", "任务概览"],
     ["devices", "升级明细"],
     ["exceptions", "异常清单"],
-    ["coverage", "覆盖记录"],
-    ["logs", "操作与审批日志"],
   ];
   return `
     <div class="detail-tabs">
@@ -2851,8 +2849,6 @@ function renderDetailTabs() {
 function renderDetailTabContent(detail) {
   const isExecutionStatus = isDetailExecutionStatus(detail);
   if (state.detailTab === "exceptions") return renderDetailExceptionTab(detail);
-  if (state.detailTab === "coverage") return renderDetailCoverageTab(detail);
-  if (state.detailTab === "logs") return renderDetailLogsTab(detail);
   if (state.detailTab === "devices") {
     if (!isExecutionStatus) return renderUpgradeDetailEmptyState(detail);
     const regionPanel = detail.method === "指定版本"
@@ -2932,24 +2928,6 @@ function detailExceptionRows(detail) {
     { id: "4G-OTA-000130", version: detail.transitionVersion || "23.200.100", reason: "回报版本异常，已触发回退", result: detail.rollbackFailed ? "回退失败" : "回退完成", time: "2026-11-20 09:42:10" },
   ];
   return base.slice(0, Math.max(1, Math.min(base.length, detail.excludedCount ? 3 : 1)));
-}
-
-function renderDetailCoverageTab(detail) {
-  const count = Number(detail.coveredCount || 0);
-  return `<div class="annotated-block"><section class="scenario-panel coverage-record-panel">
-    <div class="scenario-panel-head"><div><h3>任务覆盖记录</h3><p>新任务只覆盖冲突设备，旧任务其他设备继续执行。</p></div>${count ? statusTag("已被新任务覆盖") : `<span class="mini-tag gray">暂无覆盖</span>`}</div>
-    ${count ? `<div class="coverage-callout"><strong>${count} 台设备已切换到新任务</strong><span>当前旧任务仍保持执行中，设备完成当前固件动作并回报版本后切换任务归属。</span></div><div class="table-wrap"><table><thead><tr><th>设备 ID</th><th>原任务阶段</th><th>切换前版本</th><th>新任务</th><th>切换时间</th></tr></thead><tbody>${["4G-OTA-000201", "4G-OTA-000202", "4G-OTA-000203"].map((id, index) => `<tr><td>${id}</td><td>${index === 0 ? "阶段二升级中" : "等待稳定"}</td><td>${detail.transitionVersion || "23.200.100"}</td><td>${detail.coveredTaskId || "OTA202611200007"}</td><td>2026-11-20 10:${String(12 + index).padStart(2, "0")}:00</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty-state-panel">${icon("check")}当前任务暂无设备被新任务覆盖。</div>`}
-  </section></div>`;
-}
-
-function renderDetailLogsTab(detail) {
-  const logs = [
-    [detail.createdAt, detail.creator, "创建任务", "保存版本链路和设备范围快照"],
-    [detail.submittedAt, detail.creator, "提交审批", isTwoStageTask(detail) ? "提交两阶段升级链路审批" : "提交直达升级任务审批"],
-    ["2026-11-20 09:20:18", "系统", "阶段状态更新", detail.stageState || "任务进入执行队列"],
-    ["2026-11-20 09:42:10", "系统", "回退记录", detail.rollbackFailed ? "2 台设备回退失败，停止后续操作" : "回退流程已记录"],
-  ];
-  return `<div class="annotated-block"><section class="scenario-panel log-record-panel"><div class="scenario-panel-head"><div><h3>操作与审批日志</h3><p>记录版本链路、阶段切换、回退和任务覆盖等关键事件。</p></div></div><div class="scenario-log-list">${logs.map(([time, actor, action, detailText]) => `<div class="scenario-log-item"><span>${time}</span><strong>${actor}</strong><b>${action}</b><em>${detailText}</em></div>`).join("")}</div></section></div>`;
 }
 
 function isDetailExecutionStatus(detail) {
