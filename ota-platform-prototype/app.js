@@ -87,6 +87,8 @@ const state = {
   showRequirementNotes: true,
   visibleTaskColumns: {
     method: true,
+    upgradeMode: true,
+    versionChain: true,
     packageType: true,
     targetVersion: true,
     total: true,
@@ -140,6 +142,12 @@ const taskStatusMeta = {
 };
 
 const taskListRows = [
+  { id: "OTA202611200006", name: "4G模组两阶段升级完成示例", method: "指定版本", quantityMode: "batch", planned: 1200, batchLimit: 200, maxDispatchTotal: 1200, packageType: "差分包", targetVersion: "23.422.209.17", total: null, time: "2026-11-18 09:00:00~2026-11-20 18:00:00", result: { matched: 1200, success: 1172, failed: 28, running: 0 }, region: "中国/杭州低功耗", dispatchRegions: ["中国 / 杭州低功耗"], status: "已完成", creator: "汤彦珊", createdAt: "2026-11-20 09:12:18", upgradeMode: "两阶段", transitionVersion: "23.200.100", sourceVersions: ["23.110.105.46", "23.110.105.43"], stageState: "已完成", excludedCount: 16, coveredCount: 0, rollbackSuccess: 3, rollbackFailed: 0 },
+  { id: "OTA202611200005", name: "4G模组两阶段回退失败示例", method: "指定版本", quantityMode: "batch", planned: 800, batchLimit: 200, maxDispatchTotal: 800, packageType: "差分包", targetVersion: "23.422.209.17", total: null, time: "2026-11-19 10:00:00~2026-11-26 10:00:00", result: { matched: 316, success: 210, failed: 12, running: 94 }, region: "中国/杭州低功耗", dispatchRegions: ["中国 / 杭州低功耗"], status: "升级中", creator: "江锐", createdAt: "2026-11-20 08:48:05", upgradeMode: "两阶段", transitionVersion: "23.200.100", sourceVersions: ["23.110.105.46"], stageState: "回退失败", excludedCount: 8, coveredCount: 0, rollbackSuccess: 4, rollbackFailed: 2 },
+  { id: "OTA202611200004", name: "4G模组阶段一完成等待稳定", method: "指定版本", quantityMode: "batch", planned: 1500, batchLimit: 300, maxDispatchTotal: 1500, packageType: "差分包", targetVersion: "23.422.209.17", total: null, time: "2026-11-20 09:00:00~2026-11-27 09:00:00", result: { matched: 486, success: 0, failed: 0, running: 486 }, region: "中国/杭州低功耗", dispatchRegions: ["中国 / 杭州低功耗"], status: "升级中", creator: "汤彦珊", createdAt: "2026-11-20 08:20:22", upgradeMode: "两阶段", transitionVersion: "23.200.100", sourceVersions: ["23.110.105.46", "23.110.105.43"], stageState: "等待稳定", excludedCount: 11, coveredCount: 0, rollbackSuccess: 0, rollbackFailed: 0 },
+  { id: "OTA202611200003", name: "4G模组两阶段任务覆盖示例", method: "指定版本", quantityMode: "full", packageType: "差分包", targetVersion: "23.422.209.17", total: null, time: "2026-11-20 07:00:00~2026-11-27 07:00:00", result: { matched: 960, success: 402, failed: 9, running: 549 }, region: "香港", dispatchRegions: ["香港"], status: "升级中", creator: "钱江涛", createdAt: "2026-11-20 07:46:12", upgradeMode: "两阶段", transitionVersion: "23.200.100", sourceVersions: ["23.110.105.46"], stageState: "阶段二升级中", excludedCount: 5, coveredCount: 126, coveredTaskId: "OTA202611200007", rollbackSuccess: 1, rollbackFailed: 0 },
+  { id: "OTA202611200002", name: "4G模组阶段一执行中", method: "指定版本", quantityMode: "batch", planned: 2000, batchLimit: 250, maxDispatchTotal: 2000, packageType: "差分包", targetVersion: "23.422.209.17", total: null, time: "2026-11-20 06:00:00~2026-11-27 06:00:00", result: { matched: 520, success: 160, failed: 7, running: 353 }, region: "中国/杭州低功耗", dispatchRegions: ["中国 / 杭州低功耗"], status: "升级中", creator: "江锐", createdAt: "2026-11-20 07:18:35", upgradeMode: "两阶段", transitionVersion: "23.200.100", sourceVersions: ["23.110.105.46", "23.110.105.43"], stageState: "阶段一升级中", excludedCount: 13, coveredCount: 0, rollbackSuccess: 2, rollbackFailed: 0 },
+  { id: "OTA202611200001", name: "差分链路缺失切换整包示例", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-11-20 05:00:00~2026-11-27 05:00:00", result: null, region: "中国", dispatchRegions: ["中国"], status: "待审批", creator: "汤彦珊", createdAt: "2026-11-20 06:55:10", upgradeMode: "直达", fallbackFrom: "差分包", fallbackReason: "阶段二差分包缺失，已切换整包", sourceVersions: ["23.110.105.46", "23.110.105.43"], excludedCount: 21, coveredCount: 0 },
   { id: "OTA202606030001", name: "IPC-中国安全补丁指定版本升级", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-06-10 09:00:00~2026-06-17 09:00:00", result: null, region: "中国", dispatchRegions: ["中国"], status: "待审批", creator: "汤彦珊", createdAt: "2026-06-03 17:20:18" },
   { id: "OTA202606030002", name: "杭州低功耗灰度定时升级", method: "指定版本", quantityMode: "batch", planned: 5000, batchLimit: 500, maxDispatchTotal: 5000, packageType: "差分包", targetVersion: "23.422.209.17", total: null, time: "2026-06-04 10:00:00~2026-06-11 10:00:00", result: null, region: "中国/杭州低功耗", dispatchRegions: ["中国 / 杭州低功耗"], status: "待执行", creator: "江锐", createdAt: "2026-06-03 16:42:05" },
   { id: "OTA202606010001", name: "文件导入_法兰福克补丁升级", method: "文件导入", packageType: "整包", targetVersion: "23.422.209.17", total: "664", time: "2026-06-01 18:59:01~2026-06-30 18:59:01", result: { success: 346, failed: 0, total: 664 }, region: "法兰福克", status: "升级中", creator: "钱江涛", createdAt: "2026-06-01 18:02:14" },
@@ -156,6 +164,8 @@ const taskPackageOptions = ["全部", "整包", "差分包"];
 
 const taskColumnOptions = [
   ["method", "升级方式"],
+  ["upgradeMode", "升级模式"],
+  ["versionChain", "版本链路"],
   ["packageType", "升级包"],
   ["targetVersion", "目标版本"],
   ["total", "升级规模"],
@@ -1484,6 +1494,8 @@ function renderColumnSettingsPanel() {
 function renderTaskColumnHeaders() {
   const headerMap = {
     method: `<th style="width: 120px">升级方式</th>`,
+    upgradeMode: `<th style="width: 100px">升级模式</th>`,
+    versionChain: `<th style="width: 220px">版本链路</th>`,
     packageType: `<th style="width: 100px">升级包</th>`,
     targetVersion: `<th style="width: 140px">目标版本</th>`,
     total: `<th style="width: 140px">升级规模</th>`,
@@ -1840,9 +1852,39 @@ function renderTaskTableRow(task) {
   `;
 }
 
+function isTwoStageTask(task) {
+  return task?.upgradeMode === "两阶段" || Boolean(task?.transitionVersion);
+}
+
+function taskUpgradeModeLabel(task) {
+  return task?.upgradeMode || "直达";
+}
+
+function taskVersionChainText(task) {
+  if (isTwoStageTask(task)) {
+    const sources = task.sourceVersions?.length ? "多个源版本" : (task.sourceVersion || "源版本");
+    return `${sources} → ${task.transitionVersion || "过渡版本"} → ${task.targetVersion || "目标版本"}`;
+  }
+  if (task?.fallbackFrom === "差分包") return `整包直达 · ${task.targetVersion || "目标版本"}`;
+  return `直达 → ${task?.targetVersion || "目标版本"}`;
+}
+
+function renderUpgradeMode(task) {
+  const mode = taskUpgradeModeLabel(task);
+  return `<span class="mini-tag ${mode === "两阶段" ? "purple" : "blue"}">${mode}</span>`;
+}
+
+function renderVersionChain(task) {
+  const text = taskVersionChainText(task);
+  const sourceTitle = task?.sourceVersions?.length ? task.sourceVersions.join("、") : text;
+  return `<span class="task-version-chain" title="${escapeHtml(sourceTitle)}">${escapeHtml(text)}</span>`;
+}
+
 function renderTaskDataCells(task) {
   const cellMap = {
     method: `<td>${task.method}</td>`,
+    upgradeMode: `<td>${renderUpgradeMode(task)}</td>`,
+    versionChain: `<td>${renderVersionChain(task)}</td>`,
     packageType: `<td>${task.packageType}</td>`,
     targetVersion: `<td>${task.targetVersion}</td>`,
     total: `<td>${renderTaskScale(task)}</td>`,
@@ -2419,6 +2461,7 @@ function renderVersionStrategy(packageLabel) {
       </div>
       <span class="soft-pill blue-pill">已选择 ${state.selectedVersions.length} 个源版本</span>
     </div>
+    ${state.packageType === "diff" ? renderDiffUpgradeChainConfig() : ""}
     <div class="rule-panel">
       ${renderFieldError("strategy")}
       ${renderVersionDispatchRegionPicker()}
@@ -2470,6 +2513,11 @@ function renderVersionStrategy(packageLabel) {
       </div>
     </div>
   `;
+}
+
+function renderDiffUpgradeChainConfig() {
+  const transition = "23.200.100";
+  return `<section class="diff-chain-config"><div class="diff-chain-head"><div><strong>4G 模组差分升级链路</strong><p>检测到跨版本差分包升级时，可在一个任务内先升级到过渡版本，再升级到目标版本。</p></div><span class="mini-tag purple">按需启用</span></div><div class="diff-chain-flow"><span>多个源版本</span><i>→</i><select aria-label="过渡版本"><option>${transition}（推荐过渡版本）</option></select><i>→</i><strong>${escapeHtml(state.form.targetVersion)}</strong></div><div class="diff-chain-checks"><span class="check-ok">✓ 阶段一差分包已匹配</span><span class="check-ok">✓ 阶段二差分包已匹配</span><span class="check-info">两个阶段沿用同一种升级包类型和设备范围</span></div><button class="link-btn" type="button" data-action="switch-to-whole">差分链路缺失？切换为整包直达</button></section>`;
 }
 
 function renderVersionDispatchRegionPicker() {
@@ -2789,6 +2837,9 @@ function renderDetailTabs() {
   const tabs = [
     ["overview", "任务概览"],
     ["devices", "升级明细"],
+    ["exceptions", "异常清单"],
+    ["coverage", "覆盖记录"],
+    ["logs", "操作与审批日志"],
   ];
   return `
     <div class="detail-tabs">
@@ -2799,6 +2850,9 @@ function renderDetailTabs() {
 
 function renderDetailTabContent(detail) {
   const isExecutionStatus = isDetailExecutionStatus(detail);
+  if (state.detailTab === "exceptions") return renderDetailExceptionTab(detail);
+  if (state.detailTab === "coverage") return renderDetailCoverageTab(detail);
+  if (state.detailTab === "logs") return renderDetailLogsTab(detail);
   if (state.detailTab === "devices") {
     if (!isExecutionStatus) return renderUpgradeDetailEmptyState(detail);
     const regionPanel = detail.method === "指定版本"
@@ -2860,6 +2914,42 @@ function renderUpgradeDetailEmptyState(detail) {
     "待执行": `任务已进入执行队列，计划 ${detail.startAt} 开始下发，当前暂无升级明细。`,
   };
   return `<div class="empty-state-panel">${icon("info")} ${map[detail.status] || "任务尚未进入执行阶段，暂无升级明细。"}</div>`;
+}
+
+function renderDetailExceptionTab(detail) {
+  const rows = detailExceptionRows(detail);
+  return `<div class="annotated-block"><section class="scenario-panel exception-record-panel">
+    <div class="scenario-panel-head"><div><h3>异常清单</h3><p>发布前排除的设备保存在任务快照中，执行中异常设备保留回退记录。</p></div><button class="btn subtle" type="button" data-action="download-exception">${icon("download")}下载清单</button></div>
+    <div class="scenario-summary-grid"><div><span>发布前排除</span><strong>${Number(detail.excludedCount || rows.length).toLocaleString()} 台</strong></div><div><span>执行中异常</span><strong>${Number(detail.failed || 0).toLocaleString()} 台</strong></div><div><span>回退成功</span><strong>${Number(detail.rollbackSuccess || 0).toLocaleString()} 台</strong></div><div><span>回退失败</span><strong>${Number(detail.rollbackFailed || 0).toLocaleString()} 台</strong></div></div>
+    <div class="table-wrap"><table><thead><tr><th>设备 ID</th><th>版本</th><th>异常类型</th><th>处理结果</th><th>记录时间</th></tr></thead><tbody>${rows.map(row => `<tr><td>${row.id}</td><td>${row.version}</td><td>${row.reason}</td><td>${statusTag(row.result)}</td><td>${row.time}</td></tr>`).join("")}</tbody></table></div>
+  </section></div>`;
+}
+
+function detailExceptionRows(detail) {
+  const base = [
+    { id: "4G-OTA-000128", version: detail.sourceVersions?.[0] || "23.110.105.46", reason: "阶段二差分包缺失", result: "已排除", time: "2026-11-20 08:14:32" },
+    { id: "4G-OTA-000129", version: "23.110.105.43", reason: "当前版本无法匹配统一过渡版本", result: "已排除", time: "2026-11-20 08:14:34" },
+    { id: "4G-OTA-000130", version: detail.transitionVersion || "23.200.100", reason: "回报版本异常，已触发回退", result: detail.rollbackFailed ? "回退失败" : "回退完成", time: "2026-11-20 09:42:10" },
+  ];
+  return base.slice(0, Math.max(1, Math.min(base.length, detail.excludedCount ? 3 : 1)));
+}
+
+function renderDetailCoverageTab(detail) {
+  const count = Number(detail.coveredCount || 0);
+  return `<div class="annotated-block"><section class="scenario-panel coverage-record-panel">
+    <div class="scenario-panel-head"><div><h3>任务覆盖记录</h3><p>新任务只覆盖冲突设备，旧任务其他设备继续执行。</p></div>${count ? statusTag("已被新任务覆盖") : `<span class="mini-tag gray">暂无覆盖</span>`}</div>
+    ${count ? `<div class="coverage-callout"><strong>${count} 台设备已切换到新任务</strong><span>当前旧任务仍保持执行中，设备完成当前固件动作并回报版本后切换任务归属。</span></div><div class="table-wrap"><table><thead><tr><th>设备 ID</th><th>原任务阶段</th><th>切换前版本</th><th>新任务</th><th>切换时间</th></tr></thead><tbody>${["4G-OTA-000201", "4G-OTA-000202", "4G-OTA-000203"].map((id, index) => `<tr><td>${id}</td><td>${index === 0 ? "阶段二升级中" : "等待稳定"}</td><td>${detail.transitionVersion || "23.200.100"}</td><td>${detail.coveredTaskId || "OTA202611200007"}</td><td>2026-11-20 10:${String(12 + index).padStart(2, "0")}:00</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty-state-panel">${icon("check")}当前任务暂无设备被新任务覆盖。</div>`}
+  </section></div>`;
+}
+
+function renderDetailLogsTab(detail) {
+  const logs = [
+    [detail.createdAt, detail.creator, "创建任务", "保存版本链路和设备范围快照"],
+    [detail.submittedAt, detail.creator, "提交审批", isTwoStageTask(detail) ? "提交两阶段升级链路审批" : "提交直达升级任务审批"],
+    ["2026-11-20 09:20:18", "系统", "阶段状态更新", detail.stageState || "任务进入执行队列"],
+    ["2026-11-20 09:42:10", "系统", "回退记录", detail.rollbackFailed ? "2 台设备回退失败，停止后续操作" : "回退流程已记录"],
+  ];
+  return `<div class="annotated-block"><section class="scenario-panel log-record-panel"><div class="scenario-panel-head"><div><h3>操作与审批日志</h3><p>记录版本链路、阶段切换、回退和任务覆盖等关键事件。</p></div></div><div class="scenario-log-list">${logs.map(([time, actor, action, detailText]) => `<div class="scenario-log-item"><span>${time}</span><strong>${actor}</strong><b>${action}</b><em>${detailText}</em></div>`).join("")}</div></section></div>`;
 }
 
 function isDetailExecutionStatus(detail) {
@@ -2940,6 +3030,16 @@ function taskDetailData(status, task = null) {
     maxDispatchTotal: useTaskConfig ? task?.maxDispatchTotal ?? task?.planned ?? "" : modeConfig.maxDispatchTotal ?? "",
     syncBatchId: "",
     syncRegions: [],
+    upgradeMode: task?.upgradeMode || "直达",
+    transitionVersion: task?.transitionVersion || "",
+    stageState: task?.stageState || (task?.upgradeMode === "两阶段" ? "阶段一待执行" : "直达升级"),
+    excludedCount: Number(task?.excludedCount || 0),
+    coveredCount: Number(task?.coveredCount || 0),
+    coveredTaskId: task?.coveredTaskId || "",
+    fallbackFrom: task?.fallbackFrom || "",
+    fallbackReason: task?.fallbackReason || "",
+    rollbackSuccess: Number(task?.rollbackSuccess || 0),
+    rollbackFailed: Number(task?.rollbackFailed || 0),
   };
   const variants = {
     "待审批": { success: 0, failed: 0, running: 0, pending: 6505 },
@@ -3187,12 +3287,26 @@ function renderDetailHero(detail) {
         ${renderTaskKpi(detail.method === "指定版本" ? "升级区域" : "升级方式", detail.method === "指定版本" ? dispatchRegionSummary(detail.dispatchRegions) : "自动按设备大区")}
         ${renderTaskKpi("升级设备数", overviewDeviceScale(detail))}
       </section>
+      ${renderMultiStageDetailPanel(detail)}
       <section class="task-overview-middle">
         ${renderTaskStrategyPanel(detail)}
         ${renderTaskConditionPanel(detail)}
       </section>
     </div>
   `;
+}
+
+function renderMultiStageDetailPanel(detail) {
+  if (!isTwoStageTask(detail) && !detail.fallbackFrom) return "";
+  if (detail.fallbackFrom) {
+    return `<section class="scenario-panel fallback-panel"><div class="scenario-panel-head"><div><h3>整包兜底记录</h3><p>差分链路缺失后，任务已切换为整包直达，目标版本保持不变。</p></div>${statusTag("直达")}</div><div class="fallback-flow"><span>差分包链路缺失</span><i>→</i><strong>整包直达</strong><i>→</i><b>${detail.targetVersion}</b></div><div class="fallback-note">${escapeHtml(detail.fallbackReason || "已重新执行设备和任务周期校验")}</div></section>`;
+  }
+  const stageItems = [
+    ["阶段一", `${detail.sourceVersions?.length ? "多个源版本" : "源版本"} → ${detail.transitionVersion}`, ["阶段一完成", "等待稳定", "阶段一升级中"].includes(detail.stageState) ? "active" : "done"],
+    ["等待稳定", "回报过渡版本并重新上线", detail.stageState === "等待稳定" ? "active" : ["阶段二升级中", "已完成"].includes(detail.stageState) ? "done" : "pending"],
+    ["阶段二", `${detail.transitionVersion} → ${detail.targetVersion}`, detail.stageState === "阶段二升级中" ? "active" : detail.stageState === "已完成" ? "done" : "pending"],
+  ];
+  return `<section class="scenario-panel multi-stage-panel"><div class="scenario-panel-head"><div><h3>升级链路与阶段进度</h3><p>4G 模组差分包任务使用统一过渡版本，阶段二按设备逐台推进。</p></div>${renderUpgradeMode(detail)}</div><div class="stage-progress-track">${stageItems.map(([title, text, stateName], index) => `<div class="stage-progress-item ${stateName}"><span>${index + 1}</span><div><strong>${title}</strong><em>${text}</em></div></div>`).join("")}</div><div class="stage-state-summary"><span>当前阶段</span><strong>${detail.stageState}</strong><span>发布前排除</span><strong>${Number(detail.excludedCount || 0).toLocaleString()} 台</strong><span>任务覆盖</span><strong>${Number(detail.coveredCount || 0).toLocaleString()} 台</strong><span>回退结果</span><strong>${Number(detail.rollbackSuccess || 0)} 成功 / ${Number(detail.rollbackFailed || 0)} 失败</strong></div></section>`;
 }
 
 function renderSyncTaskNotice(detail) {
@@ -3555,6 +3669,17 @@ function taskOverviewFields(detail) {
       { label: "设备来源", icon: "log", value: detail.sourceScope, span: "wide" },
       { label: "分发方式", icon: "map", value: "按设备所属大区自动分发", span: "wide" },
     );
+  }
+
+  if (isTwoStageTask(detail)) {
+    fields.push(
+      { label: "升级模式", icon: "refresh", value: renderUpgradeMode(detail) },
+      { label: "版本链路", icon: "layer", value: renderVersionChain(detail), span: "full" },
+      { label: "过渡版本", icon: "layer", value: detail.transitionVersion || "-" },
+      { label: "当前阶段", icon: "clock", value: detail.stageState || "-" },
+    );
+  } else if (detail.fallbackFrom) {
+    fields.push({ label: "兜底方式", icon: "refresh", value: `由${detail.fallbackFrom}切换为整包直达`, span: "full" });
   }
 
   fields.push({ label: "任务说明", icon: "info", value: detail.desc, span: "full" });
@@ -5892,6 +6017,12 @@ function handleAction(action, el) {
       break;
     case "download-import-original":
       showToast("原始设备清单已生成，浏览器将开始下载");
+      break;
+    case "switch-to-whole":
+      state.packageType = "whole";
+      state.selectedVersions = state.selectedVersions.filter(version => firmwareVersions.some(item => item.version === version));
+      showToast("已切换为整包直达，正在重新校验设备范围");
+      render();
       break;
     case "export-device-list":
       handleDeviceExport(el.dataset.exportScope || "current");
