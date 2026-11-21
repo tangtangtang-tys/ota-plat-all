@@ -2348,14 +2348,13 @@ function renderStrategyStep() {
         "全量展示全量；批量支持每个区域每个版本单批数和任务累计下发上限。",
         "策略字段需记录 dispatchRegions、sourceVersions、quantityMode、batchLimit、maxDispatchTotal 或导入/手动设备校验结果。",
       ])}
-      <div class="config-section">
-        <h4>升级包类型</h4>
+      <div class="upgrade-config-surface">
+        <div class="design-config-section package-config-section">
+          <div class="design-section-title"><span class="design-section-icon">${icon("layer")}</span><strong>升级包类型</strong><div class="package-desc-inline">${icon("info")}${state.packageType === "whole" ? "整包适用于常规升级和跨版本升级，兼容性更高。" : "差分包适合连续版本小包升级，下发更快；仅支持 4G 模组产线。"}</div></div>
+        </div>
         <div class="package-choice-panel" role="radiogroup" aria-label="升级包类型">
           ${packageTypeCard("whole", "整包")}
           ${packageTypeCard("diff", "差分包")}
-          <div class="package-desc-card">${icon("info")} ${state.packageType === "whole"
-            ? "整包适用于常规升级和跨版本升级，兼容性更高。"
-            : "差分包适合连续版本小包升级，下发更快；仅支持 4G 模组产线。"}</div>
         </div>
       </div>
       <div class="strategy-config-panel">
@@ -2464,64 +2463,40 @@ function renderVersionStrategy(packageLabel) {
   const allChecked = selectableVersions.length > 0 && selectableVersions.every(item => state.selectedVersions.includes(item.version));
   return `
     <div class="config-panel-heading">
-      <div>
-        <strong>指定版本号升级配置</strong>
-      </div>
+      <div><strong>指定版本号升级配置</strong></div>
       <span class="soft-pill blue-pill">已选择 ${selectedSourceVersions.length} 个源版本</span>
     </div>
-    ${state.packageType === "diff" ? renderDiffUpgradeChainConfig() : ""}
-    <div class="source-version-guide">
-      <div><strong>选择源版本</strong><span class="mini-tag blue">支持多选</span></div>
-      <p>勾选需要参与本次升级的当前固件版本。多个源版本会共用当前任务的升级路径和目标版本。</p>
-    </div>
-    <div class="version-table">
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 72px"><label class="table-check"><input type="checkbox" ${allChecked ? "checked" : ""} aria-label="全选源版本" data-action="toggle-all-versions" /></label></th>
-            <th>源版本号</th>
-            <th>数量配置</th>
-          </tr>
-        </thead>
-        <tbody>${renderVersionRows()}</tbody>
-      </table>
-    </div>
-    <div class="rule-panel">
+    <div class="design-version-config">
+      ${state.packageType === "diff" ? renderDiffUpgradeChainConfig() : ""}
       ${renderFieldError("strategy")}
       ${renderVersionDispatchRegionPicker()}
-      <div class="quantity-panel ${state.quantityMode === "batch" ? "is-batch" : "is-full"}">
-        <div class="quantity-panel-head">
-          <span class="field-caption">配置升级数量</span>
-          <div class="segmented compact-segmented" role="radiogroup" aria-label="升级数量">
-            ${radio("quantityMode", "full", "全量", state.quantityMode)}
-            ${radio("quantityMode", "batch", "批量下发", state.quantityMode)}
-          </div>
-        </div>
+      <section class="design-config-section quantity-config-section">
+        <div class="design-section-title"><span class="design-section-icon">${icon("sliders")}</span><strong>配置升级数量</strong><div class="segmented compact-segmented" role="radiogroup" aria-label="升级数量">
+          ${radio("quantityMode", "full", "全量", state.quantityMode)}
+          ${radio("quantityMode", "batch", "批量下发", state.quantityMode)}
+        </div></div>
+        <div class="design-info-strip">${icon("info")}按已选区域和源版本匹配全部可升级设备</div>
         ${state.quantityMode === "batch"
           ? `
             <div class="batch-rule-grid">
               <label class="batch-rule-item ${state.errors.batchLimit ? "has-error" : ""}">
                 <span class="batch-rule-title">每个区域每个版本单批数</span>
-                <span class="batch-rule-field">
-                  <input class="table-input" type="number" min="0" value="${state.batchLimit}" aria-label="每个区域每个版本单批数" data-batch-limit />
-                  <em>台</em>
-                </span>
-                <span class="batch-rule-help">系统会分别对每个已选区域、每个源版本按该数量下发。</span>
-                ${renderFieldError("batchLimit")}
+                <span class="batch-rule-field"><input class="table-input" type="number" min="0" value="${state.batchLimit}" aria-label="每个区域每个版本单批数" data-batch-limit /><em>台</em></span>
+                <span class="batch-rule-help">系统会分别对每个已选区域、每个源版本按该数量下发。</span>${renderFieldError("batchLimit")}
               </label>
               <label class="batch-rule-item max-total ${state.errors.maxDispatchTotal ? "has-error" : ""}">
                 <span class="batch-rule-title">任务累计下发上限</span>
-                <span class="batch-rule-field">
-                  <input class="table-input" type="number" min="0" value="${state.maxDispatchTotal}" placeholder="不限制" aria-label="任务累计下发上限" data-max-dispatch-total />
-                  <em>台</em>
-                </span>
-                <span class="batch-rule-help">留空表示不限制；整个任务累计下发达到该数量后，将停止匹配并不再下发新设备。</span>
-                ${renderFieldError("maxDispatchTotal")}
+                <span class="batch-rule-field"><input class="table-input" type="number" min="0" value="${state.maxDispatchTotal}" placeholder="不限制" aria-label="任务累计下发上限" data-max-dispatch-total /><em>台</em></span>
+                <span class="batch-rule-help">留空表示不限制，达到上限后停止继续匹配设备。</span>${renderFieldError("maxDispatchTotal")}
               </label>
             </div>
-          `
-          : `<p class="quantity-mode-note">按已选区域和源版本匹配全部可升级设备。</p>`}
-      </div>
+          ` : ""}
+      </section>
+      <section class="design-config-section source-version-section">
+        <div class="design-section-title"><span class="design-section-icon">${icon("list")}</span><strong>源版本号</strong><span class="mini-tag blue">支持多选</span></div>
+        <div class="source-version-guide"><p>勾选需要参与本次升级的当前固件版本，多个源版本共用当前升级路径。</p></div>
+        <div class="version-table"><table><thead><tr><th style="width: 72px"><label class="table-check"><input type="checkbox" ${allChecked ? "checked" : ""} aria-label="全选源版本" data-action="toggle-all-versions" /></label></th><th>源版本号</th><th>数量配置</th></tr></thead><tbody>${renderVersionRows()}</tbody></table></div>
+      </section>
       ${renderStrategyConditions()}
     </div>
   `;
@@ -2569,23 +2544,19 @@ function renderVersionDispatchRegionPicker() {
   const chinaChildSelectedCount = chinaDispatchChildren.filter(region => selectedSet.has(region)).length;
   const chinaAllSelected = selectedSet.has("中国") || chinaChildSelectedCount === chinaDispatchChildren.length;
   const chinaPartial = !selectedSet.has("中国") && chinaChildSelectedCount > 0 && chinaChildSelectedCount < chinaDispatchChildren.length;
+  const allDispatchRegionsSelected = dispatchRegionGroups.every(group => {
+    if (group.children.length) return selectedSet.has(group.label) || group.children.every(child => selectedSet.has(child));
+    return selectedSet.has(group.label);
+  });
   return `
-    <section class="sync-region-panel dispatch-region-panel">
-      <div class="sync-region-head">
-        <span><span class="required">*</span> 升级区域</span>
-        <em>已选择 ${selected.length} 个区域</em>
-      </div>
-      <div class="dispatch-region-picker">
-        <div class="dispatch-parent-row">
-          ${dispatchRegionGroups.map(group => renderDispatchParentOption(group, selectedSet)).join("")}
-        </div>
-        <div class="dispatch-detail-row">
-          <div class="dispatch-child-panel ${chinaAllSelected || chinaPartial ? "active" : ""}">
-            <div class="dispatch-child-head">
-              <strong>中国子节点</strong>
-              <span>${chinaAllSelected ? "已覆盖全部子节点" : chinaPartial ? `已选择 ${chinaChildSelectedCount} 个子节点` : "可按子节点精细下发"}</span>
-            </div>
-            <div class="dispatch-child-grid">
+    <section class="design-config-section region-config-section sync-region-panel dispatch-region-panel">
+      <div class="design-section-title"><span class="design-section-icon">${icon("map")}</span><strong><span class="required">*</span>升级区域</strong><em>已选择 ${selected.length} 个区域</em></div>
+      <div class="dispatch-region-picker design-region-picker">
+        <div class="dispatch-tree-panel">
+          <div class="dispatch-tree-head"><label><input type="checkbox" ${allDispatchRegionsSelected ? "checked" : ""} aria-label="全选升级区域" data-action="select-all-regions" /> <span>${selected.length}/${dispatchRegionGroups.length + chinaDispatchChildren.length}</span></label></div>
+          <div class="dispatch-tree-scroll">
+            ${dispatchRegionGroups.map(group => renderDispatchParentOption(group, selectedSet)).join("")}
+            <div class="dispatch-tree-children ${chinaAllSelected || chinaPartial ? "active" : ""}">
               ${chinaDispatchChildren.map(child => `
                 <label class="dispatch-region-child ${selectedSet.has(child) || selectedSet.has("中国") ? "checked" : ""}" data-action="toggle-dispatch-region" data-region="${child}">
                   <input type="checkbox" ${selectedSet.has(child) || selectedSet.has("中国") ? "checked" : ""} />
@@ -2594,10 +2565,10 @@ function renderVersionDispatchRegionPicker() {
               `).join("")}
             </div>
           </div>
-          <div class="dispatch-selected-panel">
-            <span>已选区域</span>
-            <div class="dispatch-region-summary">${renderDispatchRegionTags(selected)}</div>
-          </div>
+        </div>
+        <div class="dispatch-selected-panel design-selected-panel">
+          <strong>已选区域（${selected.length}）</strong>
+          <div class="dispatch-region-summary">${selected.length ? renderDispatchRegionTags(selected) : `<span class="design-empty-selection">暂无选择</span>`}</div>
         </div>
       </div>
       ${renderFieldError("dispatchRegions")}
@@ -2780,14 +2751,8 @@ function renderVersionRows() {
 function renderStrategyConditions() {
   const rows = normalizeStrategyConditionRows(state.strategyConditions);
   return `
-    <section class="strategy-condition-card ${state.strategyConditionEnabled ? "active" : ""}">
-      <div class="strategy-condition-head">
-        <label class="switch-line">
-          <input type="checkbox" ${state.strategyConditionEnabled ? "checked" : ""} data-action="toggle-strategy-condition" />
-          <span>策略条件</span>
-        </label>
-        ${state.strategyConditionEnabled ? `<button class="link-btn condition-add-btn" type="button" data-action="add-strategy-condition">${icon("plus")}添加条件</button>` : ""}
-      </div>
+    <section class="strategy-condition-card design-config-section ${state.strategyConditionEnabled ? "active" : ""}">
+      <div class="design-section-title"><span class="design-section-icon">${icon("layer")}</span><strong>策略条件</strong>${state.strategyConditionEnabled ? `<button class="link-btn condition-add-btn" type="button" data-action="add-strategy-condition">${icon("plus")}添加条件</button>` : ""}</div>
       ${state.strategyConditionEnabled ? `
         <div class="strategy-condition-table">
           <div class="strategy-condition-table-head">
@@ -2809,7 +2774,17 @@ function renderStrategyConditions() {
             </div>
           `).join("")}
         </div>
-      ` : ""}
+      ` : `
+        <div class="design-condition-table">
+          ${[["指定地区", "请选择地区"], ["指定经销商", "请选择组织"]].map(([label, placeholder]) => `
+            <div class="design-condition-row">
+              <label><input type="checkbox" data-action="toggle-strategy-condition" />${label}</label>
+              <select disabled aria-label="${label}操作符"><option>请选择</option></select>
+              <select disabled aria-label="${label}条件值"><option>${placeholder}</option></select>
+            </div>
+          `).join("")}
+        </div>
+      `}
     </section>
   `;
 }
@@ -5721,10 +5696,21 @@ function handleAction(action, el) {
       break;
     }
     case "select-all-regions":
-      state.selectedRegions = [...selectableExecutionRegions()];
-      sanitizeRegionState();
-      delete state.errors.selectedRegions;
-      delete state.errors.conditionRegion;
+      if (state.strategy === "version") {
+        const selectedSet = new Set(normalizeDispatchRegions(state.dispatchRegions));
+        const allDispatchRegionsSelected = dispatchRegionGroups.every(group => {
+          if (group.children.length) return selectedSet.has(group.label) || group.children.every(child => selectedSet.has(child));
+          return selectedSet.has(group.label);
+        });
+        state.dispatchRegions = allDispatchRegionsSelected ? [] : dispatchRegionGroups.map(group => group.label);
+        state.selectedRegions = [...state.dispatchRegions];
+        delete state.errors.dispatchRegions;
+      } else {
+        state.selectedRegions = [...selectableExecutionRegions()];
+        sanitizeRegionState();
+        delete state.errors.selectedRegions;
+        delete state.errors.conditionRegion;
+      }
       render();
       break;
     case "clear-regions":
