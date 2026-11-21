@@ -2467,34 +2467,33 @@ function renderVersionStrategy(packageLabel) {
       <span class="soft-pill blue-pill">已选择 ${selectedSourceVersions.length} 个源版本</span>
     </div>
     <div class="design-version-config">
-      ${state.packageType === "diff" ? renderDiffUpgradeChainConfig() : ""}
       ${renderFieldError("strategy")}
-      ${renderVersionDispatchRegionPicker()}
-      <section class="design-config-section quantity-config-section">
-        <div class="design-section-title"><span class="design-section-icon">${icon("sliders")}</span><strong>配置升级数量</strong><div class="segmented compact-segmented" role="radiogroup" aria-label="升级数量">
-          ${radio("quantityMode", "full", "全量", state.quantityMode)}
-          ${radio("quantityMode", "batch", "批量下发", state.quantityMode)}
-        </div></div>
-        <div class="design-info-strip">${icon("info")}按已选区域和源版本匹配全部可升级设备</div>
-        ${state.quantityMode === "batch"
-          ? `
-            <div class="batch-rule-grid">
-              <label class="batch-rule-item ${state.errors.batchLimit ? "has-error" : ""}">
-                <span class="batch-rule-title">每个区域每个版本单批数</span>
-                <span class="batch-rule-field"><input class="table-input" type="number" min="0" value="${state.batchLimit}" aria-label="每个区域每个版本单批数" data-batch-limit /><em>台</em></span>
-                <span class="batch-rule-help">系统会分别对每个已选区域、每个源版本按该数量下发。</span>${renderFieldError("batchLimit")}
-              </label>
-              <label class="batch-rule-item max-total ${state.errors.maxDispatchTotal ? "has-error" : ""}">
-                <span class="batch-rule-title">任务累计下发上限</span>
-                <span class="batch-rule-field"><input class="table-input" type="number" min="0" value="${state.maxDispatchTotal}" placeholder="不限制" aria-label="任务累计下发上限" data-max-dispatch-total /><em>台</em></span>
-                <span class="batch-rule-help">留空表示不限制，达到上限后停止继续匹配设备。</span>${renderFieldError("maxDispatchTotal")}
-              </label>
-            </div>
-          ` : ""}
+      <section class="upgrade-strategy-card">
+        <div class="design-section-title"><span class="design-section-icon">${icon("sliders")}</span><strong>配置升级策略</strong></div>
+        ${state.packageType === "diff" ? renderDiffUpgradeChainConfig() : ""}
+        <section class="design-config-section quantity-config-section">
+          <div class="strategy-row-heading"><strong>升级数量</strong><div class="segmented compact-segmented" role="radiogroup" aria-label="升级数量">
+            ${radio("quantityMode", "full", "全量", state.quantityMode)}
+            ${radio("quantityMode", "batch", "批量下发", state.quantityMode)}
+          </div></div>
+          ${state.quantityMode === "batch"
+            ? `
+              <div class="batch-rule-grid">
+                <label class="batch-rule-item ${state.errors.batchLimit ? "has-error" : ""}">
+                  <span class="batch-rule-title">每个区域每个版本单批数</span>
+                  <span class="batch-rule-field"><input class="table-input" type="number" min="0" value="${state.batchLimit}" aria-label="每个区域每个版本单批数" data-batch-limit /><em>台</em></span>${renderFieldError("batchLimit")}
+                </label>
+                <label class="batch-rule-item max-total ${state.errors.maxDispatchTotal ? "has-error" : ""}">
+                  <span class="batch-rule-title">任务累计下发上限</span>
+                  <span class="batch-rule-field"><input class="table-input" type="number" min="0" value="${state.maxDispatchTotal}" placeholder="不限制" aria-label="任务累计下发上限" data-max-dispatch-total /><em>台</em></span>${renderFieldError("maxDispatchTotal")}
+                </label>
+              </div>
+            ` : ""}
+        </section>
       </section>
+      ${renderVersionDispatchRegionPicker()}
       <section class="design-config-section source-version-section">
         <div class="design-section-title"><span class="design-section-icon">${icon("list")}</span><strong>源版本号</strong><span class="mini-tag blue">支持多选</span></div>
-        <div class="source-version-guide"><p>勾选需要参与本次升级的当前固件版本，多个源版本共用当前升级路径。</p></div>
         <div class="version-table"><table><thead><tr><th style="width: 72px"><label class="table-check"><input type="checkbox" ${allChecked ? "checked" : ""} aria-label="全选源版本" data-action="toggle-all-versions" /></label></th><th>源版本号</th><th>数量配置</th></tr></thead><tbody>${renderVersionRows()}</tbody></table></div>
       </section>
       ${renderStrategyConditions()}
@@ -2510,28 +2509,26 @@ function renderDiffUpgradeChainConfig() {
   return `
     <section class="diff-chain-config">
       <div class="diff-chain-head">
-        <div><strong>4G 模组差分升级路径</strong><p>请先选择设备是直接升级，还是先升级到统一过渡版本。</p></div>
+        <div><strong>升级路径</strong></div>
         <span class="mini-tag purple">差分包专属</span>
       </div>
       <div class="diff-path-choice" role="radiogroup" aria-label="差分升级路径">
         <button class="diff-path-option ${!isTransition ? "active" : ""}" type="button" data-action="set-diff-upgrade-path" data-path="direct">
-          <span class="radio-dot"></span><span><strong>直接升级</strong><em>当前源版本直接升级到目标版本</em></span>
+          <span class="radio-dot"></span><span><strong>直接升级</strong></span>
         </button>
         <button class="diff-path-option ${isTransition ? "active" : ""}" type="button" data-action="set-diff-upgrade-path" data-path="transition">
-          <span class="radio-dot"></span><span><strong>过渡升级</strong><em>先到统一过渡版本，再升级到目标版本</em></span>
+          <span class="radio-dot"></span><span><strong>过渡升级</strong></span>
         </button>
       </div>
       ${isTransition ? `
         <div class="transition-version-field">
           <label for="transitionVersion"><span class="required">*</span>统一过渡版本</label>
           <select id="transitionVersion" aria-label="统一过渡版本" data-transition-version>${transitionOptions}</select>
-          <p>${escapeHtml(transitionVersionOptions.find(item => item.version === state.transitionVersion)?.note || "所有选中的源版本共用同一个过渡版本")}</p>
         </div>
         <div class="diff-chain-flow"><span>${sourceCountLabel}</span><i>→</i><strong>${escapeHtml(state.transitionVersion)}</strong><i>→</i><strong>${escapeHtml(state.form.targetVersion)}</strong></div>
-        <div class="diff-chain-checks"><span class="check-ok">✓ 阶段一差分包已匹配</span><span class="check-ok">✓ 阶段二差分包已匹配</span><span class="check-info">多个源版本共用同一过渡版本和设备范围</span></div>
+        <div class="diff-chain-checks"><span class="check-ok">✓ 阶段一差分包已匹配</span><span class="check-ok">✓ 阶段二差分包已匹配</span></div>
       ` : `
         <div class="diff-chain-flow"><span>${sourceCountLabel}</span><i>→</i><strong>${escapeHtml(state.form.targetVersion)}</strong></div>
-        <div class="diff-chain-checks"><span class="check-info">选中的多个源版本将直接升级到目标版本</span></div>
       `}
       <button class="link-btn" type="button" data-action="switch-to-whole">差分链路缺失？切换为整包升级</button>
     </section>
