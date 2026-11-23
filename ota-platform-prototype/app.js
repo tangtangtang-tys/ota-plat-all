@@ -2468,11 +2468,16 @@ function renderVersionStrategy(packageLabel) {
     </div>
     <div class="design-version-config">
       ${renderFieldError("strategy")}
-      <section class="upgrade-strategy-card">
-        <div class="design-section-title"><span class="design-section-icon">${icon("sliders")}</span><strong>配置升级策略</strong></div>
+      ${renderVersionDispatchRegionPicker()}
+      <section class="design-config-section source-version-section">
+        <div class="design-section-title"><span class="design-section-icon">${icon("list")}</span><strong>源版本号</strong><span class="mini-tag blue">支持多选</span></div>
+        <div class="version-table"><table><thead><tr><th style="width: 72px"><label class="table-check"><input type="checkbox" ${allChecked ? "checked" : ""} aria-label="全选源版本" data-action="toggle-all-versions" /></label></th><th>源版本号</th><th>数量配置</th></tr></thead><tbody>${renderVersionRows()}</tbody></table></div>
+      </section>
+      <section class="upgrade-strategy-card ${state.packageType === "diff" ? "has-upgrade-path" : ""}">
+        <div class="design-section-title"><span class="design-section-icon">${icon("sliders")}</span><strong>${state.packageType === "diff" ? "升级路径" : "升级数量"}</strong></div>
         ${state.packageType === "diff" ? renderDiffUpgradeChainConfig() : ""}
         <section class="design-config-section quantity-config-section">
-          <div class="strategy-row-heading"><strong>升级数量</strong><div class="segmented compact-segmented" role="radiogroup" aria-label="升级数量">
+          <div class="strategy-row-heading">${state.packageType === "diff" ? `<strong>升级数量</strong>` : ""}<div class="segmented compact-segmented" role="radiogroup" aria-label="升级数量">
             ${radio("quantityMode", "full", "全量", state.quantityMode)}
             ${radio("quantityMode", "batch", "批量下发", state.quantityMode)}
           </div></div>
@@ -2491,11 +2496,6 @@ function renderVersionStrategy(packageLabel) {
             ` : ""}
         </section>
       </section>
-      ${renderVersionDispatchRegionPicker()}
-      <section class="design-config-section source-version-section">
-        <div class="design-section-title"><span class="design-section-icon">${icon("list")}</span><strong>源版本号</strong><span class="mini-tag blue">支持多选</span></div>
-        <div class="version-table"><table><thead><tr><th style="width: 72px"><label class="table-check"><input type="checkbox" ${allChecked ? "checked" : ""} aria-label="全选源版本" data-action="toggle-all-versions" /></label></th><th>源版本号</th><th>数量配置</th></tr></thead><tbody>${renderVersionRows()}</tbody></table></div>
-      </section>
       ${renderStrategyConditions()}
     </div>
   `;
@@ -2504,33 +2504,51 @@ function renderVersionStrategy(packageLabel) {
 function renderDiffUpgradeChainConfig() {
   const selectedSourceCount = firmwareVersions.filter(item => item.diffReady && state.selectedVersions.includes(item.version)).length;
   const sourceCountLabel = selectedSourceCount ? `${selectedSourceCount} 个源版本` : "请选择源版本";
+  const selectedSourceVersions = firmwareVersions.filter(item => item.diffReady && state.selectedVersions.includes(item.version));
   const transitionOptions = transitionVersionOptions.map(item => `<option value="${item.version}" ${state.transitionVersion === item.version ? "selected" : ""}>${item.version}（推荐）</option>`).join("");
   const isTransition = state.diffUpgradePath === "transition";
   return `
     <section class="diff-chain-config">
-      <div class="diff-chain-head">
-        <div><strong>升级路径</strong></div>
-        <span class="mini-tag purple">差分包专属</span>
-      </div>
-      <div class="diff-path-choice" role="radiogroup" aria-label="差分升级路径">
-        <button class="diff-path-option ${!isTransition ? "active" : ""}" type="button" data-action="set-diff-upgrade-path" data-path="direct">
-          <span class="radio-dot"></span><span><strong>直接升级</strong></span>
-        </button>
-        <button class="diff-path-option ${isTransition ? "active" : ""}" type="button" data-action="set-diff-upgrade-path" data-path="transition">
-          <span class="radio-dot"></span><span><strong>过渡升级</strong></span>
-        </button>
+      <div class="upgrade-path-toggle">
+        <strong>是否过渡升级</strong>
+        <div class="segmented compact-segmented" role="radiogroup" aria-label="是否过渡升级">
+          ${radio("diffUpgradePath", "direct", "否", state.diffUpgradePath)}
+          ${radio("diffUpgradePath", "transition", "是", state.diffUpgradePath)}
+        </div>
       </div>
       ${isTransition ? `
-        <div class="transition-version-field">
-          <label for="transitionVersion"><span class="required">*</span>统一过渡版本</label>
-          <select id="transitionVersion" aria-label="统一过渡版本" data-transition-version>${transitionOptions}</select>
+        <div class="upgrade-path-example-label">版本链路</div>
+        <div class="upgrade-path-nodes">
+          <div class="upgrade-path-node">
+            <span>当前版本</span>
+            <div class="upgrade-path-values">${selectedSourceVersions.length ? selectedSourceVersions.map(item => `<strong>${escapeHtml(item.version)}</strong>`).join("") : `<em>${sourceCountLabel}</em>`}</div>
+          </div>
+          <i class="upgrade-path-arrow">→</i>
+          <div class="upgrade-path-node transition-node">
+            <span>过渡版本</span>
+            <select id="transitionVersion" aria-label="统一过渡版本" data-transition-version>${transitionOptions}</select>
+          </div>
+          <i class="upgrade-path-arrow">→</i>
+          <div class="upgrade-path-node">
+            <span>目标版本</span>
+            <strong>${escapeHtml(state.form.targetVersion)}</strong>
+          </div>
         </div>
-        <div class="diff-chain-flow"><span>${sourceCountLabel}</span><i>→</i><strong>${escapeHtml(state.transitionVersion)}</strong><i>→</i><strong>${escapeHtml(state.form.targetVersion)}</strong></div>
         <div class="diff-chain-checks"><span class="check-ok">✓ 阶段一差分包已匹配</span><span class="check-ok">✓ 阶段二差分包已匹配</span></div>
       ` : `
-        <div class="diff-chain-flow"><span>${sourceCountLabel}</span><i>→</i><strong>${escapeHtml(state.form.targetVersion)}</strong></div>
+        <div class="upgrade-path-example-label">版本链路</div>
+        <div class="upgrade-path-nodes">
+          <div class="upgrade-path-node">
+            <span>当前版本</span>
+            <div class="upgrade-path-values">${selectedSourceVersions.length ? selectedSourceVersions.map(item => `<strong>${escapeHtml(item.version)}</strong>`).join("") : `<em>${sourceCountLabel}</em>`}</div>
+          </div>
+          <i class="upgrade-path-arrow">→</i>
+          <div class="upgrade-path-node">
+            <span>目标版本</span>
+            <strong>${escapeHtml(state.form.targetVersion)}</strong>
+          </div>
+        </div>
       `}
-      <button class="link-btn" type="button" data-action="switch-to-whole">差分链路缺失？切换为整包升级</button>
     </section>
   `;
 }
@@ -5113,6 +5131,14 @@ function bindEvents(root) {
     input.addEventListener("change", () => {
       state.quantityMode = input.value;
       if (state.quantityMode === "batch" && state.batchLimit == null) state.batchLimit = 500;
+      render();
+    });
+  });
+
+  root.querySelectorAll("[data-radio='diffUpgradePath']").forEach(input => {
+    input.addEventListener("change", () => {
+      state.diffUpgradePath = input.value === "transition" ? "transition" : "direct";
+      delete state.errors.strategy;
       render();
     });
   });

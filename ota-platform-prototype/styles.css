@@ -8225,6 +8225,118 @@ tbody tr:hover .sticky-action-col {
   box-shadow: none;
 }
 
+.upgrade-strategy-card.has-upgrade-path .diff-chain-config {
+  display: grid;
+  gap: 14px;
+}
+
+.upgrade-path-toggle {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.upgrade-path-toggle > strong,
+.upgrade-path-example-label {
+  color: #172033;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.upgrade-path-example-label {
+  font-size: 12px;
+}
+
+.upgrade-path-nodes {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.upgrade-path-node {
+  min-width: 0;
+  flex: 1 1 0;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  border: 1px solid #d8e1ef;
+  border-radius: 6px;
+  padding: 12px;
+  background: #fff;
+}
+
+.upgrade-path-node > span {
+  color: #687589;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.upgrade-path-node > strong,
+.upgrade-path-values strong {
+  color: var(--blue);
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.upgrade-path-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.upgrade-path-values strong {
+  border-radius: 4px;
+  padding: 4px 7px;
+  background: #f0f6ff;
+  font-size: 12px;
+  word-break: normal;
+}
+
+.upgrade-path-values em {
+  color: #9aa6b6;
+  font-size: 12px;
+  font-style: normal;
+}
+
+.upgrade-path-node select {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid #bfd0e7;
+  border-radius: 4px;
+  padding: 0 8px;
+  color: #1d3557;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.upgrade-path-arrow {
+  align-self: center;
+  color: #8d9bb0;
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.upgrade-strategy-card.has-upgrade-path .diff-chain-checks {
+  padding-top: 0;
+}
+
+@media (max-width: 720px) {
+  .upgrade-path-nodes {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .upgrade-path-arrow {
+    align-self: center;
+    transform: rotate(90deg);
+  }
+}
+
 .region-config-section {
   gap: 12px;
 }
