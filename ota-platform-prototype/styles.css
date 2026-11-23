@@ -1580,94 +1580,6 @@ tbody tr:hover .sticky-action-col {
   line-height: 1.5;
 }
 
-.diff-path-choice {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.diff-path-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  min-height: 62px;
-  border: 1px solid #d5deec;
-  border-radius: 8px;
-  padding: 11px 13px;
-  color: #344054;
-  background: #fff;
-  text-align: left;
-}
-
-.diff-path-option.active {
-  border-color: var(--blue);
-  color: var(--blue);
-  background: #f3f8ff;
-  box-shadow: inset 0 0 0 1px var(--blue);
-}
-
-.diff-path-option .radio-dot {
-  flex: 0 0 auto;
-  margin-top: 2px;
-}
-
-.diff-path-option.active .radio-dot {
-  border: 5px solid var(--blue);
-}
-
-.diff-path-option strong,
-.diff-path-option em {
-  display: block;
-}
-
-.diff-path-option strong {
-  font-size: 13px;
-}
-
-.diff-path-option em {
-  margin-top: 4px;
-  color: #667085;
-  font-size: 12px;
-  font-style: normal;
-  font-weight: 400;
-  line-height: 1.4;
-}
-
-.transition-version-field {
-  display: grid;
-  grid-template-columns: auto minmax(200px, 280px);
-  align-items: center;
-  gap: 8px 12px;
-  padding: 12px;
-  border: 1px solid #d7e3f5;
-  border-radius: 8px;
-  background: #fff;
-}
-
-.transition-version-field label {
-  color: #344054;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.transition-version-field select {
-  min-height: 34px;
-  border: 1px solid #bfd0e7;
-  border-radius: 6px;
-  padding: 0 10px;
-  color: #1d3557;
-  background: #fff;
-  font-weight: 700;
-}
-
-.transition-version-field p {
-  grid-column: 2;
-  margin: 0;
-  color: #667085;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
 .source-version-guide {
   display: grid;
   gap: 4px;
@@ -1690,47 +1602,6 @@ tbody tr:hover .sticky-action-col {
   color: #667085;
   font-size: 12px;
   line-height: 1.5;
-}
-
-.diff-chain-flow {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  color: #344054;
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.diff-chain-flow select {
-  min-height: 34px;
-  border: 1px solid #bfd0e7;
-  border-radius: 6px;
-  padding: 0 10px;
-  color: #1d3557;
-  background: #fff;
-  font-weight: 700;
-}
-
-.diff-chain-flow strong {
-  color: var(--blue);
-}
-
-.diff-chain-checks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  color: #52708f;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.diff-chain-checks .check-ok {
-  color: #087443;
-}
-
-.diff-chain-checks .check-info {
-  color: #667085;
 }
 
 .pagination {
@@ -4678,6 +4549,12 @@ tbody tr:hover .sticky-action-col {
   background: var(--blue);
 }
 
+.stage-progress-item.error > span {
+  border-color: #f2a6a6;
+  color: #fff;
+  background: var(--red);
+}
+
 .stage-progress-item.active > span {
   box-shadow: 0 0 0 5px rgba(31, 107, 255, 0.12);
 }
@@ -4763,25 +4640,6 @@ tbody tr:hover .sticky-action-col {
   line-height: 1.5;
 }
 
-.fallback-flow {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  color: #475467;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.fallback-flow strong {
-  color: #0f766e;
-}
-
-.fallback-flow b {
-  color: var(--blue);
-}
-
-.fallback-note,
 .coverage-callout {
   margin-top: 12px;
   border-radius: 7px;
@@ -7533,18 +7391,6 @@ tbody tr:hover .sticky-action-col {
 }
 
 @media (max-width: 720px) {
-  .diff-path-choice {
-    grid-template-columns: 1fr;
-  }
-
-  .transition-version-field {
-    grid-template-columns: 1fr;
-  }
-
-  .transition-version-field p {
-    grid-column: auto;
-  }
-
   :root {
     --sidebar-width: 0px;
   }
@@ -8297,6 +8143,26 @@ tbody tr:hover .sticky-action-col {
   color: #344054;
 }
 
+.upgrade-path-error {
+  display: grid;
+  gap: 4px;
+  margin-top: -4px;
+  color: var(--red);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.upgrade-path-error span {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.upgrade-path-error svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
 .upgrade-path-example-label {
   font-size: 12px;
 }
@@ -8371,10 +8237,6 @@ tbody tr:hover .sticky-action-col {
   font-size: 18px;
   font-style: normal;
   font-weight: 700;
-}
-
-.upgrade-strategy-card.has-upgrade-path .diff-chain-checks {
-  padding-top: 0;
 }
 
 @media (max-width: 720px) {
