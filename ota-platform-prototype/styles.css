@@ -4724,6 +4724,45 @@ tbody tr:hover .sticky-action-col {
   font-size: 14px;
 }
 
+.stage-result-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e8eef6;
+}
+
+.stage-result-summary div {
+  display: grid;
+  gap: 4px;
+}
+
+.stage-result-summary span {
+  color: #7b8797;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.stage-result-summary strong {
+  color: #172033;
+  font-size: 14px;
+}
+
+.stage-result-summary .link-btn {
+  white-space: nowrap;
+}
+
+.stage-result-pending {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e8eef6;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .fallback-flow {
   display: flex;
   align-items: center;
@@ -8245,6 +8284,19 @@ tbody tr:hover .sticky-action-col {
   font-weight: 800;
 }
 
+.upgrade-path-description,
+.upgrade-path-hint {
+  margin: -6px 0 0;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.upgrade-path-hint {
+  margin-top: -10px;
+  color: #344054;
+}
+
 .upgrade-path-example-label {
   font-size: 12px;
 }
@@ -8334,6 +8386,10 @@ tbody tr:hover .sticky-action-col {
   .upgrade-path-arrow {
     align-self: center;
     transform: rotate(90deg);
+  }
+
+  .stage-result-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

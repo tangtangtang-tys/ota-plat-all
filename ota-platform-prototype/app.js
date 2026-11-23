@@ -2516,6 +2516,8 @@ function renderDiffUpgradeChainConfig() {
           ${radio("diffUpgradePath", "transition", "是", state.diffUpgradePath)}
         </div>
       </div>
+      <p class="upgrade-path-description">用于设置设备从当前版本升级到目标版本的升级路线。</p>
+      <p class="upgrade-path-hint">${isTransition ? "设备将先升级到过渡版本，再升级到目标版本。" : "设备将从当前版本直接升级到目标版本。"}</p>
       ${isTransition ? `
         <div class="upgrade-path-example-label">版本链路</div>
         <div class="upgrade-path-nodes">
@@ -2534,7 +2536,6 @@ function renderDiffUpgradeChainConfig() {
             <strong>${escapeHtml(state.form.targetVersion)}</strong>
           </div>
         </div>
-        <div class="diff-chain-checks"><span class="check-ok">✓ 阶段一差分包已匹配</span><span class="check-ok">✓ 阶段二差分包已匹配</span></div>
       ` : `
         <div class="upgrade-path-example-label">版本链路</div>
         <div class="upgrade-path-nodes">
@@ -3313,11 +3314,17 @@ function renderMultiStageDetailPanel(detail) {
     return `<section class="scenario-panel fallback-panel"><div class="scenario-panel-head"><div><h3>整包兜底记录</h3><p>差分链路缺失后，任务已切换为整包升级，目标版本保持不变。</p></div></div><div class="fallback-flow"><span>差分包链路缺失</span><i>→</i><strong>整包升级</strong><i>→</i><b>${detail.targetVersion}</b></div><div class="fallback-note">${escapeHtml(detail.fallbackReason || "已重新执行设备和任务周期校验")}</div></section>`;
   }
   const stageItems = [
-    ["阶段一", `${detail.sourceVersions?.length ? "多个源版本" : "源版本"} → ${detail.transitionVersion}`, ["阶段一完成", "等待稳定", "阶段一升级中"].includes(detail.stageState) ? "active" : "done"],
+    ["阶段一", `${detail.sourceVersions?.length ? detail.sourceVersions.join("、") : "源版本"} → ${detail.transitionVersion}`, ["阶段一完成", "等待稳定", "阶段一升级中"].includes(detail.stageState) ? "active" : "done"],
     ["等待稳定", "回报过渡版本并重新上线", detail.stageState === "等待稳定" ? "active" : ["阶段二升级中", "已完成"].includes(detail.stageState) ? "done" : "pending"],
     ["阶段二", `${detail.transitionVersion} → ${detail.targetVersion}`, detail.stageState === "阶段二升级中" ? "active" : detail.stageState === "已完成" ? "done" : "pending"],
   ];
-  return `<section class="scenario-panel multi-stage-panel"><div class="scenario-panel-head"><div><h3>升级链路与阶段进度</h3><p>4G 模组差分包任务使用统一过渡版本，阶段二按设备逐台推进。</p></div></div><div class="stage-progress-track">${stageItems.map(([title, text, stateName], index) => `<div class="stage-progress-item ${stateName}"><span>${index + 1}</span><div><strong>${title}</strong><em>${text}</em></div></div>`).join("")}</div><div class="stage-state-summary"><span>当前阶段</span><strong>${detail.stageState}</strong><span>发布前排除</span><strong>${Number(detail.excludedCount || 0).toLocaleString()} 台</strong><span>任务覆盖</span><strong>${Number(detail.coveredCount || 0).toLocaleString()} 台</strong><span>回退结果</span><strong>${Number(detail.rollbackSuccess || 0)} 成功 / ${Number(detail.rollbackFailed || 0)} 失败</strong></div></section>`;
+  const resultSummary = isDetailExecutionStatus(detail)
+    ? (() => {
+      const stats = metricStats(detail);
+      return `<div class="stage-result-summary"><div><span>已进入执行</span><strong>${Number(stats.stocked).toLocaleString()} 台</strong></div><div><span>最终成功</span><strong>${Number(stats.upgradeSuccess).toLocaleString()} 台</strong></div><div><span>最终失败</span><strong>${Number(stats.upgradeFailed).toLocaleString()} 台</strong></div><div><span>当前升级中</span><strong>${Number(stats.running).toLocaleString()} 台</strong></div><button class="link-btn" type="button" data-action="set-detail-tab" data-tab="devices">查看升级明细</button></div>`;
+    })()
+    : `<div class="stage-result-pending">任务发布后，设备完成版本回报，阶段状态和升级结果会同步更新。</div>`;
+  return `<section class="scenario-panel multi-stage-panel"><div class="scenario-panel-head"><div><h3>升级链路与阶段进度</h3><p>4G 模组差分包任务使用统一过渡版本，阶段二按设备逐台推进。</p></div></div><div class="stage-progress-track">${stageItems.map(([title, text, stateName], index) => `<div class="stage-progress-item ${stateName}"><span>${index + 1}</span><div><strong>${title}</strong><em>${text}</em></div></div>`).join("")}</div><div class="stage-state-summary"><span>当前阶段</span><strong>${detail.stageState}</strong><span>发布前排除</span><strong>${Number(detail.excludedCount || 0).toLocaleString()} 台</strong><span>任务覆盖</span><strong>${Number(detail.coveredCount || 0).toLocaleString()} 台</strong><span>回退结果</span><strong>${Number(detail.rollbackSuccess || 0)} 成功 / ${Number(detail.rollbackFailed || 0)} 失败</strong></div>${resultSummary}</section>`;
 }
 
 function renderSyncTaskNotice(detail) {
