@@ -82,6 +82,7 @@ const state = {
   detailStatus: "升级中",
   detailMetricMode: "versionFull",
   detailTab: "overview",
+  detailStageTab: "all",
   detailRegionTab: "",
   detailDeviceKeyword: "",
   deviceExportMenuOpen: false,
@@ -157,6 +158,39 @@ const taskListRows = [
   { id: "OTA202605090001", name: "审批超时_香港安全补丁升级", method: "指定版本", quantityMode: "full", packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-05-09 16:40:34~2026-06-09 16:40:34", result: null, region: "香港", dispatchRegions: ["香港"], status: "已失效", creator: "汤彦珊", createdAt: "2026-05-09 16:37:40" },
   { id: "OTA202605080001", name: "硅谷摄像机批量灰度", method: "指定版本", quantityMode: "batch", planned: 800, batchLimit: 200, maxDispatchTotal: 800, packageType: "整包", targetVersion: "23.422.209.17", total: null, time: "2026-05-08 10:00:00~2026-05-18 10:00:00", result: { matched: 640, success: 520, failed: 20, running: 100 }, region: "硅谷", dispatchRegions: ["硅谷"], status: "中止中", creator: "江锐", createdAt: "2026-05-08 09:42:16" },
 ];
+
+const stageStatsByTaskId = {
+  OTA202611200006: {
+    stageOne: { entered: 1200, success: 1182, failed: 18, running: 0, waiting: 0 },
+    stability: { waiting: 0, passed: 1182, timeout: 0, abnormal: 0 },
+    stageTwo: { entered: 1182, success: 1172, failed: 10, running: 0, waiting: 0 },
+    rollback: { triggered: 3, success: 3, failed: 0 },
+  },
+  OTA202611200005: {
+    stageOne: { entered: 316, success: 210, failed: 12, running: 94, waiting: 0 },
+    stability: { waiting: 0, passed: 160, timeout: 4, abnormal: 2 },
+    stageTwo: { entered: 160, success: 130, failed: 6, running: 24, waiting: 0 },
+    rollback: { triggered: 6, success: 4, failed: 2 },
+  },
+  OTA202611200004: {
+    stageOne: { entered: 486, success: 476, failed: 10, running: 0, waiting: 476 },
+    stability: { waiting: 476, passed: 0, timeout: 0, abnormal: 0 },
+    stageTwo: { entered: 0, success: 0, failed: 0, running: 0, waiting: 0 },
+    rollback: { triggered: 0, success: 0, failed: 0 },
+  },
+  OTA202611200003: {
+    stageOne: { entered: 960, success: 900, failed: 10, running: 50, waiting: 0 },
+    stability: { waiting: 0, passed: 850, timeout: 0, abnormal: 0 },
+    stageTwo: { entered: 850, success: 402, failed: 9, running: 439, waiting: 0 },
+    rollback: { triggered: 1, success: 1, failed: 0 },
+  },
+  OTA202611200002: {
+    stageOne: { entered: 520, success: 160, failed: 7, running: 353, waiting: 0 },
+    stability: { waiting: 0, passed: 0, timeout: 0, abnormal: 0 },
+    stageTwo: { entered: 0, success: 0, failed: 0, running: 0, waiting: 0 },
+    rollback: { triggered: 2, success: 2, failed: 0 },
+  },
+};
 
 const taskStatusOptions = ["全部", "待发布", "待审批", "待执行", "升级中", "中止中", "已完成", "已结束", "已驳回", "已失效"];
 const taskMethodOptions = ["全部", "指定版本", "文件导入", "手动导入"];
@@ -1577,6 +1611,7 @@ function selectTask(taskId) {
 
 function resetDetailViewContext(options = {}) {
   if (options.tab) state.detailTab = options.tab;
+  state.detailStageTab = "all";
   state.detailRegionTab = "";
   state.detailDeviceKeyword = "";
   state.deviceExportMenuOpen = false;
@@ -3099,6 +3134,7 @@ function taskDetailData(status, task = null) {
     upgradeMode: task?.upgradeMode || "直达",
     transitionVersion: task?.transitionVersion || "",
     stageState: task?.stageState || (isTwoStageTask(task) ? inferredStageStateForDetail(status) : "直达升级"),
+    stageStats: task?.stageStats || (task?.id ? stageStatsByTaskId[task.id] : null),
     excludedCount: Number(task?.excludedCount || 0),
     coveredCount: Number(task?.coveredCount || 0),
     rollbackSuccess: Number(task?.rollbackSuccess || 0),
@@ -3129,6 +3165,38 @@ function inferredStageStateForDetail(status) {
   if (status === "已完成") return "已完成";
   if (status === "升级中") return "阶段一升级中";
   return "阶段一待执行";
+}
+
+function stageStatsForDetail(detail) {
+  if (detail?.stageStats) return detail.stageStats;
+  const entered = Math.max(Number(detail?.matched || detail?.running || detail?.success || 0), 0);
+  const success = Math.max(Number(detail?.success || 0), 0);
+  const failed = Math.max(Number(detail?.failed || 0), 0);
+  const running = Math.max(Number(detail?.running || 0), 0);
+  return {
+    stageOne: { entered, success, failed, running, waiting: 0 },
+    stability: { waiting: 0, passed: detail?.status === "已完成" ? success : 0, timeout: 0, abnormal: 0 },
+    stageTwo: { entered: detail?.status === "已完成" ? success : 0, success: detail?.status === "已完成" ? success : 0, failed: 0, running: 0, waiting: 0 },
+    rollback: { triggered: Number(detail?.rollbackSuccess || 0) + Number(detail?.rollbackFailed || 0), success: Number(detail?.rollbackSuccess || 0), failed: Number(detail?.rollbackFailed || 0) },
+  };
+}
+
+function stageSuccessRate(stats) {
+  const completed = Number(stats?.success || 0) + Number(stats?.failed || 0);
+  return completed ? `${((Number(stats.success || 0) / completed) * 100).toFixed(1)}%` : "-";
+}
+
+function stageCurrentDistribution(detail) {
+  const stats = stageStatsForDetail(detail);
+  const stageState = detail.stageState || "阶段一待执行";
+  const distribution = [
+    ["阶段一升级中", Number(stats.stageOne?.running || 0)],
+    ["等待稳定", Number(stats.stability?.waiting || 0)],
+    ["阶段二升级中", Number(stats.stageTwo?.running || 0)],
+    ["已完成", Number(stats.stageTwo?.success || 0)],
+    ["异常或回退", Number(stats.stageOne?.failed || 0) + Number(stats.stageTwo?.failed || 0) + Number(stats.rollback?.failed || 0)],
+  ].filter(([, count]) => count > 0);
+  return distribution.length ? distribution : [[stageState, 0]];
 }
 
 function detailMetricsFromTaskStatus(status, task, base) {
@@ -3368,6 +3436,8 @@ function renderDetailHero(detail) {
 function renderMultiStageDetailPanel(detail) {
   if (!isTwoStageTask(detail)) return "";
   const stageState = detail.stageState || "阶段一待执行";
+  const stats = stageStatsForDetail(detail);
+  const distribution = stageCurrentDistribution(detail);
   const stageItems = [
     ["阶段一", `${detail.sourceVersions?.length ? detail.sourceVersions.join("、") : "源版本"} → ${detail.transitionVersion}`, stageProgressState(stageState, "stage-one")],
     ["等待稳定", "回报过渡版本并重新上线", stageProgressState(stageState, "stability")],
@@ -3379,7 +3449,16 @@ function renderMultiStageDetailPanel(detail) {
       return `<div class="stage-result-summary"><div><span>已进入执行</span><strong>${Number(stats.stocked).toLocaleString()} 台</strong></div><div><span>最终成功</span><strong>${Number(stats.upgradeSuccess).toLocaleString()} 台</strong></div><div><span>最终失败</span><strong>${Number(stats.upgradeFailed).toLocaleString()} 台</strong></div><div><span>当前升级中</span><strong>${Number(stats.running).toLocaleString()} 台</strong></div><button class="link-btn" type="button" data-action="set-detail-tab" data-tab="devices">查看升级明细</button></div>`;
     })()
     : `<div class="stage-result-pending">任务发布后，设备完成版本回报，阶段状态和升级结果会同步更新。</div>`;
-  return `<section class="scenario-panel multi-stage-panel"><div class="scenario-panel-head"><div><h3>升级链路与阶段进度</h3><p>4G 模组差分包任务使用统一过渡版本，阶段二按设备逐台推进。</p></div></div><div class="stage-progress-track">${stageItems.map(([title, text, stateName], index) => `<div class="stage-progress-item ${stateName}"><span>${index + 1}</span><div><strong>${title}</strong><em>${text}</em></div></div>`).join("")}</div><div class="stage-state-summary"><span>当前阶段</span><strong>${detail.stageState}</strong><span>发布前排除</span><strong>${Number(detail.excludedCount || 0).toLocaleString()} 台</strong><span>任务覆盖</span><strong>${Number(detail.coveredCount || 0).toLocaleString()} 台</strong><span>回退结果</span><strong>${Number(detail.rollbackSuccess || 0)} 成功 / ${Number(detail.rollbackFailed || 0)} 失败</strong></div>${resultSummary}</section>`;
+  const distributionText = distribution.map(([label, count]) => `${label} ${Number(count).toLocaleString()} 台`).join("、");
+  return `<section class="scenario-panel multi-stage-panel"><div class="scenario-panel-head"><div><h3>升级链路与阶段进度</h3><p>4G 模组差分包任务使用统一过渡版本，设备完成阶段一并通过稳定校验后进入阶段二。</p></div></div><div class="stage-progress-track">${stageItems.map(([title, text, stateName], index) => `<div class="stage-progress-item ${stateName}"><span>${index + 1}</span><div><strong>${title}</strong><em>${text}</em></div></div>`).join("")}</div><div class="stage-state-summary"><span>当前执行情况</span><strong>${distribution.length === 1 ? distribution[0][0] : "设备分阶段推进"}</strong><span>设备阶段分布</span><strong>${distributionText}</strong><span>发布前排除</span><strong>${Number(detail.excludedCount || 0).toLocaleString()} 台</strong><span>回退结果</span><strong>${Number(detail.rollbackSuccess || stats.rollback?.success || 0)} 成功 / ${Number(detail.rollbackFailed || stats.rollback?.failed || 0)} 失败</strong></div>${renderStageStatsTable(detail, stats)}${resultSummary}</section>`;
+}
+
+function renderStageStatsTable(detail, stats) {
+  const rows = [
+    ["阶段一", `${detail.sourceVersions?.length ? detail.sourceVersions.join("、") : "源版本"} → ${detail.transitionVersion}`, stats.stageOne, Number(stats.stageOne?.waiting || 0)],
+    ["阶段二", `${detail.transitionVersion} → ${detail.targetVersion}`, stats.stageTwo, Number(stats.stageTwo?.waiting || 0)],
+  ];
+  return `<div class="stage-stats-block"><div class="stage-stats-head"><div><strong>分阶段执行结果</strong><span>成功率按已完成回执计算</span></div><button class="link-btn" type="button" data-action="set-detail-tab" data-tab="devices">查看阶段设备明细</button></div><div class="table-wrap stage-stats-table-wrap"><table class="stage-stats-table"><thead><tr><th>阶段</th><th>版本链路</th><th>进入设备</th><th>成功</th><th>失败</th><th>执行中</th><th>等待稳定</th><th>成功率</th></tr></thead><tbody>${rows.map(([name, path, stage, waiting]) => `<tr><td><strong>${name}</strong></td><td>${path}</td><td>${Number(stage?.entered || 0).toLocaleString()} 台</td><td class="stage-success">${Number(stage?.success || 0).toLocaleString()} 台</td><td class="stage-failed">${Number(stage?.failed || 0).toLocaleString()} 台</td><td>${Number(stage?.running || 0).toLocaleString()} 台</td><td>${waiting.toLocaleString()} 台</td><td><strong>${stageSuccessRate(stage)}</strong></td></tr>`).join("")}</tbody></table></div><div class="stage-stats-note">等待稳定设备不计入阶段二成功率，阶段二成功率只统计已经收到阶段二结果回执的设备。</div></div>`;
 }
 
 function stageProgressState(stageState, stage) {
@@ -4293,6 +4372,7 @@ function renderDeviceDetailTable(detail) {
       <h3 class="section-title">${icon("layer")}设备列表</h3>
       ${detail.method === "指定版本" ? `<span class="section-subtitle">当前区域：${escapeHtml(selectedRegion)}</span>` : ""}
     </div>
+    ${isTwoStageTask(detail) ? renderStageDetailTabs() : ""}
     ${renderDeviceDetailNote(detail)}
     <div class="toolbar device-list-toolbar">
       <label class="field-control search">${icon("search")}<input type="search" value="${escapeHtml(state.detailDeviceKeyword)}" placeholder="请输入设备ID" aria-label="设备ID搜索" data-detail-device-search /></label>
@@ -4305,11 +4385,22 @@ function renderDeviceDetailTable(detail) {
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>设备ID</th><th>源版本</th><th>目标版本</th><th>所属大区</th><th>升级状态</th><th>完成时间</th><th>失败原因</th><th>最近上报时间</th></tr></thead>
+        <thead><tr>${isTwoStageTask(detail) ? "<th>设备ID</th><th>源版本</th><th>当前阶段</th><th>阶段结果</th><th>目标版本</th><th>所属大区</th><th>失败原因</th><th>最近上报时间</th>" : "<th>设备ID</th><th>源版本</th><th>目标版本</th><th>所属大区</th><th>升级状态</th><th>完成时间</th><th>失败原因</th><th>最近上报时间</th>"}</tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
   `;
+}
+
+function renderStageDetailTabs() {
+  const tabs = [
+    ["all", "全部设备"],
+    ["stage-one", "阶段一"],
+    ["stability", "等待稳定"],
+    ["stage-two", "阶段二"],
+    ["rollback", "异常与回退"],
+  ];
+  return `<div class="stage-detail-tabs" role="tablist" aria-label="阶段设备明细筛选">${tabs.map(([key, label]) => `<button class="${state.detailStageTab === key ? "active" : ""}" type="button" data-action="set-detail-stage-tab" data-stage-tab="${key}">${label}</button>`).join("")}</div>`;
 }
 
 function renderDeviceExportMenu(detail, selectedRegion) {
@@ -4337,7 +4428,15 @@ function deviceDetailRows(detail, selectedRegion = "") {
   const region = selectedRegion || selectedDetailRegionName(detail);
   const regionMetric = dispatchRegionExecutionRows(detail).find(row => row.region === region);
   const versionLimit = versionDeviceSampleLimit(detail, regionMetric);
-  return deviceRows.slice(0, versionLimit).map((id, index) => buildDeviceDetailRow(detail, id, index, region, regionMetric));
+  const rows = deviceRows.slice(0, versionLimit).map((id, index) => buildDeviceDetailRow(detail, id, index, region, regionMetric));
+  if (!isTwoStageTask(detail)) return rows;
+  const stageFilter = state.detailStageTab || "all";
+  return rows
+    .map((row, index) => {
+      const meta = stageDeviceRowMeta(detail, index, stageFilter);
+      return { ...row, ...meta, reason: meta.stageReason };
+    })
+    .filter(row => stageFilter === "all" || row.stageKey === stageFilter);
 }
 
 function deviceDetailRowLimit(detail) {
@@ -4350,8 +4449,8 @@ function renderDeviceDetailNote(detail) {
   const fixed = detail.method !== "指定版本";
   return `
     <div class="device-detail-note">
-      <strong>${fixed ? "固定清单设备明细" : "指定版本设备明细"}</strong>
-      <p>${fixed ? "文件导入和手动导入按设备所属大区拆分，下表展示当前清单设备的执行结果。" : "指定版本按当前选中的分发范围展示设备，列表不提供跨区域全部聚合明细。"}</p>
+      <strong>${isTwoStageTask(detail) ? "分阶段设备明细" : fixed ? "固定清单设备明细" : "指定版本设备明细"}</strong>
+      <p>${isTwoStageTask(detail) ? "设备可能处于不同阶段，切换阶段筛选查看对应结果。点击设备阶段结果可结合上方阶段统计判断当前进度。" : fixed ? "文件导入和手动导入按设备所属大区拆分，下表展示当前清单设备的执行结果。" : "指定版本按当前选中的分发范围展示设备，列表不提供跨区域全部聚合明细。"}</p>
     </div>
   `;
 }
@@ -4388,7 +4487,24 @@ function buildDeviceDetailRow(detail, id, index, forcedRegion = "", sampleMetric
   };
 }
 
+function stageDeviceRowMeta(detail, index, stageFilter = "all") {
+  const sequence = ["stage-one", "stability", "stage-two", "rollback", "stage-two", "stage-one"];
+  const stageKey = stageFilter === "all" ? sequence[index % sequence.length] : stageFilter;
+  const state = detail.stageState || "阶段一待执行";
+  const stageMeta = {
+    "stage-one": { label: "阶段一", result: ["阶段一失败", "回退失败"].includes(state) ? "异常" : ["阶段一升级中", "阶段一待执行"].includes(state) ? "升级中" : "已完成", reason: ["阶段一失败", "回退失败"].includes(state) ? "设备离线，升级状态未回传" : "-" },
+    stability: { label: "等待稳定", result: state === "等待稳定" ? "等待设备重新上线" : ["阶段一待执行", "阶段一升级中"].includes(state) ? "未进入" : "已通过", reason: state === "等待稳定" ? "等待设备重新上线" : "-" },
+    "stage-two": { label: "阶段二", result: ["阶段二失败", "回退失败"].includes(state) ? "异常" : state === "阶段二升级中" ? "升级中" : state === "已完成" ? "已完成" : "待进入", reason: ["阶段二失败", "回退失败"].includes(state) ? "阶段二执行失败" : "-" },
+    rollback: { label: "回退", result: Number(detail.rollbackFailed || 0) ? "回退失败" : Number(detail.rollbackSuccess || 0) ? "回退完成" : "未触发", reason: Number(detail.rollbackFailed || 0) ? "回退未完成" : "-" },
+  };
+  const meta = stageMeta[stageKey] || stageMeta["stage-one"];
+  return { stageKey, stageLabel: meta.label, stageResult: meta.result, stageReason: meta.reason };
+}
+
 function renderDeviceDetailRow(row) {
+  if (row.stageKey) {
+    return `<tr><td>${row.id}</td><td>${row.sourceVersion}</td><td>${row.stageLabel}</td><td>${row.stageResult}</td><td>${row.targetVersion}</td><td>${row.region}</td><td>${row.reason}</td><td>${row.reportedAt}</td></tr>`;
+  }
   return `<tr><td>${row.id}</td><td>${row.sourceVersion}</td><td>${row.targetVersion}</td><td>${row.region}</td><td>${row.upgradeStatus}</td><td>${row.finishedAt}</td><td>${row.reason}</td><td>${row.reportedAt}</td></tr>`;
 }
 
@@ -5993,6 +6109,11 @@ function handleAction(action, el) {
       break;
     case "set-detail-region-tab":
       state.detailRegionTab = el.dataset.regionTab || "";
+      state.deviceExportMenuOpen = false;
+      render();
+      break;
+    case "set-detail-stage-tab":
+      state.detailStageTab = el.dataset.stageTab || "all";
       state.deviceExportMenuOpen = false;
       render();
       break;
