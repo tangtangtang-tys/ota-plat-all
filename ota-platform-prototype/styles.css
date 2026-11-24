@@ -4535,9 +4535,7 @@ tbody tr:hover .sticky-action-col {
   color: inherit;
   background: #fff;
   font: inherit;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
+  cursor: default;
   box-shadow: none;
 }
 
@@ -4589,6 +4587,40 @@ tbody tr:hover .sticky-action-col {
 .stage-progress-item strong,
 .stage-progress-item em {
   display: block;
+}
+
+.stage-progress-item small {
+  display: block;
+  margin-top: 7px;
+  color: #52657d;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.stage-progress-item.current {
+  border-color: #8fb6ff;
+  background: #f7fbff;
+}
+
+.stage-current-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e8eef6;
+}
+
+.stage-current-status span {
+  color: #7b8797;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.stage-current-status strong {
+  color: #172033;
+  font-size: 13px;
 }
 
 .stage-progress-item strong {

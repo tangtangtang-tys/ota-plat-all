@@ -2945,6 +2945,7 @@ function renderDetailTabContent(detail) {
     const exceptionSummary = renderExceptionSummary(detail);
     return `
         ${isTwoStageTask(detail) ? renderMultiStageDetailPanel(detail) : ""}
+        ${isTwoStageTask(detail) ? renderStageDetailTabs(detail) : ""}
         ${regionPanel ? `<div class="annotated-block">${regionPanel}</div>` : ""}
         <div class="annotated-block">
           ${renderUpgradeDetailOverview(detail)}
@@ -3182,45 +3183,29 @@ function stageStatsForDetail(detail) {
   };
 }
 
+function effectiveStageTab(detail) {
+  if (!isTwoStageTask(detail)) return "all";
+  if (["stage-one", "stage-two"].includes(state.detailStageTab)) return state.detailStageTab;
+  const stageState = detail.stageState || "阶段一待执行";
+  return ["阶段二升级中", "阶段二失败", "回退失败", "已完成"].includes(stageState) ? "stage-two" : "stage-one";
+}
+
 function stageScopeLabel(detail) {
   if (!isTwoStageTask(detail)) return "";
-  const labels = {
-    all: "全部阶段",
-    "stage-one": "阶段一",
-    stability: "阶段一待稳定",
-    "stage-two": "阶段二",
-    rollback: "异常与回退",
-  };
-  return labels[state.detailStageTab || "all"] || labels.all;
+  return effectiveStageTab(detail) === "stage-two" ? "阶段二" : "阶段一";
 }
 
 function stageScopeMetrics(detail) {
   const stageStats = stageStatsForDetail(detail);
-  const selectedScope = isTwoStageTask(detail) ? (state.detailStageTab || "all") : "all";
+  const selectedScope = effectiveStageTab(detail);
   if (selectedScope === "stage-one") {
-    return { ...stageStats.stageOne, entered: Number(stageStats.stageOne?.entered || 0), waiting: 0 };
-  }
-  if (selectedScope === "stability") {
     return {
+      ...stageStats.stageOne,
       entered: Number(stageStats.stageOne?.entered || 0),
-      success: Number(stageStats.stageOne?.success || 0),
-      failed: Number(stageStats.stageOne?.failed || 0),
-      running: 0,
       waiting: Number(stageStats.stability?.waiting || 0),
     };
   }
-  if (selectedScope === "stage-two") {
-    return { ...stageStats.stageTwo, entered: Number(stageStats.stageTwo?.entered || 0), waiting: 0 };
-  }
-  if (selectedScope === "rollback") {
-    return {
-      entered: Number(stageStats.rollback?.triggered || 0),
-      success: Number(stageStats.rollback?.success || 0),
-      failed: Number(stageStats.rollback?.failed || 0),
-      running: 0,
-      waiting: 0,
-    };
-  }
+  if (selectedScope === "stage-two") return { ...stageStats.stageTwo, entered: Number(stageStats.stageTwo?.entered || 0), waiting: 0 };
   return {
     entered: Math.max(Number(detail.success || 0) + Number(detail.failed || 0) + Number(detail.running || 0), 0),
     success: Number(detail.success || 0),
@@ -3230,22 +3215,29 @@ function stageScopeMetrics(detail) {
   };
 }
 
-function stageSuccessRate(stats) {
-  const completed = Number(stats?.success || 0) + Number(stats?.failed || 0);
-  return completed ? `${((Number(stats.success || 0) / completed) * 100).toFixed(1)}%` : "-";
+function stageNodeExecutionText(detail, stage, stats) {
+  const stateName = detail.stageState || "阶段一待执行";
+  const stageStats = stage === "stage-one" ? stats.stageOne : stats.stageTwo;
+  const success = Number(stageStats?.success || 0);
+  const failed = Number(stageStats?.failed || 0);
+  const running = Number(stageStats?.running || 0);
+  const waiting = stage === "stage-one" ? Number(stats.stability?.waiting || 0) : 0;
+  if (stage === "stage-one") {
+    if (stateName === "等待稳定") return `待稳定 · ${waiting.toLocaleString()} 台`;
+    if (stateName === "阶段一升级中") return `升级中 · ${running.toLocaleString()} 台`;
+    if (stateName === "阶段一失败") return `失败 · ${failed.toLocaleString()} 台`;
+    if (["阶段二升级中", "阶段二失败", "回退失败", "已完成"].includes(stateName)) return `已完成 · ${success.toLocaleString()} 台成功 / ${failed.toLocaleString()} 台失败`;
+    return `待执行 · ${Number(stageStats?.entered || 0).toLocaleString()} 台`;
+  }
+  if (["阶段二升级中"].includes(stateName)) return `升级中 · ${running.toLocaleString()} 台`;
+  if (["阶段二失败", "回退失败"].includes(stateName)) return `失败 · ${failed.toLocaleString()} 台`;
+  if (stateName === "已完成") return `已完成 · ${success.toLocaleString()} 台成功 / ${failed.toLocaleString()} 台失败`;
+  return `待进入 · ${Number(stageStats?.entered || 0).toLocaleString()} 台`;
 }
 
-function stageCurrentDistribution(detail) {
-  const stats = stageStatsForDetail(detail);
-  const stageState = detail.stageState || "阶段一待执行";
-  const distribution = [
-    ["阶段一升级中", Number(stats.stageOne?.running || 0)],
-    ["阶段一待稳定", Number(stats.stability?.waiting || 0)],
-    ["阶段二升级中", Number(stats.stageTwo?.running || 0)],
-    ["已完成", Number(stats.stageTwo?.success || 0)],
-    ["异常或回退", Number(stats.stageOne?.failed || 0) + Number(stats.stageTwo?.failed || 0) + Number(stats.rollback?.failed || 0)],
-  ].filter(([, count]) => count > 0);
-  return distribution.length ? distribution : [[stageState, 0]];
+function currentStageExecutionText(detail, stats) {
+  const stage = effectiveStageTab(detail);
+  return `${stage === "stage-two" ? "阶段二" : "阶段一"} · ${stageNodeExecutionText(detail, stage, stats)}`;
 }
 
 function detailMetricsFromTaskStatus(status, task, base) {
@@ -3485,32 +3477,17 @@ function renderMultiStageDetailPanel(detail) {
   if (!isTwoStageTask(detail)) return "";
   const stageState = detail.stageState || "阶段一待执行";
   const stats = stageStatsForDetail(detail);
-  const distribution = stageCurrentDistribution(detail);
   const stageItems = [
-    ["阶段一", stageOneProgressText(detail, stageState), stageProgressState(stageState, "stage-one")],
-    ["阶段二", `${detail.transitionVersion} → ${detail.targetVersion}`, stageProgressState(stageState, "stage-two")],
+    ["阶段一", stageOneProgressText(detail, stageState), stageProgressState(stageState, "stage-one"), stageNodeExecutionText(detail, "stage-one", stats)],
+    ["阶段二", `${detail.transitionVersion} → ${detail.targetVersion}`, stageProgressState(stageState, "stage-two"), stageNodeExecutionText(detail, "stage-two", stats)],
   ];
-  const resultSummary = isDetailExecutionStatus(detail)
-    ? (() => {
-      const stats = metricStats(detail);
-      return `<div class="stage-result-summary"><div><span>已进入执行</span><strong>${Number(stats.stocked).toLocaleString()} 台</strong></div><div><span>最终成功</span><strong>${Number(stats.upgradeSuccess).toLocaleString()} 台</strong></div><div><span>最终失败</span><strong>${Number(stats.upgradeFailed).toLocaleString()} 台</strong></div><div><span>当前升级中</span><strong>${Number(stats.running).toLocaleString()} 台</strong></div></div>`;
-    })()
-    : `<div class="stage-result-pending">任务发布后，设备完成版本回报，阶段状态和升级结果会同步更新。</div>`;
-  const distributionText = distribution.map(([label, count]) => `${label} ${Number(count).toLocaleString()} 台`).join("、");
-  return `<section class="scenario-panel multi-stage-panel"><div class="scenario-panel-head"><div><h3>升级链路与阶段进度</h3><p>4G 模组差分包任务使用统一过渡版本，设备完成阶段一并通过稳定校验后进入阶段二。点击节点查看该阶段明细。</p></div></div><div class="stage-progress-track">${stageItems.map(([title, text, stateName], index) => { const stageTab = index === 0 ? "stage-one" : "stage-two"; const selected = state.detailStageTab === stageTab || (stageTab === "stage-one" && state.detailStageTab === "stability"); return `<button class="stage-progress-item ${stateName}${selected ? " selected" : ""}" type="button" data-action="set-detail-stage-tab" data-stage-tab="${stageTab}" aria-pressed="${selected}"><span>${index + 1}</span><div><strong>${title}</strong><em>${text}</em></div></button>`; }).join("")}</div><div class="stage-state-summary"><span>当前执行情况</span><strong>${distribution.length === 1 ? distribution[0][0] : "设备分阶段推进"}</strong><span>设备阶段分布</span><strong>${distributionText}</strong><span>发布前排除</span><strong>${Number(detail.excludedCount || 0).toLocaleString()} 台</strong><span>回退结果</span><strong>${Number(detail.rollbackSuccess || stats.rollback?.success || 0)} 成功 / ${Number(detail.rollbackFailed || stats.rollback?.failed || 0)} 失败</strong></div>${renderStageStatsTable(detail, stats)}${resultSummary}</section>`;
+  const currentStage = effectiveStageTab(detail);
+  return `<section class="scenario-panel multi-stage-panel"><div class="scenario-panel-head"><div><h3>升级链路与阶段进度</h3><p>4G 模组差分包任务使用统一过渡版本，设备完成阶段一并通过稳定校验后进入阶段二。</p></div></div><div class="stage-progress-track">${stageItems.map(([title, path, stateName, executionText], index) => { const stageTab = index === 0 ? "stage-one" : "stage-two"; const current = currentStage === stageTab ? " current" : ""; return `<div class="stage-progress-item ${stateName}${current}"><span>${index + 1}</span><div><strong>${title}</strong><em>${path}</em><small>${executionText}</small></div></div>`; }).join("")}</div><div class="stage-current-status"><span>当前执行情况</span><strong>${currentStageExecutionText(detail, stats)}</strong></div></section>`;
 }
 
 function stageOneProgressText(detail, stageState) {
   const path = `${detail.sourceVersions?.length ? detail.sourceVersions.join("、") : "源版本"} → ${detail.transitionVersion}`;
   return stageState === "等待稳定" ? `${path} · 已完成，等待设备重新上线` : path;
-}
-
-function renderStageStatsTable(detail, stats) {
-  const rows = [
-    ["阶段一", `${detail.sourceVersions?.length ? detail.sourceVersions.join("、") : "源版本"} → ${detail.transitionVersion}`, stats.stageOne, Number(stats.stageOne?.waiting || 0)],
-    ["阶段二", `${detail.transitionVersion} → ${detail.targetVersion}`, stats.stageTwo, Number(stats.stageTwo?.waiting || 0)],
-  ];
-  return `<div class="stage-stats-block"><div class="stage-stats-head"><div><strong>分阶段执行结果</strong><span>成功率按已完成回执计算</span></div><button class="link-btn" type="button" data-action="set-detail-tab" data-tab="devices">查看阶段设备明细</button></div><div class="table-wrap stage-stats-table-wrap"><table class="stage-stats-table"><thead><tr><th>阶段</th><th>版本链路</th><th>进入设备</th><th>成功</th><th>失败</th><th>执行中</th><th>阶段一待稳定</th><th>成功率</th></tr></thead><tbody>${rows.map(([name, path, stage, waiting]) => `<tr><td><strong>${name}</strong></td><td>${path}</td><td>${Number(stage?.entered || 0).toLocaleString()} 台</td><td class="stage-success">${Number(stage?.success || 0).toLocaleString()} 台</td><td class="stage-failed">${Number(stage?.failed || 0).toLocaleString()} 台</td><td>${Number(stage?.running || 0).toLocaleString()} 台</td><td>${waiting.toLocaleString()} 台</td><td><strong>${stageSuccessRate(stage)}</strong></td></tr>`).join("")}</tbody></table></div><div class="stage-stats-note">阶段一待稳定设备不计入阶段二成功率，阶段二成功率只统计已经收到阶段二结果回执的设备。</div></div>`;
 }
 
 function stageProgressState(stageState, stage) {
@@ -3627,37 +3604,31 @@ function dispatchRegionExecutionRows(detail) {
   const runningCounts = splitCountByWeights(Number(scope.running) || 0, weights);
   const waitingCounts = splitCountByWeights(Number(scope.waiting) || 0, weights);
   const enteredCounts = splitCountByWeights(Number(scope.entered) || 0, weights);
-  const selectedScope = isTwoStageTask(detail) ? (state.detailStageTab || "all") : "all";
+  const selectedScope = effectiveStageTab(detail);
   return regions.map((region, index) => {
     const success = successCounts[index] || 0;
     const failed = failedCounts[index] || 0;
     const running = runningCounts[index] || 0;
     const waiting = waitingCounts[index] || 0;
     const entered = enteredCounts[index] || success + failed + running + waiting;
-    const matched = selectedScope === "stability" ? entered : success + failed + running + waiting;
-    const dispatched = selectedScope === "stability" ? waiting : success + failed + running;
-    const successRate = selectedScope === "stability"
-      ? "-"
-      : dispatched
+    const matched = entered;
+    const dispatched = success + failed + running;
+    const successRate = dispatched
         ? ((success / dispatched) * 100).toFixed(1)
         : "0.0";
     const rowStatus = selectedScope === "stage-one"
-      ? (failed ? (success ? "阶段一部分失败" : "阶段一失败") : running ? "阶段一升级中" : success ? "已完成" : "待进入")
-      : selectedScope === "stability"
-        ? (waiting ? "阶段一待稳定" : success ? "已通过" : "待进入")
-        : selectedScope === "stage-two"
+      ? (waiting ? "阶段一待稳定" : failed ? (success ? "阶段一部分失败" : "阶段一失败") : running ? "阶段一升级中" : success ? "已完成" : "待进入")
+      : selectedScope === "stage-two"
           ? (failed ? (success ? "阶段二部分失败" : "阶段二失败") : running ? "阶段二升级中" : success ? "已完成" : "待进入")
-          : selectedScope === "rollback"
-            ? (failed ? "回退失败" : success ? "回退完成" : "未触发")
-            : detail.status === "升级中"
-              ? "升级中"
-              : detail.status === "中止中"
-                ? "中止中"
-                : detail.status === "已结束"
-                  ? "已结束"
-                  : detail.status === "已完成"
-                    ? "已完成"
-                    : "待执行";
+          : detail.status === "升级中"
+            ? "升级中"
+            : detail.status === "中止中"
+              ? "中止中"
+              : detail.status === "已结束"
+                ? "已结束"
+                : detail.status === "已完成"
+                  ? "已完成"
+                  : "待执行";
     return {
       region,
       status: rowStatus,
@@ -3967,7 +3938,7 @@ function metricStatsForCurrentView(detail) {
   if (detail.method !== "指定版本") return metricStats(detail);
   const row = dispatchRegionExecutionRows(detail).find(item => regionTabKey(item.region) === selectedDetailRegionKey(detail));
   if (!row) return metricStats(detail);
-  const stageScoped = isTwoStageTask(detail) && (state.detailStageTab || "all") !== "all";
+  const stageScoped = isTwoStageTask(detail);
   return {
     stocked: stageScoped ? row.entered : row.matched,
     stageEntered: row.entered,
@@ -4338,17 +4309,14 @@ function renderExecutionProgressInline(detail, stats) {
 }
 
 function executionMetricCards(detail, stats) {
-  const stageScope = isTwoStageTask(detail) ? (state.detailStageTab || "all") : "all";
+  const stageScope = effectiveStageTab(detail);
   if (stageScope !== "all") {
-    const enteredLabel = stageScope === "rollback" ? "触发回退" : "进入阶段";
-    const successLabel = stageScope === "rollback" ? "回退完成" : "阶段成功";
-    const failedLabel = stageScope === "rollback" ? "回退失败" : "阶段失败";
-    const activeLabel = stageScope === "stability" ? "阶段一待稳定" : "执行中";
-    const activeValue = stageScope === "stability" ? stats.waiting : stats.running;
+    const activeLabel = stageScope === "stage-one" && Number(stats.waiting || 0) > 0 ? "阶段一待稳定" : "执行中";
+    const activeValue = stageScope === "stage-one" && Number(stats.waiting || 0) > 0 ? stats.waiting : stats.running;
     return [
-      [enteredLabel, `${Number(stats.stageEntered ?? stats.stocked).toLocaleString()} 台`, "blue", "refresh"],
-      [successLabel, `${Number(stats.upgradeSuccess).toLocaleString()} 台`, "green", "check"],
-      [failedLabel, `${Number(stats.upgradeFailed).toLocaleString()} 台`, "red", "alert"],
+      ["进入阶段", `${Number(stats.stageEntered ?? stats.stocked).toLocaleString()} 台`, "blue", "refresh"],
+      ["阶段成功", `${Number(stats.upgradeSuccess).toLocaleString()} 台`, "green", "check"],
+      ["阶段失败", `${Number(stats.upgradeFailed).toLocaleString()} 台`, "red", "alert"],
       [activeLabel, `${Number(activeValue).toLocaleString()} 台`, "orange", "clock"],
     ];
   }
@@ -4456,7 +4424,6 @@ function renderDeviceDetailTable(detail) {
       <h3 class="section-title">${icon("layer")}设备列表</h3>
       ${detail.method === "指定版本" ? `<span class="section-subtitle">当前区域：${escapeHtml(selectedRegion)}${isTwoStageTask(detail) ? ` · 当前阶段：${escapeHtml(stageScopeLabel(detail))}` : ""}</span>` : ""}
     </div>
-    ${isTwoStageTask(detail) ? renderStageDetailTabs() : ""}
     ${renderDeviceDetailNote(detail)}
     <div class="toolbar device-list-toolbar">
       <label class="field-control search">${icon("search")}<input type="search" value="${escapeHtml(state.detailDeviceKeyword)}" placeholder="请输入设备ID" aria-label="设备ID搜索" data-detail-device-search /></label>
@@ -4476,15 +4443,13 @@ function renderDeviceDetailTable(detail) {
   `;
 }
 
-function renderStageDetailTabs() {
+function renderStageDetailTabs(detail) {
   const tabs = [
-    ["all", "全部设备"],
     ["stage-one", "阶段一"],
-    ["stability", "阶段一待稳定"],
     ["stage-two", "阶段二"],
-    ["rollback", "异常与回退"],
   ];
-  return `<div class="stage-detail-tabs" role="tablist" aria-label="阶段设备明细筛选">${tabs.map(([key, label]) => `<button class="${state.detailStageTab === key ? "active" : ""}" type="button" data-action="set-detail-stage-tab" data-stage-tab="${key}">${label}</button>`).join("")}</div>`;
+  const activeTab = effectiveStageTab(detail);
+  return `<div class="stage-detail-tabs stage-detail-tabs-top" role="tablist" aria-label="升级阶段明细切换">${tabs.map(([key, label]) => `<button class="${activeTab === key ? "active" : ""}" type="button" role="tab" aria-selected="${activeTab === key}" data-action="set-detail-stage-tab" data-stage-tab="${key}">${label}</button>`).join("")}</div>`;
 }
 
 function renderDeviceExportMenu(detail, selectedRegion) {
@@ -4514,13 +4479,13 @@ function deviceDetailRows(detail, selectedRegion = "") {
   const versionLimit = versionDeviceSampleLimit(detail, regionMetric);
   const rows = deviceRows.slice(0, versionLimit).map((id, index) => buildDeviceDetailRow(detail, id, index, region, regionMetric));
   if (!isTwoStageTask(detail)) return rows;
-  const stageFilter = state.detailStageTab || "all";
+  const stageFilter = effectiveStageTab(detail);
   return rows
     .map((row, index) => {
       const meta = stageDeviceRowMeta(detail, index, stageFilter);
       return { ...row, ...meta, reason: meta.stageReason };
     })
-    .filter(row => stageFilter === "all" || row.stageKey === stageFilter);
+    .filter(row => row.stageKey === stageFilter);
 }
 
 function deviceDetailRowLimit(detail) {
@@ -4534,7 +4499,7 @@ function renderDeviceDetailNote(detail) {
   return `
     <div class="device-detail-note">
       <strong>${isTwoStageTask(detail) ? "分阶段设备明细" : fixed ? "固定清单设备明细" : "指定版本设备明细"}</strong>
-      <p>${isTwoStageTask(detail) ? "设备可能处于不同阶段，切换阶段筛选查看对应结果。点击设备阶段结果可结合上方阶段统计判断当前进度。" : fixed ? "文件导入和手动导入按设备所属大区拆分，下表展示当前清单设备的执行结果。" : "指定版本按当前选中的分发范围展示设备，列表不提供跨区域全部聚合明细。"}</p>
+      <p>${isTwoStageTask(detail) ? "切换阶段页签查看对应设备结果。" : fixed ? "文件导入和手动导入按设备所属大区拆分，下表展示当前清单设备的执行结果。" : "指定版本按当前选中的分发范围展示设备，列表不提供跨区域全部聚合明细。"}</p>
     </div>
   `;
 }
@@ -4571,15 +4536,24 @@ function buildDeviceDetailRow(detail, id, index, forcedRegion = "", sampleMetric
   };
 }
 
-function stageDeviceRowMeta(detail, index, stageFilter = "all") {
-  const sequence = ["stage-one", "stability", "stage-two", "rollback", "stage-two", "stage-one"];
-  const stageKey = stageFilter === "all" ? sequence[index % sequence.length] : stageFilter;
+function stageDeviceRowMeta(detail, index, stageFilter = "stage-one") {
+  const stageKey = ["stage-one", "stage-two"].includes(stageFilter) ? stageFilter : "stage-one";
   const state = detail.stageState || "阶段一待执行";
+  const stats = stageStatsForDetail(detail);
+  const stage = stageKey === "stage-one" ? stats.stageOne : stats.stageTwo;
+  const failedLimit = Math.min(Number(stage?.failed || 0), 3);
+  const runningLimit = Math.min(Number(stage?.running || 0), 3);
+  const waitingLimit = stageKey === "stage-one" ? Math.min(Number(stats.stability?.waiting || 0), 3) : 0;
+  const sampleState = index < failedLimit
+    ? "failed"
+    : index < failedLimit + runningLimit
+      ? "running"
+      : index < failedLimit + runningLimit + waitingLimit
+        ? "waiting"
+        : "success";
   const stageMeta = {
-    "stage-one": { label: "阶段一", result: ["阶段一失败", "回退失败"].includes(state) ? "异常" : ["阶段一升级中", "阶段一待执行"].includes(state) ? "升级中" : "已完成", reason: ["阶段一失败", "回退失败"].includes(state) ? "设备离线，升级状态未回传" : "-" },
-    stability: { label: "阶段一待稳定", result: state === "等待稳定" ? "等待设备重新上线" : ["阶段一待执行", "阶段一升级中"].includes(state) ? "未进入" : "已通过", reason: state === "等待稳定" ? "等待设备重新上线" : "-" },
-    "stage-two": { label: "阶段二", result: ["阶段二失败", "回退失败"].includes(state) ? "异常" : state === "阶段二升级中" ? "升级中" : state === "已完成" ? "已完成" : "待进入", reason: ["阶段二失败", "回退失败"].includes(state) ? "阶段二执行失败" : "-" },
-    rollback: { label: "回退", result: Number(detail.rollbackFailed || 0) ? "回退失败" : Number(detail.rollbackSuccess || 0) ? "回退完成" : "未触发", reason: Number(detail.rollbackFailed || 0) ? "回退未完成" : "-" },
+    "stage-one": { label: "阶段一", result: sampleState === "failed" ? "异常" : sampleState === "waiting" || state === "等待稳定" ? "待稳定" : sampleState === "running" ? "升级中" : ["阶段一失败", "回退失败"].includes(state) ? "异常" : ["阶段一升级中", "阶段一待执行"].includes(state) ? "升级中" : "已完成", reason: sampleState === "failed" ? "设备离线，升级状态未回传" : sampleState === "waiting" || state === "等待稳定" ? "等待设备重新上线" : "-" },
+    "stage-two": { label: "阶段二", result: sampleState === "failed" ? "异常" : sampleState === "running" ? "升级中" : ["阶段二失败", "回退失败"].includes(state) ? "异常" : state === "阶段二升级中" ? "升级中" : state === "已完成" ? "已完成" : "待进入", reason: sampleState === "failed" ? "阶段二执行失败" : "-" },
   };
   const meta = stageMeta[stageKey] || stageMeta["stage-one"];
   return { stageKey, stageLabel: meta.label, stageResult: meta.result, stageReason: meta.reason };
@@ -6197,7 +6171,7 @@ function handleAction(action, el) {
       render();
       break;
     case "set-detail-stage-tab":
-      state.detailStageTab = el.dataset.stageTab || "all";
+      state.detailStageTab = ["stage-one", "stage-two"].includes(el.dataset.stageTab) ? el.dataset.stageTab : "stage-one";
       state.detailRegionTab = "";
       state.deviceExportMenuOpen = false;
       render();
