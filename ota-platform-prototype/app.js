@@ -2898,7 +2898,7 @@ function renderTaskDetail() {
         ${renderDetailTabs()}
         ${renderRequirementNote("PRD 12", "详情页信息架构", [
           "页签固定为任务概览、升级明细和异常清单。",
-          "任务概览展示任务配置和流转；升级明细先展示区域升级明细，再展示当前区域的升级概览、异常分类和设备列表。",
+          "任务概览展示任务配置和流转；升级明细先展示两阶段链路与阶段结果，再展示区域升级明细、当前区域概览、异常分类和设备列表。",
           "开发评审视图可切换状态和统计规则，但不影响真实任务记录字段。",
         ])}
       </div>
@@ -2944,6 +2944,7 @@ function renderDetailTabContent(detail) {
         : "";
     const exceptionSummary = renderExceptionSummary(detail);
     return `
+        ${isTwoStageTask(detail) ? renderMultiStageDetailPanel(detail) : ""}
         ${regionPanel ? `<div class="annotated-block">${regionPanel}</div>` : ""}
         <div class="annotated-block">
           ${renderUpgradeDetailOverview(detail)}
@@ -3424,7 +3425,6 @@ function renderDetailHero(detail) {
         ${renderTaskKpi(detail.method === "指定版本" ? "升级区域" : "升级方式", detail.method === "指定版本" ? dispatchRegionSummary(detail.dispatchRegions) : "自动按设备大区")}
         ${renderTaskKpi("升级设备数", overviewDeviceScale(detail))}
       </section>
-      ${renderMultiStageDetailPanel(detail)}
       <section class="task-overview-middle">
         ${renderTaskStrategyPanel(detail)}
         ${renderTaskConditionPanel(detail)}
