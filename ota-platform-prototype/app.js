@@ -3192,7 +3192,7 @@ function stageCurrentDistribution(detail) {
   const stageState = detail.stageState || "阶段一待执行";
   const distribution = [
     ["阶段一升级中", Number(stats.stageOne?.running || 0)],
-    ["等待稳定", Number(stats.stability?.waiting || 0)],
+    ["阶段一待稳定", Number(stats.stability?.waiting || 0)],
     ["阶段二升级中", Number(stats.stageTwo?.running || 0)],
     ["已完成", Number(stats.stageTwo?.success || 0)],
     ["异常或回退", Number(stats.stageOne?.failed || 0) + Number(stats.stageTwo?.failed || 0) + Number(stats.rollback?.failed || 0)],
@@ -3439,8 +3439,7 @@ function renderMultiStageDetailPanel(detail) {
   const stats = stageStatsForDetail(detail);
   const distribution = stageCurrentDistribution(detail);
   const stageItems = [
-    ["阶段一", `${detail.sourceVersions?.length ? detail.sourceVersions.join("、") : "源版本"} → ${detail.transitionVersion}`, stageProgressState(stageState, "stage-one")],
-    ["等待稳定", "回报过渡版本并重新上线", stageProgressState(stageState, "stability")],
+    ["阶段一", stageOneProgressText(detail, stageState), stageProgressState(stageState, "stage-one")],
     ["阶段二", `${detail.transitionVersion} → ${detail.targetVersion}`, stageProgressState(stageState, "stage-two")],
   ];
   const resultSummary = isDetailExecutionStatus(detail)
@@ -3453,26 +3452,24 @@ function renderMultiStageDetailPanel(detail) {
   return `<section class="scenario-panel multi-stage-panel"><div class="scenario-panel-head"><div><h3>升级链路与阶段进度</h3><p>4G 模组差分包任务使用统一过渡版本，设备完成阶段一并通过稳定校验后进入阶段二。</p></div></div><div class="stage-progress-track">${stageItems.map(([title, text, stateName], index) => `<div class="stage-progress-item ${stateName}"><span>${index + 1}</span><div><strong>${title}</strong><em>${text}</em></div></div>`).join("")}</div><div class="stage-state-summary"><span>当前执行情况</span><strong>${distribution.length === 1 ? distribution[0][0] : "设备分阶段推进"}</strong><span>设备阶段分布</span><strong>${distributionText}</strong><span>发布前排除</span><strong>${Number(detail.excludedCount || 0).toLocaleString()} 台</strong><span>回退结果</span><strong>${Number(detail.rollbackSuccess || stats.rollback?.success || 0)} 成功 / ${Number(detail.rollbackFailed || stats.rollback?.failed || 0)} 失败</strong></div>${renderStageStatsTable(detail, stats)}${resultSummary}</section>`;
 }
 
+function stageOneProgressText(detail, stageState) {
+  const path = `${detail.sourceVersions?.length ? detail.sourceVersions.join("、") : "源版本"} → ${detail.transitionVersion}`;
+  return stageState === "等待稳定" ? `${path} · 已完成，等待设备重新上线` : path;
+}
+
 function renderStageStatsTable(detail, stats) {
   const rows = [
     ["阶段一", `${detail.sourceVersions?.length ? detail.sourceVersions.join("、") : "源版本"} → ${detail.transitionVersion}`, stats.stageOne, Number(stats.stageOne?.waiting || 0)],
     ["阶段二", `${detail.transitionVersion} → ${detail.targetVersion}`, stats.stageTwo, Number(stats.stageTwo?.waiting || 0)],
   ];
-  return `<div class="stage-stats-block"><div class="stage-stats-head"><div><strong>分阶段执行结果</strong><span>成功率按已完成回执计算</span></div><button class="link-btn" type="button" data-action="set-detail-tab" data-tab="devices">查看阶段设备明细</button></div><div class="table-wrap stage-stats-table-wrap"><table class="stage-stats-table"><thead><tr><th>阶段</th><th>版本链路</th><th>进入设备</th><th>成功</th><th>失败</th><th>执行中</th><th>等待稳定</th><th>成功率</th></tr></thead><tbody>${rows.map(([name, path, stage, waiting]) => `<tr><td><strong>${name}</strong></td><td>${path}</td><td>${Number(stage?.entered || 0).toLocaleString()} 台</td><td class="stage-success">${Number(stage?.success || 0).toLocaleString()} 台</td><td class="stage-failed">${Number(stage?.failed || 0).toLocaleString()} 台</td><td>${Number(stage?.running || 0).toLocaleString()} 台</td><td>${waiting.toLocaleString()} 台</td><td><strong>${stageSuccessRate(stage)}</strong></td></tr>`).join("")}</tbody></table></div><div class="stage-stats-note">等待稳定设备不计入阶段二成功率，阶段二成功率只统计已经收到阶段二结果回执的设备。</div></div>`;
+  return `<div class="stage-stats-block"><div class="stage-stats-head"><div><strong>分阶段执行结果</strong><span>成功率按已完成回执计算</span></div><button class="link-btn" type="button" data-action="set-detail-tab" data-tab="devices">查看阶段设备明细</button></div><div class="table-wrap stage-stats-table-wrap"><table class="stage-stats-table"><thead><tr><th>阶段</th><th>版本链路</th><th>进入设备</th><th>成功</th><th>失败</th><th>执行中</th><th>阶段一待稳定</th><th>成功率</th></tr></thead><tbody>${rows.map(([name, path, stage, waiting]) => `<tr><td><strong>${name}</strong></td><td>${path}</td><td>${Number(stage?.entered || 0).toLocaleString()} 台</td><td class="stage-success">${Number(stage?.success || 0).toLocaleString()} 台</td><td class="stage-failed">${Number(stage?.failed || 0).toLocaleString()} 台</td><td>${Number(stage?.running || 0).toLocaleString()} 台</td><td>${waiting.toLocaleString()} 台</td><td><strong>${stageSuccessRate(stage)}</strong></td></tr>`).join("")}</tbody></table></div><div class="stage-stats-note">阶段一待稳定设备不计入阶段二成功率，阶段二成功率只统计已经收到阶段二结果回执的设备。</div></div>`;
 }
 
 function stageProgressState(stageState, stage) {
-  const failed = ["阶段一失败", "阶段二失败", "回退失败"].includes(stageState);
   if (stage === "stage-one") {
     if (stageState === "阶段一失败") return "error";
     if (stageState === "阶段一升级中") return "active";
     if (["阶段一完成", "等待稳定", "阶段二升级中", "已完成"].includes(stageState)) return "done";
-    return "pending";
-  }
-  if (stage === "stability") {
-    if (failed) return "error";
-    if (stageState === "等待稳定") return "active";
-    if (["阶段二升级中", "已完成"].includes(stageState)) return "done";
     return "pending";
   }
   if (["阶段二失败", "回退失败"].includes(stageState)) return "error";
@@ -4396,7 +4393,7 @@ function renderStageDetailTabs() {
   const tabs = [
     ["all", "全部设备"],
     ["stage-one", "阶段一"],
-    ["stability", "等待稳定"],
+    ["stability", "阶段一待稳定"],
     ["stage-two", "阶段二"],
     ["rollback", "异常与回退"],
   ];
@@ -4493,7 +4490,7 @@ function stageDeviceRowMeta(detail, index, stageFilter = "all") {
   const state = detail.stageState || "阶段一待执行";
   const stageMeta = {
     "stage-one": { label: "阶段一", result: ["阶段一失败", "回退失败"].includes(state) ? "异常" : ["阶段一升级中", "阶段一待执行"].includes(state) ? "升级中" : "已完成", reason: ["阶段一失败", "回退失败"].includes(state) ? "设备离线，升级状态未回传" : "-" },
-    stability: { label: "等待稳定", result: state === "等待稳定" ? "等待设备重新上线" : ["阶段一待执行", "阶段一升级中"].includes(state) ? "未进入" : "已通过", reason: state === "等待稳定" ? "等待设备重新上线" : "-" },
+    stability: { label: "阶段一待稳定", result: state === "等待稳定" ? "等待设备重新上线" : ["阶段一待执行", "阶段一升级中"].includes(state) ? "未进入" : "已通过", reason: state === "等待稳定" ? "等待设备重新上线" : "-" },
     "stage-two": { label: "阶段二", result: ["阶段二失败", "回退失败"].includes(state) ? "异常" : state === "阶段二升级中" ? "升级中" : state === "已完成" ? "已完成" : "待进入", reason: ["阶段二失败", "回退失败"].includes(state) ? "阶段二执行失败" : "-" },
     rollback: { label: "回退", result: Number(detail.rollbackFailed || 0) ? "回退失败" : Number(detail.rollbackSuccess || 0) ? "回退完成" : "未触发", reason: Number(detail.rollbackFailed || 0) ? "回退未完成" : "-" },
   };
