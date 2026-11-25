@@ -4535,7 +4535,9 @@ tbody tr:hover .sticky-action-col {
   color: inherit;
   background: #fff;
   font: inherit;
-  cursor: default;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
   box-shadow: none;
 }
 
@@ -4601,6 +4603,7 @@ tbody tr:hover .sticky-action-col {
 .stage-progress-item.current {
   border-color: #8fb6ff;
   background: #f7fbff;
+  box-shadow: 0 0 0 2px rgba(31, 107, 255, 0.1);
 }
 
 .stage-current-status {
@@ -4762,30 +4765,6 @@ tbody tr:hover .sticky-action-col {
 
 .stage-stats-note {
   margin-top: 8px;
-}
-
-.stage-detail-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: -2px 0 14px;
-}
-
-.stage-detail-tabs button {
-  min-height: 30px;
-  border: 1px solid #d8e2ef;
-  border-radius: 16px;
-  padding: 0 12px;
-  color: #5f6b7d;
-  background: #fff;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.stage-detail-tabs button.active {
-  border-color: #8fb6ff;
-  color: var(--blue);
-  background: #f2f7ff;
 }
 
 .coverage-callout {

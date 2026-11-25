@@ -82,7 +82,7 @@ const state = {
   detailStatus: "升级中",
   detailMetricMode: "versionFull",
   detailTab: "overview",
-  detailStageTab: "all",
+  detailStageTab: "stage-one",
   detailRegionTab: "",
   detailDeviceKeyword: "",
   deviceExportMenuOpen: false,
@@ -1611,7 +1611,7 @@ function selectTask(taskId) {
 
 function resetDetailViewContext(options = {}) {
   if (options.tab) state.detailTab = options.tab;
-  state.detailStageTab = "all";
+  state.detailStageTab = "stage-one";
   state.detailRegionTab = "";
   state.detailDeviceKeyword = "";
   state.deviceExportMenuOpen = false;
@@ -2945,7 +2945,6 @@ function renderDetailTabContent(detail) {
     const exceptionSummary = renderExceptionSummary(detail);
     return `
         ${isTwoStageTask(detail) ? renderMultiStageDetailPanel(detail) : ""}
-        ${isTwoStageTask(detail) ? renderStageDetailTabs(detail) : ""}
         ${regionPanel ? `<div class="annotated-block">${regionPanel}</div>` : ""}
         <div class="annotated-block">
           ${renderUpgradeDetailOverview(detail)}
@@ -3482,7 +3481,7 @@ function renderMultiStageDetailPanel(detail) {
     ["阶段二", `${detail.transitionVersion} → ${detail.targetVersion}`, stageProgressState(stageState, "stage-two"), stageNodeExecutionText(detail, "stage-two", stats)],
   ];
   const currentStage = effectiveStageTab(detail);
-  return `<section class="scenario-panel multi-stage-panel"><div class="scenario-panel-head"><div><h3>升级链路与阶段进度</h3><p>4G 模组差分包任务使用统一过渡版本，设备完成阶段一并通过稳定校验后进入阶段二。</p></div></div><div class="stage-progress-track">${stageItems.map(([title, path, stateName, executionText], index) => { const stageTab = index === 0 ? "stage-one" : "stage-two"; const current = currentStage === stageTab ? " current" : ""; return `<div class="stage-progress-item ${stateName}${current}"><span>${index + 1}</span><div><strong>${title}</strong><em>${path}</em><small>${executionText}</small></div></div>`; }).join("")}</div><div class="stage-current-status"><span>当前执行情况</span><strong>${currentStageExecutionText(detail, stats)}</strong></div></section>`;
+  return `<section class="scenario-panel multi-stage-panel"><div class="scenario-panel-head"><div><h3>升级链路与阶段进度</h3><p>4G 模组差分包任务使用统一过渡版本，设备完成阶段一并通过稳定校验后进入阶段二。</p></div></div><div class="stage-progress-track">${stageItems.map(([title, path, stateName, executionText], index) => { const stageTab = index === 0 ? "stage-one" : "stage-two"; const current = currentStage === stageTab ? " current" : ""; return `<button class="stage-progress-item ${stateName}${current}" type="button" role="tab" aria-selected="${currentStage === stageTab}" aria-label="查看${title}明细" data-action="set-detail-stage-tab" data-stage-tab="${stageTab}"><span>${index + 1}</span><div><strong>${title}</strong><em>${path}</em><small>${executionText}</small></div></button>`; }).join("")}</div><div class="stage-current-status"><span>当前执行情况</span><strong>${currentStageExecutionText(detail, stats)}</strong></div></section>`;
 }
 
 function stageOneProgressText(detail, stageState) {
@@ -4443,15 +4442,6 @@ function renderDeviceDetailTable(detail) {
   `;
 }
 
-function renderStageDetailTabs(detail) {
-  const tabs = [
-    ["stage-one", "阶段一"],
-    ["stage-two", "阶段二"],
-  ];
-  const activeTab = effectiveStageTab(detail);
-  return `<div class="stage-detail-tabs stage-detail-tabs-top" role="tablist" aria-label="升级阶段明细切换">${tabs.map(([key, label]) => `<button class="${activeTab === key ? "active" : ""}" type="button" role="tab" aria-selected="${activeTab === key}" data-action="set-detail-stage-tab" data-stage-tab="${key}">${label}</button>`).join("")}</div>`;
-}
-
 function renderDeviceExportMenu(detail, selectedRegion) {
   const currentScope = selectedRegion ? `当前区域：${selectedRegion}` : "当前筛选结果";
   const allScope = detail.method === "指定版本" ? "全部升级区域、源版本和批次" : "全部设备执行记录";
@@ -4499,7 +4489,7 @@ function renderDeviceDetailNote(detail) {
   return `
     <div class="device-detail-note">
       <strong>${isTwoStageTask(detail) ? "分阶段设备明细" : fixed ? "固定清单设备明细" : "指定版本设备明细"}</strong>
-      <p>${isTwoStageTask(detail) ? "切换阶段页签查看对应设备结果。" : fixed ? "文件导入和手动导入按设备所属大区拆分，下表展示当前清单设备的执行结果。" : "指定版本按当前选中的分发范围展示设备，列表不提供跨区域全部聚合明细。"}</p>
+      <p>${isTwoStageTask(detail) ? "点击上方阶段节点查看对应设备结果。" : fixed ? "文件导入和手动导入按设备所属大区拆分，下表展示当前清单设备的执行结果。" : "指定版本按当前选中的分发范围展示设备，列表不提供跨区域全部聚合明细。"}</p>
     </div>
   `;
 }
